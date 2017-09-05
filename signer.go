@@ -10,9 +10,13 @@ import (
 type Priority int
 
 const (
+	// UnknownPriority represents an Unknown Priority siging request
 	UnknownPriority Priority = iota
+	// LowPriority represents an Low Priority siging request
 	LowPriority
+	// MediumPriority represents an Medium Priority siging request
 	MediumPriority
+	// HighPriority represents an High Priority siging request
 	HighPriority
 )
 
