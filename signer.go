@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"io"
 	"io/ioutil"
+
+	"bitbucket.org/digitorus/pdfsign/sign"
 )
 
 // by default we queue 25 signing jobs
@@ -41,6 +43,7 @@ type signer struct {
 	c crypto.Signer
 	q priorityQueue
 
+	tsa               sign.TSA
 	certificate       *x509.Certificate
 	certificateChains [][]*x509.Certificate
 }
