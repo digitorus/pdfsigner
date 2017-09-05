@@ -33,8 +33,8 @@ type priorityQueue struct {
 }
 
 type signer struct {
-	c  crypto.Signer
-	pq priorityQueue
+	c crypto.Signer
+	q priorityQueue
 }
 
 // Status contains the current signing proccess status for a specific document
@@ -85,11 +85,11 @@ func (s *Signer) Sign(file io.Reader, options *Options) (*string, error) {
 	// Add job to the signing queue according to it's priority
 	switch options.Priority {
 	case HighPriority:
-		s.s[signer].pq.heigh <- job
+		s.s[signer].q.heigh <- job
 	case MediumPriority:
-		s.s[signer].pq.medium <- job
+		s.s[signer].q.medium <- job
 	default:
-		s.s[signer].pq.low <- job
+		s.s[signer].q.low <- job
 	}
 
 	// create a unqiue id that can be used by a client to obtain the document or
