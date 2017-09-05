@@ -26,7 +26,10 @@ type signJob struct {
 	options *Options
 }
 
-type priorityQueue struct {
+type signer struct {
+	c crypto.Signer
+
+	// priority queues
 	low    chan signJob
 	medium chan signJob
 	heigh  chan signJob
@@ -50,8 +53,7 @@ type Options struct {
 // The crypto.Signer map can contain multiple singers as defined in the config,
 // a Singer implementation can be a private key or PKCS#11 device.
 type Signer struct {
-	q map[string]priorityQueue
-	c map[string]crypto.Signer
+	s map[string]signer
 }
 
 // Sign reads a file and stores it at temporary location so that it can be
@@ -81,11 +83,11 @@ func (s *Signer) Sign(file io.Reader, options *Options) (*string, error) {
 	// Add job to the signing queue according to it's priority
 	switch options.Priority {
 	case HighPriority:
-		s.q[signer].heigh <- job
+		s.s[signer].heigh <- job
 	case MediumPriority:
-		s.q[signer].medium <- job
+		s.s[signer].medium <- job
 	default:
-		s.q[signer].low <- job
+		s.s[signer].low <- job
 	}
 
 	// create a unqiue id that can be used by a client to obtain the document or
