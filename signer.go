@@ -13,6 +13,8 @@ import (
 // TODO: this needs to come from the configuration
 const queueSize = 25
 
+//go:generate stringer -type=Priority
+
 // Priority of signing request
 type Priority int
 
