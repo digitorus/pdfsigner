@@ -6,6 +6,10 @@ import (
 	"io/ioutil"
 )
 
+// by default we queue 25 signing jobs
+// TODO: this needs to come from the configuration
+const queueSize = 25
+
 // Priority of signing request
 type Priority int
 
@@ -75,6 +79,8 @@ func (s *Signer) Sign(file io.Reader, options *Options) (*string, error) {
 
 	// based on the request we must identify what device or private key we should
 	// be using.
+	//
+	// TODO: signer priority queues need to be initialized with make(chan signJob, queueSize)
 	signer := "s.c-id"
 
 	job := signJob{
