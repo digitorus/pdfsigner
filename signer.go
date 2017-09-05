@@ -2,6 +2,7 @@ package signer
 
 import (
 	"crypto"
+	"crypto/x509"
 	"io"
 	"io/ioutil"
 )
@@ -39,6 +40,9 @@ type priorityQueue struct {
 type signer struct {
 	c crypto.Signer
 	q priorityQueue
+
+	certificate       *x509.Certificate
+	certificateChains [][]*x509.Certificate
 }
 
 // Status contains the current signing proccess status for a specific document
