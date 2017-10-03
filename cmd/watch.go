@@ -43,27 +43,6 @@ var watchPKSC11Cmd = &cobra.Command{
 	},
 }
 
-func init() {
-	RootCmd.AddCommand(watchCmd)
-	// Parse sign data flags
-	parseSignDataSignatureFlags(watchCmd)
-	parseSignDataTSAFlags(watchCmd)
-
-	// Parse certificate chain path
-	parseCertificateChainPathFlag(watchCmd)
-
-	//PEM watch command
-	watchCmd.AddCommand(watchPEMCmd)
-	parsePEMCertificateFlags(watchPEMCmd)
-
-	//PKSC11 watch command
-	watchCmd.AddCommand(watchPKSC11Cmd)
-	parsePKSC11CertificateFlags(watchPKSC11Cmd)
-
-	watchCmd.PersistentFlags().StringVar(&watchInputPath, "in", "", "Watch input folder path")
-	watchCmd.PersistentFlags().StringVar(&watchOutputPath, "out", "", "Output folder path")
-}
-
 func watch(signData signer.SignData) {
 	signData.TSA = getSignDataTSA()
 	signData.Signature = getSignDataSignature()
@@ -100,4 +79,25 @@ func watch(signData signer.SignData) {
 		log.Fatal(err)
 	}
 	<-done
+}
+
+func init() {
+	RootCmd.AddCommand(watchCmd)
+	// Parse sign data flags
+	parseSignDataSignatureFlags(watchCmd)
+	parseSignDataTSAFlags(watchCmd)
+
+	// Parse certificate chain path
+	parseCertificateChainPathFlag(watchCmd)
+
+	//PEM watch command
+	watchCmd.AddCommand(watchPEMCmd)
+	parsePEMCertificateFlags(watchPEMCmd)
+
+	//PKSC11 watch command
+	watchCmd.AddCommand(watchPKSC11Cmd)
+	parsePKSC11CertificateFlags(watchPKSC11Cmd)
+
+	watchCmd.PersistentFlags().StringVar(&watchInputPath, "in", "", "Watch input folder path")
+	watchCmd.PersistentFlags().StringVar(&watchOutputPath, "out", "", "Output folder path")
 }
