@@ -36,7 +36,7 @@ var signPKSC11Cmd = &cobra.Command{
 }
 
 func signFilesByPatterns(filePatterns []string, signData signer.SignData) {
-	signData.TSA = getTSA()
+	signData.TSA = getSignDataTSA()
 	signData.Signature = getSignDataSignature()
 
 	files, err := findFilesByPatterns(filePatterns)

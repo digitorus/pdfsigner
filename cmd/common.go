@@ -53,7 +53,7 @@ func parseSignDataSignatureFlags(cmd *cobra.Command) {
 }
 
 func getSignDataSignature() sign.SignDataSignature {
-	signDataSignature := sign.SignDataSignature{
+	return sign.SignDataSignature{
 		Info: sign.SignDataSignatureInfo{
 			Name:        viper.GetString("info.name"),
 			Location:    viper.GetString("info.location"),
@@ -64,8 +64,6 @@ func getSignDataSignature() sign.SignDataSignature {
 		CertType: uint32(viper.GetInt("type")),
 		Approval: viper.GetBool("approval"),
 	}
-
-	return signDataSignature
 }
 
 func parseSignDataTSAFlags(cmd *cobra.Command) {
@@ -77,13 +75,12 @@ func parseSignDataTSAFlags(cmd *cobra.Command) {
 	viper.BindPFlag("tsa.password", cmd.PersistentFlags().Lookup("tsa-password"))
 }
 
-func getTSA() sign.TSA {
-	tsa := sign.TSA{
+func getSignDataTSA() sign.TSA {
+	return sign.TSA{
 		URL:      viper.GetString("tsa.url"),
 		Username: viper.GetString("tsa.username"),
 		Password: viper.GetString("tsa.password"),
 	}
-	return tsa
 }
 
 func parseCertificateChainPathFlag(cmd *cobra.Command) {

@@ -65,7 +65,7 @@ func init() {
 }
 
 func watch(signData signer.SignData) {
-	signData.TSA = getTSA()
+	signData.TSA = getSignDataTSA()
 	signData.Signature = getSignDataSignature()
 
 	watcher, err := fsnotify.NewWatcher()
