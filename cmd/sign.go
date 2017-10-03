@@ -15,9 +15,9 @@ var signCmd = &cobra.Command{
 	Long:  `Long multiline description here`,
 }
 
-var signSSLCmd = &cobra.Command{
-	Use:   "ssl",
-	Short: "Sign PDF with SSL",
+var signPEMCmd = &cobra.Command{
+	Use:   "pem",
+	Short: "Sign PDF with PEM formatted certificate",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
 		signData := signer.NewSignData(viper.GetString("crt"), viper.GetString("key"), viper.GetString("chain"))
@@ -65,9 +65,9 @@ func init() {
 	// Parse output path
 	parseOutputPathFlag(signCmd)
 
-	//SSL sign command
-	signCmd.AddCommand(signSSLCmd)
-	parseSSLCertificateFlags(signSSLCmd)
+	//PEM sign command
+	signCmd.AddCommand(signPEMCmd)
+	parsePEMCertificateFlags(signPEMCmd)
 
 	//PKSC11 sign command
 	signCmd.AddCommand(signPKSC11Cmd)

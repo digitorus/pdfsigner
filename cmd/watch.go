@@ -23,9 +23,9 @@ var watchCmd = &cobra.Command{
 	Long:  `Long multiline description`,
 }
 
-var watchSSLCmd = &cobra.Command{
-	Use:   "ssl",
-	Short: "Watch and sign PDF with SSL",
+var watchPEMCmd = &cobra.Command{
+	Use:   "pem",
+	Short: "Watch and sign PDF with PEM formatted certificate",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
 		signData := signer.NewSignData(viper.GetString("crt"), viper.GetString("key"), viper.GetString("chain"))
@@ -52,9 +52,9 @@ func init() {
 	// Parse certificate chain path
 	parseCertificateChainPathFlag(watchCmd)
 
-	//SSL watch command
-	watchCmd.AddCommand(watchSSLCmd)
-	parseSSLCertificateFlags(watchSSLCmd)
+	//PEM watch command
+	watchCmd.AddCommand(watchPEMCmd)
+	parsePEMCertificateFlags(watchPEMCmd)
 
 	//PKSC11 watch command
 	watchCmd.AddCommand(watchPKSC11Cmd)

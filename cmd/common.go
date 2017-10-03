@@ -93,7 +93,7 @@ func parseOutputPathFlag(cmd *cobra.Command) {
 	viper.BindPFlag("out", cmd.PersistentFlags().Lookup("out"))
 }
 
-func parseSSLCertificateFlags(cmd *cobra.Command) {
+func parsePEMCertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().String("crt", "", "Certificate path")
 	cmd.PersistentFlags().String("key", "", "Private key path")
 	viper.BindPFlag("crt", cmd.PersistentFlags().Lookup("crt"))
