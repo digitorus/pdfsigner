@@ -5,17 +5,16 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"log"
+	"time"
 
+	"bitbucket.org/digitorus/pdfsign/revocation"
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pkcs11"
-	"bitbucket.org/digitorus/pdfsign/revocation"
 )
-
 
 type SignData sign.SignData
 
-func NewSignData(crtPath, keyPath, crtChainPath string) SignData {
-	var s SignData
+func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	// Set certificate
 	certificate_data, err := ioutil.ReadFile(crtPath)
 	if err != nil {
@@ -48,13 +47,9 @@ func NewSignData(crtPath, keyPath, crtChainPath string) SignData {
 
 	s.SetCertificateChains(crtChainPath)
 	s.SetRevocationSettings()
-
-	return s
 }
 
-func NewPKSC11SignData(libPath, pass, crtChainPath string) SignData {
-	var s SignData
-
+func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
 	// pkcs11 key
 	lib, err := pkcs11.FindLib(libPath)
 	if err != nil {
@@ -91,7 +86,6 @@ func NewPKSC11SignData(libPath, pass, crtChainPath string) SignData {
 
 	s.SetCertificateChains(crtChainPath)
 	s.SetRevocationSettings()
-	return s
 }
 
 func (s *SignData) SetCertificateChains(crtChainPath string) {
@@ -123,7 +117,7 @@ func (s *SignData) SetRevocationSettings() {
 }
 
 func SignFile(input, output string, s SignData) error {
+	s.Signature.Info.Date = time.Now().Local()
 	err := sign.SignFile(input, output, sign.SignData(s))
 	return err
 }
-

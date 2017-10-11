@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log"
-
 	"path/filepath"
 
 	"bitbucket.org/digitorus/pdfsigner/signer"
@@ -11,42 +10,86 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	watchInputPath  string
-	watchOutputPath string
-)
-
 // watchCmd represents the watch command
 var watchCmd = &cobra.Command{
 	Use:   "watch",
-	Short: "A brief description of your command",
-	Long:  `Long multiline description`,
+	Short: "Watch command",
+	Long:  `Long multiline description here`,
 }
 
 var watchPEMCmd = &cobra.Command{
 	Use:   "pem",
-	Short: "Watch and sign PDF with PEM formatted certificate",
+	Short: "Watch PDF with PEM formatted certificate",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		signData := signer.NewSignData(viper.GetString("crt"), viper.GetString("key"), viper.GetString("chain"))
-		watch(signData)
+		c := signerConfig{}
+		bindSignerFlagsToConfig(cmd, &c)
+		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
+		watch(c.SignData)
 	},
 }
 
 var watchPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
-	Short: "Watch and sign PDF with PSKC11",
+	Short: "Watch PDF with PSKC11",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		signData := signer.NewPKSC11SignData(viper.GetString("lib"), viper.GetString("pass"), viper.GetString("chain"))
-		watch(signData)
+		c := signerConfig{}
+		bindSignerFlagsToConfig(cmd, &c)
+		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
+		watch(c.SignData)
 	},
 }
 
-func watch(signData signer.SignData) {
-	signData.TSA = getSignDataTSA()
-	signData.Signature = getSignDataSignature()
+var watchBySignerNameCmd = &cobra.Command{
+	Use:   "signer",
+	Short: "Signs PDF with signer from the config",
+	Long:  `Long multiline description here`,
+	Run: func(cmd *cobra.Command, args []string) {
+		c := getChosenSignerConfig()
+		bindSignerFlagsToConfig(cmd, &c)
 
+		switch c.Type {
+		case "pem":
+			c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
+		case "pksc11":
+			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
+		}
+
+		watch(c.SignData)
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(watchCmd)
+
+	//PEM watch command
+	watchCmd.AddCommand(watchPEMCmd)
+	parsePEMCertificateFlags(watchPEMCmd)
+	parseCommonFlags(watchPEMCmd)
+	parseInputPathFlag(watchPEMCmd)
+	parseOutputPathFlag(watchPEMCmd)
+
+	//PKSC11 watch command
+	watchCmd.AddCommand(watchPKSC11Cmd)
+	parsePKSC11CertificateFlags(watchPKSC11Cmd)
+	parseCommonFlags(watchPKSC11Cmd)
+	parseOutputPathFlag(watchPKSC11Cmd)
+	parseInputPathFlag(watchPEMCmd)
+
+	// watch with watcher from config file
+	watchCmd.AddCommand(watchBySignerNameCmd)
+	parseSignerName(watchBySignerNameCmd)
+	parseCommonFlags(watchBySignerNameCmd)
+	parsePEMCertificateFlags(watchBySignerNameCmd)
+	parsePKSC11CertificateFlags(watchBySignerNameCmd)
+	parseInputPathFlag(watchBySignerNameCmd)
+	parseOutputPathFlag(watchBySignerNameCmd)
+}
+
+func watch(signData signer.SignData) {
+	watchFolder := viper.GetString("in")
+	outputFolder := viper.GetString("out")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -62,8 +105,8 @@ func watch(signData signer.SignData) {
 					inputFileName := event.Name
 					inputFileExtension := filepath.Ext(inputFileName)
 					if inputFileExtension == "pdf" {
-						fullFilePath := filepath.Join(watchInputPath, inputFileName)
-						signer.SignFile(fullFilePath, watchOutputPath, signData)
+						fullFilePath := filepath.Join(watchFolder, inputFileName)
+						signer.SignFile(fullFilePath, outputFolder, signData)
 					}
 					log.Println("created file:", event.Name)
 
@@ -74,30 +117,9 @@ func watch(signData signer.SignData) {
 		}
 	}()
 
-	err = watcher.Add(watchInputPath)
+	err = watcher.Add(watchFolder)
 	if err != nil {
 		log.Fatal(err)
 	}
 	<-done
-}
-
-func init() {
-	RootCmd.AddCommand(watchCmd)
-	// Parse sign data flags
-	parseSignDataSignatureFlags(watchCmd)
-	parseSignDataTSAFlags(watchCmd)
-
-	// Parse certificate chain path
-	parseCertificateChainPathFlag(watchCmd)
-
-	//PEM watch command
-	watchCmd.AddCommand(watchPEMCmd)
-	parsePEMCertificateFlags(watchPEMCmd)
-
-	//PKSC11 watch command
-	watchCmd.AddCommand(watchPKSC11Cmd)
-	parsePKSC11CertificateFlags(watchPKSC11Cmd)
-
-	watchCmd.PersistentFlags().StringVar(&watchInputPath, "in", "", "Watch input folder path")
-	watchCmd.PersistentFlags().StringVar(&watchOutputPath, "out", "", "Output folder path")
 }

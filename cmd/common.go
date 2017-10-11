@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"path/filepath"
-	"time"
 
-	"bitbucket.org/digitorus/pdfsign/sign"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -36,56 +36,50 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	return matchedFiles, err
 }
 
-func parseSignDataSignatureFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("info-name", "", "Signature info name")
-	cmd.PersistentFlags().String("info-location", "", "Signature info location")
-	cmd.PersistentFlags().String("info-reason", "", "Signature info reason")
-	cmd.PersistentFlags().String("info-contact", "", "Signature info contact")
-	viper.BindPFlag("info.name", cmd.PersistentFlags().Lookup("info-name"))
-	viper.BindPFlag("info.location", cmd.PersistentFlags().Lookup("info-location"))
-	viper.BindPFlag("info.reason", cmd.PersistentFlags().Lookup("info-reason"))
-	viper.BindPFlag("info.contact", cmd.PersistentFlags().Lookup("info-contact"))
+var (
+	signatureApproval     bool
+	signatureType         uint
+	signatureInfoName     string
+	signatureInfoLocation string
+	signatureInfoReason   string
+	signatureInfoContact  string
+	signatureTSAUrl       string
+	signatureTSAUsername  string
+	signatureTSAPassword  string
+	signerNameFlag        string
+	certificateChainPath  string
+	certificatePath       string
+	privateKeyPath        string
+	pksc11LibPath         string
+	pksc11Pass            string
+)
 
-	cmd.PersistentFlags().Bool("approval", false, "Approval")
-	cmd.PersistentFlags().Uint("type", 0, "Certificate type")
-	viper.BindPFlag("approval", cmd.PersistentFlags().Lookup("approval"))
-	viper.BindPFlag("type", cmd.PersistentFlags().Lookup("type"))
+func parseCommonFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolVar(&signatureApproval, "approval", false, "Approval")
+	cmd.PersistentFlags().UintVar(&signatureType, "type", 1, "Certificate type")
+	cmd.PersistentFlags().StringVar(&signatureInfoName, "info-name", "", "Signature info name")
+	cmd.PersistentFlags().StringVar(&signatureInfoLocation, "info-location", "", "Signature info location")
+	cmd.PersistentFlags().StringVar(&signatureInfoReason, "info-reason", "", "Signature info reason")
+	cmd.PersistentFlags().StringVar(&signatureInfoContact, "info-contact", "", "Signature info contact")
+	cmd.PersistentFlags().StringVar(&signatureTSAUrl, "tsa-url", "", "TSA url")
+	cmd.PersistentFlags().StringVar(&signatureTSAUsername, "tsa-username", "", "TSA username")
+	cmd.PersistentFlags().StringVar(&signatureTSAPassword, "tsa-password", "", "TSA password")
+	cmd.PersistentFlags().StringVar(&certificateChainPath, "chain", "", "Certificate chain")
 }
 
-func getSignDataSignature() sign.SignDataSignature {
-	return sign.SignDataSignature{
-		Info: sign.SignDataSignatureInfo{
-			Name:        viper.GetString("info.name"),
-			Location:    viper.GetString("info.location"),
-			Reason:      viper.GetString("info.reason"),
-			ContactInfo: viper.GetString("info.contact"),
-			Date:        time.Now().Local(),
-		},
-		CertType: uint32(viper.GetInt("type")),
-		Approval: viper.GetBool("approval"),
-	}
+func parsePEMCertificateFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&certificatePath, "crt", "", "Certificate path")
+	cmd.PersistentFlags().StringVar(&privateKeyPath, "key", "", "Private key path")
 }
 
-func parseSignDataTSAFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("tsa-url", "", "TSA url")
-	cmd.PersistentFlags().String("tsa-username", "", "TSA username")
-	cmd.PersistentFlags().String("tsa-password", "", "TSA password")
-	viper.BindPFlag("tsa.url", cmd.PersistentFlags().Lookup("tsa-url"))
-	viper.BindPFlag("tsa.username", cmd.PersistentFlags().Lookup("tsa-username"))
-	viper.BindPFlag("tsa.password", cmd.PersistentFlags().Lookup("tsa-password"))
+func parsePKSC11CertificateFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&pksc11LibPath, "lib", "", "Path to PKCS11 library")
+	cmd.PersistentFlags().StringVar(&pksc11Pass, "pass", "", "PKCS11 password")
 }
 
-func getSignDataTSA() sign.TSA {
-	return sign.TSA{
-		URL:      viper.GetString("tsa.url"),
-		Username: viper.GetString("tsa.username"),
-		Password: viper.GetString("tsa.password"),
-	}
-}
-
-func parseCertificateChainPathFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("chain", "", "Certificate chain")
-	viper.BindPFlag("chain", cmd.PersistentFlags().Lookup("chain"))
+func parseInputPathFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().String("in", "", "Input path")
+	viper.BindPFlag("in", cmd.PersistentFlags().Lookup("in"))
 }
 
 func parseOutputPathFlag(cmd *cobra.Command) {
@@ -93,16 +87,66 @@ func parseOutputPathFlag(cmd *cobra.Command) {
 	viper.BindPFlag("out", cmd.PersistentFlags().Lookup("out"))
 }
 
-func parsePEMCertificateFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("crt", "", "Certificate path")
-	cmd.PersistentFlags().String("key", "", "Private key path")
-	viper.BindPFlag("crt", cmd.PersistentFlags().Lookup("crt"))
-	viper.BindPFlag("key", cmd.PersistentFlags().Lookup("key"))
+
+func parseSignerName(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
 }
 
-func parsePKSC11CertificateFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("lib", "", "Path to PKCS11 library")
-	cmd.PersistentFlags().String("pass", "", "PKCS11 password")
-	viper.BindPFlag("lib", cmd.PersistentFlags().Lookup("lib"))
-	viper.BindPFlag("pass", cmd.PersistentFlags().Lookup("pass"))
+// Since viper is not supporting binding flags to an item of the array we use this workaround
+func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
+	switch {
+	// SignData
+	case cmd.PersistentFlags().Changed("approval"):
+		c.SignData.Signature.Approval = signatureApproval
+		fallthrough
+	case cmd.PersistentFlags().Changed("type"):
+		c.SignData.Signature.CertType = uint32(signatureType)
+		fallthrough
+	case cmd.PersistentFlags().Changed("info-name"):
+		c.SignData.Signature.Info.Name = signatureInfoName
+		fallthrough
+	case cmd.PersistentFlags().Changed("info-location"):
+		c.SignData.Signature.Info.Location = signatureInfoLocation
+		fallthrough
+	case cmd.PersistentFlags().Changed("info-reason"):
+		c.SignData.Signature.Info.Reason = signatureInfoReason
+		fallthrough
+	case cmd.PersistentFlags().Changed("info-contact"):
+		c.SignData.Signature.Info.ContactInfo = signatureInfoContact
+		fallthrough
+	case cmd.PersistentFlags().Changed("tsa-password"):
+		c.SignData.TSA.URL = signatureTSAUrl
+		fallthrough
+	case cmd.PersistentFlags().Changed("tsa-url"):
+		c.SignData.TSA.Password = signatureTSAPassword
+		fallthrough
+		// Certificate chain
+	case cmd.PersistentFlags().Changed("chain"):
+		c.CrtChainPath = certificateChainPath
+		fallthrough
+		// PEM
+	case cmd.PersistentFlags().Changed("crt"):
+		c.CrtPath = certificatePath
+		fallthrough
+	case cmd.PersistentFlags().Changed("key"):
+		c.KeyPath = privateKeyPath
+		fallthrough
+		// PKSC11
+	case cmd.PersistentFlags().Changed("lib"):
+		c.LibPath = pksc11LibPath
+		fallthrough
+	case cmd.PersistentFlags().Changed("pass"):
+		c.Pass = pksc11Pass
+	}
+}
+
+func getChosenSignerConfig() signerConfig {
+	var s signerConfig
+	for _, s = range configSigners {
+		if s.Name == signerNameFlag {
+			return s
+		}
+	}
+	log.Fatal(errors.New("signer not found"))
+	return s
 }

@@ -1,0 +1,29 @@
+[[signer]]
+name = "simple"
+type = "pem"
+crtPath = "path/to/crt"
+keyPath = "path/to/private/key"
+crtChainPath = "path/to/certificate/chain"
+[signer.signature]
+approval = true
+certType = 1
+[signer.signature.info]
+name = "name"
+location = "location"
+reason = "reason"
+contactInfo = "contact"
+
+[[signer]]
+name = "simple2"
+type = "pksc11"
+libPath = "path/to/lib"
+pass = "path/to/lib"
+crtChainPath = "path/to/certificate/chain"
+[signer.signature]
+approval = true
+certType = 1
+[signer.signature.info]
+name = "name"
+location = "location"
+reason = "reason"
+contactInfo = "contact"
