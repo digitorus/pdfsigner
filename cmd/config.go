@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Since Viper is not supporting access to array, we need to make structures and unmarshal config to it manually
+// Since Viper is not supporting access to array, we need to make structures and unmarshal config manually
 var configSigners []signerConfig
 
 type signerConfig struct {
