@@ -87,55 +87,56 @@ func parseOutputPathFlag(cmd *cobra.Command) {
 	viper.BindPFlag("out", cmd.PersistentFlags().Lookup("out"))
 }
 
-
 func parseSignerName(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
 }
 
 // Since viper is not supporting binding flags to an item of the array we use this workaround
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
-	switch {
 	// SignData
-	case cmd.PersistentFlags().Changed("approval"):
+	if cmd.PersistentFlags().Changed("approval") {
 		c.SignData.Signature.Approval = signatureApproval
-		fallthrough
-	case cmd.PersistentFlags().Changed("type"):
+	}
+	if cmd.PersistentFlags().Changed("type") {
 		c.SignData.Signature.CertType = uint32(signatureType)
-		fallthrough
-	case cmd.PersistentFlags().Changed("info-name"):
+	}
+	if cmd.PersistentFlags().Changed("info-name") {
 		c.SignData.Signature.Info.Name = signatureInfoName
-		fallthrough
-	case cmd.PersistentFlags().Changed("info-location"):
+	}
+	if cmd.PersistentFlags().Changed("info-location") {
 		c.SignData.Signature.Info.Location = signatureInfoLocation
-		fallthrough
-	case cmd.PersistentFlags().Changed("info-reason"):
+	}
+	if cmd.PersistentFlags().Changed("info-reason") {
 		c.SignData.Signature.Info.Reason = signatureInfoReason
-		fallthrough
-	case cmd.PersistentFlags().Changed("info-contact"):
+	}
+	if cmd.PersistentFlags().Changed("info-contact") {
 		c.SignData.Signature.Info.ContactInfo = signatureInfoContact
-		fallthrough
-	case cmd.PersistentFlags().Changed("tsa-password"):
+	}
+	if cmd.PersistentFlags().Changed("tsa-password") {
 		c.SignData.TSA.URL = signatureTSAUrl
-		fallthrough
-	case cmd.PersistentFlags().Changed("tsa-url"):
+	}
+	if cmd.PersistentFlags().Changed("tsa-url") {
 		c.SignData.TSA.Password = signatureTSAPassword
-		fallthrough
-		// Certificate chain
-	case cmd.PersistentFlags().Changed("chain"):
+	}
+
+	// Certificate chain
+	if cmd.PersistentFlags().Changed("chain") {
 		c.CrtChainPath = certificateChainPath
-		fallthrough
-		// PEM
-	case cmd.PersistentFlags().Changed("crt"):
+	}
+
+	// PEM
+	if cmd.PersistentFlags().Changed("crt") {
 		c.CrtPath = certificatePath
-		fallthrough
-	case cmd.PersistentFlags().Changed("key"):
+	}
+	if cmd.PersistentFlags().Changed("key") {
 		c.KeyPath = privateKeyPath
-		fallthrough
-		// PKSC11
-	case cmd.PersistentFlags().Changed("lib"):
+	}
+
+	// PKSC11
+	if cmd.PersistentFlags().Changed("lib") {
 		c.LibPath = pksc11LibPath
-		fallthrough
-	case cmd.PersistentFlags().Changed("pass"):
+	}
+	if cmd.PersistentFlags().Changed("pass") {
 		c.Pass = pksc11Pass
 	}
 }
