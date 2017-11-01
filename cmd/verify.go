@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var inputFileName string
+
 
 // verifyCmd represents the verify command
 var verifyCmd = &cobra.Command{
@@ -16,7 +16,7 @@ var verifyCmd = &cobra.Command{
 	Short: "Verifies PDF signature",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		input_file, err := os.Open(inputFileName)
+		input_file, err := os.Open(inputFileNameFlag)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -32,5 +32,5 @@ var verifyCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(verifyCmd)
-	verifyCmd.PersistentFlags().StringVar(&inputFileName, "in", "", "Help here")
+	verifyCmd.PersistentFlags().StringVar(&inputFileNameFlag, "in", "", "Help here")
 }

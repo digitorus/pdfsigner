@@ -26,10 +26,10 @@ type signerConfig struct {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	log.Print(cfgFile)
-	if cfgFile != "" {
+	log.Print(configFilePathFlag)
+	if configFilePathFlag != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(configFilePathFlag)
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
