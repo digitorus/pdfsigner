@@ -1,3 +1,18 @@
+# mixed command
+[[service]]
+name = "watch1"
+type = "watch"
+signer = "simple"
+in = "path/to/inputfolder"
+out = "path/to/outputfolder"
+
+[[service]]
+name = "web1"
+type = "serve"
+signer = "simple"
+port = 3000
+
+# signers
 [[signer]]
 name = "simple"
 type = "pem"

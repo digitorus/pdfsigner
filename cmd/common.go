@@ -7,34 +7,11 @@ import (
 	"log"
 	"path/filepath"
 
+	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-func storeTempFile(file io.Reader) (string, error) {
-	// TODO: Should we encrypt temporary files?
-	tmpFile, err := ioutil.TempFile("", "pdf")
-	if err != nil {
-		return "", err
-	}
-
-	_, err = io.Copy(tmpFile, file)
-	if err != nil {
-		return "", err
-	}
-	return tmpFile.Name(), nil
-}
-
-func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
-	for _, f := range patterns {
-		m, err := filepath.Glob(f)
-		if err != nil {
-			return matchedFiles, err
-		}
-		matchedFiles = append(matchedFiles, m...)
-	}
-	return matchedFiles, err
-}
 
 var (
 	// common flags
@@ -149,13 +126,98 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	}
 }
 
-func getChosenSignerConfig() signerConfig {
+func getConfigSignerByName(signerName string) signerConfig {
 	var s signerConfig
-	for _, s = range configSigners {
-		if s.Name == signerNameFlag {
+	for _, s = range signersConfig {
+		if s.Name == signerName {
 			return s
 		}
 	}
 	log.Fatal(errors.New("signer not found"))
 	return s
+}
+
+func getConfigServiceByName(serviceName string) serviceConfig {
+	var s serviceConfig
+	for _, s = range servicesConfig {
+		if s.Name == serviceName {
+			return s
+		}
+	}
+	log.Fatal(errors.New("service not found"))
+	return s
+}
+
+func storeTempFile(file io.Reader) (string, error) {
+	// TODO: Should we encrypt temporary files?
+	tmpFile, err := ioutil.TempFile("", "pdf")
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.Copy(tmpFile, file)
+	if err != nil {
+		return "", err
+	}
+	return tmpFile.Name(), nil
+}
+
+func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
+	for _, f := range patterns {
+		m, err := filepath.Glob(f)
+		if err != nil {
+			return matchedFiles, err
+		}
+		matchedFiles = append(matchedFiles, m...)
+	}
+	return matchedFiles, err
+}
+
+func watch(signData signer.SignData, watchFolder, outputFolder string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event := <-watcher.Events:
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					inputFileName := event.Name
+					inputFileExtension := filepath.Ext(inputFileName)
+					if inputFileExtension == "pdf" {
+						fullFilePath := filepath.Join(watchFolder, inputFileName)
+						signer.SignFile(fullFilePath, outputFolder, signData)
+					}
+					log.Println("created file:", event.Name)
+
+				}
+			case err := <-watcher.Errors:
+				log.Println("error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(watchFolder)
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
+}
+
+func signFilesByPatterns(filePatterns []string, signData signer.SignData) {
+	files, err := findFilesByPatterns(filePatterns)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		if err := signer.SignFile(f, viper.GetString("out"), signData); err != nil {
+			log.Fatal(err)
+		}
+	}
+	log.Println("Signed PDF written to " + viper.GetString("out"))
 }

@@ -11,7 +11,7 @@ import (
 )
 
 // Since Viper is not supporting access to array, we need to make structures and unmarshal config manually
-var configSigners []signerConfig
+var signersConfig []signerConfig
 
 type signerConfig struct {
 	Name         string
@@ -22,6 +22,18 @@ type signerConfig struct {
 	Pass         string
 	CrtChainPath string
 	SignData     signer.SignData
+}
+
+// used for mixed command
+var servicesConfig []serviceConfig
+
+type serviceConfig struct {
+	Name   string
+	Type   string
+	Signer string
+	In     string
+	Out    string
+	Port   int
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -48,7 +60,12 @@ func initConfig() {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
-	if err := viper.UnmarshalKey("signer", &configSigners); err != nil {
+	// unmarshal signers
+	if err := viper.UnmarshalKey("signer", &signersConfig); err != nil {
+		log.Fatal(err)
+	}
+	// unmarshal services for mixed command
+	if err := viper.UnmarshalKey("service", &servicesConfig); err != nil {
 		log.Fatal(err)
 	}
 }

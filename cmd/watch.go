@@ -1,11 +1,7 @@
 package cmd
 
 import (
-	"log"
-	"path/filepath"
-
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,7 +21,7 @@ var watchPEMCmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-		watch(c.SignData)
+		runSingleCmdWatch(c.SignData)
 	},
 }
 
@@ -37,7 +33,7 @@ var watchPKSC11Cmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-		watch(c.SignData)
+		runSingleCmdWatch(c.SignData)
 	},
 }
 
@@ -46,7 +42,7 @@ var watchBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		c := getChosenSignerConfig()
+		c := getConfigSignerByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &c)
 
 		switch c.Type {
@@ -56,8 +52,15 @@ var watchBySignerNameCmd = &cobra.Command{
 			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
 		}
 
-		watch(c.SignData)
+		runSingleCmdWatch(c.SignData)
+
 	},
+}
+
+func runSingleCmdWatch(signData signer.SignData) {
+	watchFolder := viper.GetString("in")
+	outputFolder := viper.GetString("out")
+	watch(signData, watchFolder, outputFolder)
 }
 
 func init() {
@@ -85,41 +88,4 @@ func init() {
 	parseOutputPathFlag(watchBySignerNameCmd)
 	parsePEMCertificateFlags(watchBySignerNameCmd)
 	parsePKSC11CertificateFlags(watchBySignerNameCmd)
-}
-
-func watch(signData signer.SignData) {
-	watchFolder := viper.GetString("in")
-	outputFolder := viper.GetString("out")
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer watcher.Close()
-
-	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case event := <-watcher.Events:
-				if event.Op&fsnotify.Create == fsnotify.Create {
-					inputFileName := event.Name
-					inputFileExtension := filepath.Ext(inputFileName)
-					if inputFileExtension == "pdf" {
-						fullFilePath := filepath.Join(watchFolder, inputFileName)
-						signer.SignFile(fullFilePath, outputFolder, signData)
-					}
-					log.Println("created file:", event.Name)
-
-				}
-			case err := <-watcher.Errors:
-				log.Println("error:", err)
-			}
-		}
-	}()
-
-	err = watcher.Add(watchFolder)
-	if err != nil {
-		log.Fatal(err)
-	}
-	<-done
 }

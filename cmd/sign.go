@@ -1,11 +1,7 @@
 package cmd
 
 import (
-	"log"
-
-	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // signCmd represents the sign command
@@ -44,7 +40,7 @@ var signBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
-		c := getChosenSignerConfig()
+		c := getConfigSignerByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &c)
 
 		switch c.Type {
@@ -56,20 +52,6 @@ var signBySignerNameCmd = &cobra.Command{
 
 		signFilesByPatterns(filePatterns, c.SignData)
 	},
-}
-
-func signFilesByPatterns(filePatterns []string, signData signer.SignData) {
-	files, err := findFilesByPatterns(filePatterns)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range files {
-		if err := signer.SignFile(f, viper.GetString("out"), signData); err != nil {
-			log.Fatal(err)
-		}
-	}
-	log.Println("Signed PDF written to " + viper.GetString("out"))
 }
 
 func init() {
