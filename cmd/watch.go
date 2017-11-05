@@ -65,26 +65,26 @@ func init() {
 
 	//PEM watch command
 	watchCmd.AddCommand(watchPEMCmd)
-	parsePEMCertificateFlags(watchPEMCmd)
 	parseCommonFlags(watchPEMCmd)
 	parseInputPathFlag(watchPEMCmd)
 	parseOutputPathFlag(watchPEMCmd)
+	parsePEMCertificateFlags(watchPEMCmd)
 
 	//PKSC11 watch command
 	watchCmd.AddCommand(watchPKSC11Cmd)
-	parsePKSC11CertificateFlags(watchPKSC11Cmd)
 	parseCommonFlags(watchPKSC11Cmd)
 	parseOutputPathFlag(watchPKSC11Cmd)
-	parseInputPathFlag(watchPEMCmd)
+	parseInputPathFlag(watchPKSC11Cmd)
+	parsePKSC11CertificateFlags(watchPKSC11Cmd)
 
 	// watch with watcher from config file
 	watchCmd.AddCommand(watchBySignerNameCmd)
 	parseSignerName(watchBySignerNameCmd)
 	parseCommonFlags(watchBySignerNameCmd)
-	parsePEMCertificateFlags(watchBySignerNameCmd)
-	parsePKSC11CertificateFlags(watchBySignerNameCmd)
 	parseInputPathFlag(watchBySignerNameCmd)
 	parseOutputPathFlag(watchBySignerNameCmd)
+	parsePEMCertificateFlags(watchBySignerNameCmd)
+	parsePKSC11CertificateFlags(watchBySignerNameCmd)
 }
 
 func watch(signData signer.SignData) {

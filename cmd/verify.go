@@ -32,5 +32,4 @@ var verifyCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(verifyCmd)
-	verifyCmd.PersistentFlags().StringVar(&inputFileNameFlag, "in", "", "Help here")
 }

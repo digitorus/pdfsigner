@@ -77,21 +77,23 @@ func init() {
 
 	//PEM sign command
 	signCmd.AddCommand(signPEMCmd)
-	parsePEMCertificateFlags(signPEMCmd)
 	parseCommonFlags(signPEMCmd)
+	parseInputPathFlag(signPEMCmd)
 	parseOutputPathFlag(signPEMCmd)
+	parsePEMCertificateFlags(signPEMCmd)
 
 	//PKSC11 sign command
 	signCmd.AddCommand(signPKSC11Cmd)
-	parsePKSC11CertificateFlags(signPKSC11Cmd)
 	parseCommonFlags(signPKSC11Cmd)
+	parseInputPathFlag(signPKSC11Cmd)
 	parseOutputPathFlag(signPKSC11Cmd)
+	parsePKSC11CertificateFlags(signPKSC11Cmd)
 
 	// sign with signer from config file
 	signCmd.AddCommand(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
-	parseCommonFlags(signBySignerNameCmd)
+	parseInputPathFlag(signBySignerNameCmd)
+	parseOutputPathFlag(signBySignerNameCmd)
 	parsePEMCertificateFlags(signBySignerNameCmd)
 	parsePKSC11CertificateFlags(signBySignerNameCmd)
-	parseOutputPathFlag(signBySignerNameCmd)
 }
