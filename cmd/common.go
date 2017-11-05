@@ -38,9 +38,9 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 
 var (
 	// common flags
-	signerNameFlag            string
-	certificateChainPathFlag  string
-	inputFileNameFlag         string
+	signerNameFlag           string
+	certificateChainPathFlag string
+	inputFileNameFlag        string
 
 	// Signature flags
 	signatureApprovalFlag     bool
@@ -53,13 +53,13 @@ var (
 	signatureTSAUsernameFlag  string
 	signatureTSAPasswordFlag  string
 
-	// SSL flags
-	certificatePathFlag       string
-	privateKeyPathFlag        string
+	// PEM flags
+	certificatePathFlag string
+	privateKeyPathFlag  string
 
 	// PKSC11 flags
-	pksc11LibPathFlag         string
-	pksc11PassFlag            string
+	pksc11LibPathFlag string
+	pksc11PassFlag    string
 )
 
 func parseCommonFlags(cmd *cobra.Command) {
