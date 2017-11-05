@@ -19,7 +19,7 @@ var watchPEMCmd = &cobra.Command{
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := signerConfig{}
-		bindSignerFlagsToConfig(cmd, &c)
+		x(cmd, &c)
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 		runSingleCmdWatch(c.SignData)
 	},

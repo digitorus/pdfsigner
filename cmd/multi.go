@@ -18,8 +18,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// mixedCmd represents the mixed command
-var mixedCmd = &cobra.Command{
+// multiCmd represents the mixed command
+var multiCmd = &cobra.Command{
 	Use:   "mixed",
 	Short: "A brief description of your command",
 	Long:  `A longer description that spans multiple lines`,
@@ -46,5 +46,5 @@ var mixedCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(mixedCmd)
+	RootCmd.AddCommand(multiCmd)
 }
