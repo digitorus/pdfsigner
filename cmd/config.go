@@ -26,7 +26,6 @@ type signerConfig struct {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	log.Print(configFilePathFlag)
 	if configFilePathFlag != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(configFilePathFlag)
