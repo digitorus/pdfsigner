@@ -17,18 +17,18 @@ const (
 )
 
 type Item struct {
-	value    interface{}
-	priority Priority
+	Value    interface{}
+	Priority Priority
 }
 
-type priorityQueue struct {
+type PriorityQueue struct {
 	high   chan Item
 	medium chan Item
 	low    chan Item
 }
 
-func NewPriorityQueue(size int) *priorityQueue {
-	q := priorityQueue{
+func NewPriorityQueue(size int) *PriorityQueue {
+	q := PriorityQueue{
 		high:   make(chan Item, size),
 		medium: make(chan Item, size),
 		low:    make(chan Item, size),
@@ -40,8 +40,8 @@ func NewPriorityQueue(size int) *priorityQueue {
 // Push reads a file and stores it at temporary location so that it can be
 // processed later without consuming memory. The function returns a tracking
 // id or error.
-func (q *priorityQueue) Push(i Item) error {
-	switch i.priority {
+func (q *PriorityQueue) Push(i Item) error {
+	switch i.Priority {
 	case HighPriority:
 		q.high <- i
 	case MediumPriority:
@@ -53,7 +53,7 @@ func (q *priorityQueue) Push(i Item) error {
 	return nil
 }
 
-func (q *priorityQueue) Pop() Item {
+func (q *PriorityQueue) Pop() Item {
 	for {
 		select {
 		case Item := <-q.high:

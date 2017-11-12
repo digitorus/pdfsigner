@@ -19,7 +19,7 @@ var watchPEMCmd = &cobra.Command{
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := signerConfig{}
-		x(cmd, &c)
+		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 		runSingleCmdWatch(c.SignData)
 	},
@@ -60,7 +60,10 @@ var watchBySignerNameCmd = &cobra.Command{
 func runSingleCmdWatch(signData signer.SignData) {
 	watchFolder := viper.GetString("in")
 	outputFolder := viper.GetString("out")
-	watch(signData, watchFolder, outputFolder)
+
+	watch(watchFolder, func(filePath string) {
+		signer.SignFile(filePath, outputFolder, signData)
+	})
 }
 
 func init() {

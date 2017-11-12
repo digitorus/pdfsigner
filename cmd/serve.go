@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 )
 
@@ -12,8 +13,21 @@ var serveCmd = &cobra.Command{
 	Short: "Serves the web API",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serve called")
+		r := mux.NewRouter()
+		r.HandleFunc("/put-job", handlePut).Methods("POST")
+		r.HandleFunc("/get", handleGet).Methods("GET")
+		r.HandleFunc("/check", handleCheck).Methods("GET")
 	},
+}
+
+func handlePut(w http.ResponseWriter, r *http.Request) {
+
+}
+func handleCheck(w http.ResponseWriter, r *http.Request) {
+
+}
+func handleGet(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func init() {

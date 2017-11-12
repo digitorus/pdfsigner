@@ -173,7 +173,9 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	return matchedFiles, err
 }
 
-func watch(signData signer.SignData, watchFolder, outputFolder string) {
+type callback func(filePath string)
+
+func watch(watchFolder string, cb callback) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -181,6 +183,7 @@ func watch(signData signer.SignData, watchFolder, outputFolder string) {
 	defer watcher.Close()
 
 	done := make(chan bool)
+
 	go func() {
 		for {
 			select {
@@ -190,13 +193,13 @@ func watch(signData signer.SignData, watchFolder, outputFolder string) {
 					inputFileExtension := filepath.Ext(inputFileName)
 					if inputFileExtension == "pdf" {
 						fullFilePath := filepath.Join(watchFolder, inputFileName)
-						signer.SignFile(fullFilePath, outputFolder, signData)
-					}
-					log.Println("created file:", event.Name)
 
+						cb(fullFilePath)
+					}
 				}
+
 			case err := <-watcher.Errors:
-				log.Println("error:", err)
+				log.Println(err)
 			}
 		}
 	}()
@@ -207,6 +210,8 @@ func watch(signData signer.SignData, watchFolder, outputFolder string) {
 	}
 	<-done
 }
+
+//signer.SignFile(fullFilePath, outputFolder, signData)
 
 func signFilesByPatterns(filePatterns []string, signData signer.SignData) {
 	files, err := findFilesByPatterns(filePatterns)

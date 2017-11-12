@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"bitbucket.org/digitorus/pdfsigner/priority_queue"
+	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/spf13/cobra"
 )
 
@@ -24,26 +26,65 @@ var multiCmd = &cobra.Command{
 	Short: "A brief description of your command",
 	Long:  `A longer description that spans multiple lines`,
 	Run: func(cmd *cobra.Command, serviceNames []string) {
-		for _, n := range serviceNames {
-			service := getConfigServiceByName(n)
-			if service.Type == "watch" {
-				c := getConfigSignerByName(service.Signer)
-
-				switch c.Type {
-				case "pem":
-					c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-				case "pksc11":
-					c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-				}
-
-				watch(c.SignData, service.In, service.Out)
-			} else if service.Type == "serve" {
-				// handle serve
-			}
-
-		}
+		setupServices(serviceNames)
 	},
 }
+
+type job struct {
+	ID   string
+	file string // tmp or real file location
+}
+
+func setupServices(serviceNames []string) {
+	for _, n := range serviceNames {
+		// get service by name
+		service := getConfigServiceByName(n)
+
+		// get signer by name
+		c := getConfigSignerByName(service.Signer)
+
+		// set sign data
+		switch c.Type {
+		case "pem":
+			c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
+		case "pksc11":
+			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
+		}
+
+		// create signer
+		s := qSigner{
+			pq:       priority_queue.NewPriorityQueue(10),
+			signData: c.SignData,
+		}
+
+		// set jobs
+		if service.Type == "watch" {
+
+			watch(service.In, func(filePath string) {
+				//c.SignData, service.In, service.Out
+				i := priority_queue.Item{
+					Value: job{
+						file: filePath,
+					},
+					Priority: priority_queue.LowPriority,
+				}
+				s.pq.Push(i)
+			})
+		} else if service.Type == "serve" {
+			// handle serve
+		}
+
+		signers = append(signers)
+	}
+}
+
+var signers []qSigner
+
+type qSigner struct {
+	pq       *priority_queue.PriorityQueue
+	signData signer.SignData
+}
+
 
 func init() {
 	RootCmd.AddCommand(multiCmd)
