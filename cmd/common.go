@@ -80,8 +80,8 @@ func parseSignerName(cmd *cobra.Command) {
 }
 
 func parseServeFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&serveAddrFlag, "signer-name", "", "serve address")
-	cmd.PersistentFlags().StringVar(&servePortFlag, "signer-name", "", "serve port")
+	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "serve address")
+	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "serve port")
 }
 
 func getAddrPort() string {
