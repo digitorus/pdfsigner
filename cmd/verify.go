@@ -8,8 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 // verifyCmd represents the verify command
 var verifyCmd = &cobra.Command{
 	Use:   "verify",

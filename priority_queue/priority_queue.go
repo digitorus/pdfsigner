@@ -27,7 +27,7 @@ type PriorityQueue struct {
 	low    chan Item
 }
 
-func NewPriorityQueue(size int) *PriorityQueue {
+func New(size int) *PriorityQueue {
 	q := PriorityQueue{
 		high:   make(chan Item, size),
 		medium: make(chan Item, size),

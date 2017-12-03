@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bitbucket.org/digitorus/pdfsigner/files"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,7 @@ var signPEMCmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-		signFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -31,7 +32,7 @@ var signPKSC11Cmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-		signFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -40,7 +41,7 @@ var signBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
-		c := getConfigSignerByName(signerNameFlag)
+		c := getSignerConfigByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &c)
 
 		switch c.Type {
@@ -50,7 +51,7 @@ var signBySignerNameCmd = &cobra.Command{
 			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
 		}
 
-		signFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -71,7 +72,7 @@ func init() {
 	parseOutputPathFlag(signPKSC11Cmd)
 	parsePKSC11CertificateFlags(signPKSC11Cmd)
 
-	// sign with signer from config file
+	// sign with signer from config inputFile
 	signCmd.AddCommand(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
 	parseInputPathFlag(signBySignerNameCmd)

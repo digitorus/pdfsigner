@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,7 +43,7 @@ var watchBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		c := getConfigSignerByName(signerNameFlag)
+		c := getSignerConfigByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &c)
 
 		switch c.Type {
@@ -61,7 +62,7 @@ func runSingleCmdWatch(signData signer.SignData) {
 	watchFolder := viper.GetString("in")
 	outputFolder := viper.GetString("out")
 
-	watch(watchFolder, func(filePath string) {
+	files.Watch(watchFolder, func(filePath string) {
 		signer.SignFile(filePath, outputFolder, signData)
 	})
 }
@@ -83,7 +84,7 @@ func init() {
 	parseInputPathFlag(watchPKSC11Cmd)
 	parsePKSC11CertificateFlags(watchPKSC11Cmd)
 
-	// watch with watcher from config file
+	// watch with watcher from config inputFile
 	watchCmd.AddCommand(watchBySignerNameCmd)
 	parseSignerName(watchBySignerNameCmd)
 	parseCommonFlags(watchBySignerNameCmd)

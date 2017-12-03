@@ -18,7 +18,7 @@ type job struct {
 // create a unique id that can be used by a client to obtain the document or
 // current state of the Item
 func TestPriorityQueue(t *testing.T) {
-	q := NewPriorityQueue(10)
+	q := New(10)
 	i := Item{
 		Value: job{
 			ID:       generateID(),
@@ -35,4 +35,3 @@ func generateID() string {
 	guid := xid.New()
 	return guid.String()
 }
-

@@ -9,7 +9,7 @@ out = "path/to/outputfolder"
 [[service]]
 name = "web1"
 type = "serve"
-signer = "simple"
+signers = [ "simple", "simple2" ]
 port = 3000
 
 # signers
