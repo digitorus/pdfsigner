@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -37,8 +38,8 @@ func NewWebAPI(addr string, qs queued_sign.QSign, allowedSigners []string) *WebA
 func (wa *WebAPI) Serve() {
 	r := mux.NewRouter()
 	r.HandleFunc("/put", wa.handlePut).Methods("POST")
-	r.HandleFunc("/get", wa.handleGet).Methods("GET")
-	r.HandleFunc("/check", wa.handleCheck).Methods("GET")
+	r.HandleFunc("/check/{sessionID}", wa.handleCheckBySessionID).Methods("GET")
+	r.HandleFunc("/get/", wa.handleGetBySessionID).Methods("GET")
 
 	s := &http.Server{
 		Addr:           wa.addr,
@@ -81,7 +82,7 @@ func (wa *WebAPI) handlePut(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//save pdf file to tmp
-		err = savePDFToTemp(p, fileNames)
+		err = savePDFToTemp(p, &fileNames)
 		if err != nil {
 			httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
 			return
@@ -91,6 +92,7 @@ func (wa *WebAPI) handlePut(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := pushJobs(wa.qSign, f, fileNames)
 	if err != nil {
 		httpError(w, errors2.Wrap(err, "push jobs"), 500)
+		return
 	}
 
 	_, err = fmt.Fprint(w, sessionID)
@@ -99,13 +101,47 @@ func (wa *WebAPI) handlePut(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type fields struct {
-	signerName string
+func (wa *WebAPI) handleCheckBySessionID(w http.ResponseWriter, r *http.Request) {
+	// get jobs for session
+	vars := mux.Vars(r)
+	sessionId := vars["sessionID"]
+
+	sess, err := wa.qSign.GetSessionByID(sessionId)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+
+	log.Println(sess)
+	// respond with json
+	j, err := json.Marshal(sess)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
+
 }
 
-func httpError(w http.ResponseWriter, err error, code int) {
-	fmt.Printf("%v", err)
-	http.Error(w, err.Error(), code)
+func (wa *WebAPI) handleGetBySessionID(w http.ResponseWriter, r *http.Request) {
+	// get jobs for session
+	vars := mux.Vars(r)
+	sessionId := vars["sessionID"]
+	jobs, err := wa.qSign.GetSessionCompletedJobs(sessionId)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+
+	// respond with json
+	j, err := json.Marshal(jobs)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
+}
+
+type fields struct {
+	signerName string
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
@@ -124,8 +160,7 @@ func parseFields(p *multipart.Part, f *fields) error {
 	return nil
 }
 
-func savePDFToTemp(p *multipart.Part, fileNames []string) error {
-
+func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
 	// parse pdf
 	if path.Ext(p.FileName()) == ".pdf" {
 		f, err := ioutil.TempFile("", "pdfsigner_cache")
@@ -139,24 +174,27 @@ func savePDFToTemp(p *multipart.Part, fileNames []string) error {
 			return err
 		}
 
-		fileNames = append(fileNames, f.Name())
+		*fileNames = append(*fileNames, f.Name())
 	}
 
 	return nil
 }
 
-func pushJobs(m queued_sign.QSign, f fields, fileNames []string) (string, error) {
+func pushJobs(qs queued_sign.QSign, f fields, fileNames []string) (string, error) {
 
 	if f.signerName == "" {
-		return "", errors.New("signer with this name is not setup for this api")
+		return "", errors.New("signer name is required")
 	}
 
-	sessionID := m.NewSession()
-
-	priority := determinePriority(len(fileNames))
+	totalJobs := len(fileNames)
+	sessionID := qs.NewSession(totalJobs)
+	priority := determinePriority(totalJobs)
 
 	for _, fileName := range fileNames {
-		m.PushJob(sessionID, f.signerName, fileName, fileName+"_signed.pdf", priority)
+		_, err := qs.PushJob(f.signerName, sessionID, fileName, fileName+"_signed.pdf", priority)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return sessionID, nil
@@ -172,9 +210,9 @@ func determinePriority(totalJobs int) priority_queue.Priority {
 	return priority
 }
 
-func (wa *WebAPI) handleCheck(w http.ResponseWriter, r *http.Request) {
-}
-func (wa *WebAPI) handleGet(w http.ResponseWriter, r *http.Request) {
+func httpError(w http.ResponseWriter, err error, code int) {
+	fmt.Printf("%v", err)
+	http.Error(w, err.Error(), code)
 }
 
 func dumpRequest(r *http.Request) {

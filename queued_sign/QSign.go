@@ -2,6 +2,7 @@ package queued_sign
 
 import (
 	"errors"
+	"sync"
 
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
@@ -10,7 +11,7 @@ import (
 
 type QSign struct {
 	signers  map[string]QSigner
-	sessions map[string]Session
+	sessions map[string]ThreadSafeSession
 }
 
 type QSigner struct {
@@ -19,10 +20,16 @@ type QSigner struct {
 	signData signer.SignData
 }
 
+type ThreadSafeSession struct {
+	Session *Session
+	m       *sync.Mutex
+}
+
 type Session struct {
 	ID            string
-	TotalAdded    int
+	TotalJobs     int
 	CompletedJobs []Job
+	IsCompleted   bool
 }
 
 type Job struct {
@@ -35,19 +42,23 @@ type Job struct {
 func NewQSign() QSign {
 	return QSign{
 		signers:  make(map[string]QSigner, 1),
-		sessions: make(map[string]Session, 1),
+		sessions: make(map[string]ThreadSafeSession, 1),
 	}
 }
 
-func (q QSign) NewSession() string {
+func (q *QSign) NewSession(totalJobs int) string {
 	id := xid.New().String()
-	s := Session{}
+	s := ThreadSafeSession{
+		Session: &Session{ID: id, TotalJobs: totalJobs},
+		m:       &sync.Mutex{},
+	}
+
 	q.sessions[id] = s
 
 	return id
 }
 
-func (q QSign) AddSigner(signerName string, signData signer.SignData, queueSize int) {
+func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize int) {
 	// skip if already setup
 	if _, exists := q.signers[signerName]; exists {
 		return
@@ -62,18 +73,17 @@ func (q QSign) AddSigner(signerName string, signData signer.SignData, queueSize 
 	q.signers[signerName] = qs
 }
 
-func (q QSign) PushJob(sessionID, signerName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
-	if _, exists := q.sessions[sessionID]; !exists {
-		return "", errors.New("session is not in map")
-	}
-
+func (q *QSign) PushJob(signerName, sessionID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
 	if _, exists := q.signers[signerName]; !exists {
 		return "", errors.New("signer is not in map")
 	}
 
+	if _, exists := q.sessions[sessionID]; !exists {
+		return "", errors.New("session is not in map")
+	}
+
 	// generate unique job id
 	id := xid.New().String()
-
 	//create job
 	j := Job{
 		ID:             id,
@@ -94,8 +104,8 @@ func (q QSign) PushJob(sessionID, signerName, inputFilePath, outputFilePath stri
 	return id, nil
 }
 
-func (q QSign) SignNextJob(signerName string) error {
-	if _, exists := q.signers[signerName]; exists {
+func (q *QSign) SignNextJob(signerName string) error {
+	if _, exists := q.signers[signerName]; !exists {
 		return errors.New("signer is not in map")
 	}
 
@@ -110,13 +120,39 @@ func (q QSign) SignNextJob(signerName string) error {
 	}
 
 	// update session completed jobs
-	session := q.sessions[job.SessionID]
-	session.CompletedJobs = append(session.CompletedJobs, job)
+	q.addCompletedJob(job)
 
 	return nil
 }
 
-func (q QSign) Runner() {
+func (q *QSign) GetSessionCompletedJobs(sessionID string) ([]Job, error) {
+	if _, exists := q.sessions[sessionID]; !exists {
+		return []Job{}, errors.New("session is not in map")
+	}
+
+	return q.sessions[sessionID].Session.CompletedJobs, nil
+}
+
+func (q *QSign) GetSessionByID(sessionID string) (Session, error) {
+	if _, exists := q.sessions[sessionID]; !exists {
+		return Session{}, errors.New("session is not in map")
+	}
+
+	return *q.sessions[sessionID].Session, nil
+}
+
+func (q *QSign) addCompletedJob(job Job) {
+	q.sessions[job.SessionID].m.Lock()
+
+	s := *q.sessions[job.SessionID].Session
+	s.CompletedJobs = append(s.CompletedJobs, job)
+	s.IsCompleted = s.TotalJobs == len(s.CompletedJobs)
+	*q.sessions[job.SessionID].Session = s
+
+	q.sessions[job.SessionID].m.Unlock()
+}
+
+func (q *QSign) Runner() {
 	for _, s := range q.signers {
 		go func() {
 			for {

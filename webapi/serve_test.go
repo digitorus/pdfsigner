@@ -3,7 +3,6 @@ package webapi
 import (
 	"bytes"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -11,19 +10,30 @@ import (
 	"testing"
 	"time"
 
-	"sync"
+	"io/ioutil"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	"io/ioutil"
 )
 
-func TestPut(t *testing.T) {
-	addr := "localhost:3000"
-	qsm := queued_sign.NewQSign()
+type filePart struct {
+	fieldName string
+	path      string
+}
 
-	d := signer.SignData{
+func TestPut(t *testing.T) {
+	var (
+		proto   = "http://"
+		addr    = "localhost:3000"
+		baseURL = proto + addr
+	)
+
+	// create new QSign
+	qs := queued_sign.NewQSign()
+
+	// create signer
+	signData := signer.SignData{
 		Signature: sign.SignDataSignature{
 			Info: sign.SignDataSignatureInfo{
 				Name:        "Tim",
@@ -36,73 +46,88 @@ func TestPut(t *testing.T) {
 			Approval: false,
 		},
 	}
+	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
+	qs.AddSigner("simple", signData, 10)
 
-	d.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
-
-	qsm.AddSigner("simple", d, 10)
-
-	wa := NewWebAPI(addr, qsm, []string{
+	// create web api
+	wa := NewWebAPI(addr, qs, []string{
 		"simple",
 	})
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		wa.Serve()
-		wg.Done()
-	}()
-	go func() {
-		qsm.Runner()
-		wg.Done()
-	}()
+	// start server and runner
+	go wa.Serve()
+	qs.Runner()
 
-	req, err := newfileUploadRequest(
-		"http://"+addr+"/put",
+	// upload pdf files
+	fileParts := []filePart{
+		{"testfile1", "../testfiles/testfile20.pdf"},
+		{"testfile2", "../testfiles/testfile20.pdf"},
+	}
+	req, err := newMultipleFilesUploadRequest(
+		baseURL+"/put",
 		map[string]string{
 			"signer": "simple",
-		},
-		"file",
-		"/Users/tim/go/src/bitbucket.org/digitorus/pdfsign/testfiles/testfile20.pdf")
-
+		}, fileParts)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	log.Println(string(body))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	wg.Wait()
+	sessionID := string(body)
+	if sessionID == "" {
+		t.Fatal("not received sessionID")
+	}
+
+	time.Sleep(5 * time.Second)
+	// check for signed files
+	resp, err = http.Get(baseURL + "/check/" + sessionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(body))
 }
 
-// Creates a new file upload http request with optional extra params
-func newfileUploadRequest(uri string, params map[string]string, paramName, path string) (*http.Request, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
+// Creates a new multiple files upload http request with optional extra params
+func newMultipleFilesUploadRequest(uri string, params map[string]string, fileParts []filePart) (*http.Request, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-	if err != nil {
-		return nil, err
-	}
-	_, err = io.Copy(part, file)
-	if err != nil {
-		return nil, err
-	}
-
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
 	}
-	err = writer.Close()
+
+	for _, f := range fileParts {
+		file, err := os.Open(f.path)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		part, err := writer.CreateFormFile(f.fieldName, filepath.Base(f.path))
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(part, file)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err := writer.Close()
 	if err != nil {
 		return nil, err
 	}

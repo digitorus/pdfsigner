@@ -1,5 +1,7 @@
 package priority_queue
 
+import "errors"
+
 //go:generate stringer -type=Priority
 
 // Priority of signing request
@@ -76,4 +78,17 @@ func (q *PriorityQueue) Pop() Item {
 			}
 		}
 	}
+}
+
+func (q *PriorityQueue) Len(p Priority) (int, error) {
+	switch p {
+	case LowPriority:
+		return len(q.low), nil
+	case MediumPriority:
+		return len(q.medium), nil
+	case HighPriority:
+		return len(q.high), nil
+	}
+
+	return -1, errors.New("wrong priority name")
 }
