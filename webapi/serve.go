@@ -22,28 +22,31 @@ import (
 )
 
 type WebAPI struct {
+	r              *mux.Router
 	addr           string
 	qSign          queued_sign.QSign
 	allowedSigners []string
 }
 
 func NewWebAPI(addr string, qs queued_sign.QSign, allowedSigners []string) *WebAPI {
-	return &WebAPI{
+	wa := WebAPI{
 		addr:           addr,
 		qSign:          qs,
 		allowedSigners: allowedSigners,
+		r:              mux.NewRouter(),
 	}
+
+	wa.r.HandleFunc("/put", wa.handlePut).Methods("POST")
+	wa.r.HandleFunc("/check/{sessionID}", wa.handleCheckBySessionID).Methods("GET")
+	wa.r.HandleFunc("/get/", wa.handleGetBySessionID).Methods("GET")
+
+	return &wa
 }
 
 func (wa *WebAPI) Serve() {
-	r := mux.NewRouter()
-	r.HandleFunc("/put", wa.handlePut).Methods("POST")
-	r.HandleFunc("/check/{sessionID}", wa.handleCheckBySessionID).Methods("GET")
-	r.HandleFunc("/get/", wa.handleGetBySessionID).Methods("GET")
-
 	s := &http.Server{
 		Addr:           wa.addr,
-		Handler:        r,
+		Handler:        wa.r,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -105,13 +108,13 @@ func (wa *WebAPI) handleCheckBySessionID(w http.ResponseWriter, r *http.Request)
 	// get jobs for session
 	vars := mux.Vars(r)
 	sessionId := vars["sessionID"]
+	log.Println(sessionId)
 
 	sess, err := wa.qSign.GetSessionByID(sessionId)
 	if err != nil {
 		httpError(w, err, 500)
 	}
 
-	log.Println(sess)
 	// respond with json
 	j, err := json.Marshal(sess)
 	if err != nil {
@@ -181,7 +184,6 @@ func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
 }
 
 func pushJobs(qs queued_sign.QSign, f fields, fileNames []string) (string, error) {
-
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}

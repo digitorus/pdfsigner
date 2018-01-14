@@ -3,14 +3,14 @@ package webapi
 import (
 	"bytes"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
-
-	"io/ioutil"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
@@ -22,15 +22,23 @@ type filePart struct {
 	path      string
 }
 
-func TestPut(t *testing.T) {
-	var (
-		proto   = "http://"
-		addr    = "localhost:3000"
-		baseURL = proto + addr
-	)
+var (
+	wa      *WebAPI
+	qs      queued_sign.QSign
+	proto   = "http://"
+	addr    = "localhost:3000"
+	baseURL = proto + addr
+)
 
+// TestMain setup / tear down before tests
+func TestMain(m *testing.M) {
+	os.Exit(runTest(m))
+}
+
+// runTest initializes the environment
+func runTest(m *testing.M) int {
 	// create new QSign
-	qs := queued_sign.NewQSign()
+	qs = queued_sign.NewQSign()
 
 	// create signer
 	signData := signer.SignData{
@@ -48,22 +56,25 @@ func TestPut(t *testing.T) {
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 	qs.AddSigner("simple", signData, 10)
+	qs.Runner()
 
 	// create web api
-	wa := NewWebAPI(addr, qs, []string{
+	wa = NewWebAPI(addr, qs, []string{
 		"simple",
 	})
 
-	// start server and runner
-	go wa.Serve()
-	qs.Runner()
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 
+	return m.Run()
+}
+
+func TestPut(t *testing.T) {
 	// upload pdf files
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile20.pdf"},
 		{"testfile2", "../testfiles/testfile20.pdf"},
 	}
-	req, err := newMultipleFilesUploadRequest(
+	r, err := newMultipleFilesUploadRequest(
 		baseURL+"/put",
 		map[string]string{
 			"signer": "simple",
@@ -71,35 +82,20 @@ func TestPut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	w := httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
 
-	sessionID := string(body)
+	sessionID := w.Body.String()
 	if sessionID == "" {
 		t.Fatal("not received sessionID")
 	}
-
 	time.Sleep(5 * time.Second)
-	// check for signed files
-	resp, err = http.Get(baseURL + "/check/" + sessionID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	r = httptest.NewRequest("GET", baseURL+"/check/"+sessionID, nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
 
-	t.Log(string(body))
+	log.Println(w.Body.String())
 }
 
 // Creates a new multiple files upload http request with optional extra params
