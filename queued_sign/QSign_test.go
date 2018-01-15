@@ -50,13 +50,13 @@ func TestQSignersMap(t *testing.T) {
 	)
 
 	// sign job
-	if err := qs.SignNextJob("simple"); err != nil {
-		t.Fatal(err)
-	}
+	qs.SignNextJob("simple")
+
 	session, err = qs.GetSessionByID(sessionID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, session.IsCompleted)
 	assert.Equal(t, 1, len(session.CompletedJobs))
+	assert.Equal(t, "", session.CompletedJobs[0].Error)
 }

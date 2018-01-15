@@ -26,36 +26,27 @@ type ThreadSafeSession struct {
 }
 
 type Session struct {
-	ID            string
-	TotalJobs     int
-	CompletedJobs []Job
-	IsCompleted   bool
+	ID                   string         `json:"id"`
+	TotalJobs            int            `json:"total_jobs"`
+	CompletedJobs        []Job          `json:"completed_jobs"`
+	CompletedJobsMapByID map[string]Job `json:"-"`
+	IsCompleted          bool           `json:"session_is_completed"`
+	HadErrors            bool           `json:"had_errors"`
 }
 
 type Job struct {
-	ID             string
-	SessionID      string
-	inputFilePath  string
-	outputFilePath string
+	ID             string `json:"id"`
+	Error          string `json:"error,omitempty"`
+	SessionID      string `json:"-"`
+	inputFilePath  string `json:"-"`
+	outputFilePath string `json:"-"`
 }
 
-func NewQSign() QSign {
-	return QSign{
+func NewQSign() *QSign {
+	return &QSign{
 		signers:  make(map[string]QSigner, 1),
 		sessions: make(map[string]ThreadSafeSession, 1),
 	}
-}
-
-func (q *QSign) NewSession(totalJobs int) string {
-	id := xid.New().String()
-	s := ThreadSafeSession{
-		Session: &Session{ID: id, TotalJobs: totalJobs},
-		m:       &sync.Mutex{},
-	}
-
-	q.sessions[id] = s
-
-	return id
 }
 
 func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize int) {
@@ -71,6 +62,18 @@ func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize
 	}
 
 	q.signers[signerName] = qs
+}
+
+func (q *QSign) NewSession(totalJobs int) string {
+	id := xid.New().String()
+	s := ThreadSafeSession{
+		Session: &Session{ID: id, TotalJobs: totalJobs, CompletedJobsMapByID: make(map[string]Job, 1)},
+		m:       &sync.Mutex{},
+	}
+
+	q.sessions[id] = s
+
+	return id
 }
 
 func (q *QSign) PushJob(signerName, sessionID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
@@ -116,7 +119,7 @@ func (q *QSign) SignNextJob(signerName string) error {
 	//sign
 	err := signer.SignFile(job.inputFilePath, job.outputFilePath, qSigner.signData)
 	if err != nil {
-		return err
+		job.Error = err.Error()
 	}
 
 	// update session completed jobs
@@ -145,11 +148,32 @@ func (q *QSign) addCompletedJob(job Job) {
 	q.sessions[job.SessionID].m.Lock()
 
 	s := *q.sessions[job.SessionID].Session
+
+	// update values
 	s.CompletedJobs = append(s.CompletedJobs, job)
+	s.CompletedJobsMapByID[job.ID] = job
 	s.IsCompleted = s.TotalJobs == len(s.CompletedJobs)
+	if job.Error != "" {
+		s.HadErrors = true
+	}
+
+	// update session
 	*q.sessions[job.SessionID].Session = s
 
 	q.sessions[job.SessionID].m.Unlock()
+}
+
+func (q *QSign) GetCompletedJobFilePath(sessionID, jobID string) (string, error) {
+	if _, exists := q.sessions[sessionID]; !exists {
+		return "", errors.New("session is not in map")
+	}
+
+	job, ok := q.sessions[sessionID].Session.CompletedJobsMapByID[jobID]
+	if !ok {
+		return "", errors.New("job not found in map")
+	}
+
+	return job.outputFilePath, nil
 }
 
 func (q *QSign) Runner() {

@@ -2,6 +2,7 @@ package webapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"log"
 	"mime/multipart"
@@ -15,6 +16,7 @@ import (
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/stretchr/testify/assert"
 )
 
 type filePart struct {
@@ -23,11 +25,12 @@ type filePart struct {
 }
 
 var (
-	wa      *WebAPI
-	qs      queued_sign.QSign
-	proto   = "http://"
-	addr    = "localhost:3000"
-	baseURL = proto + addr
+	wa        *WebAPI
+	qs        *queued_sign.QSign
+	sessionID string
+	proto     = "http://"
+	addr      = "localhost:3000"
+	baseURL   = proto + addr
 )
 
 // TestMain setup / tear down before tests
@@ -68,12 +71,14 @@ func runTest(m *testing.M) int {
 	return m.Run()
 }
 
-func TestPut(t *testing.T) {
-	// upload pdf files
+func TestUploadCheckDownload(t *testing.T) {
+	// test upload
+	//create file parts
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile20.pdf"},
 		{"testfile2", "../testfiles/testfile20.pdf"},
 	}
+	// create multipart request
 	r, err := newMultipleFilesUploadRequest(
 		baseURL+"/put",
 		map[string]string{
@@ -82,20 +87,54 @@ func TestPut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	// create recorder
 	w := httptest.NewRecorder()
-	wa.r.ServeHTTP(w, r)
 
+	// make request
+	wa.r.ServeHTTP(w, r)
+	//
+	if w.Code != http.StatusOK {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+	// get session id
 	sessionID := w.Body.String()
 	if sessionID == "" {
 		t.Fatal("not received sessionID")
 	}
-	time.Sleep(5 * time.Second)
-	r = httptest.NewRequest("GET", baseURL+"/check/"+sessionID, nil)
+
+	// wait for signing files
+	time.Sleep(1 * time.Second)
+
+	// test check
+	r = httptest.NewRequest("GET", baseURL+"/check-session/"+sessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
-	log.Println(w.Body.String())
+	if w.Code != http.StatusOK {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+
+	var session queued_sign.Session
+	if err := json.NewDecoder(w.Body).Decode(&session); err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, true, session.IsCompleted)
+	assert.Equal(t, 2, len(session.CompletedJobs))
+	assert.Equal(t, "", session.CompletedJobs[0].Error)
+	assert.Equal(t, "", session.CompletedJobs[1].Error)
+
+	// test get completed jobs
+	r = httptest.NewRequest("GET", baseURL+"/get-file/"+sessionID+"/"+session.CompletedJobs[0].ID, nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+
+	if len(w.Body.Bytes()) != 9001 {
+		t.Fatalf("file size is not correct")
+	}
 }
 
 // Creates a new multiple files upload http request with optional extra params

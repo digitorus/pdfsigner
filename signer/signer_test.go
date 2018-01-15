@@ -3,7 +3,6 @@ package signer
 import (
 	"log"
 	"testing"
-	"time"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 )
@@ -16,7 +15,6 @@ func TestSigner(t *testing.T) {
 				Location:    "Spain",
 				Reason:      "Test",
 				ContactInfo: "None",
-				Date:        time.Now().Local(),
 			},
 			CertType: 2,
 			Approval: false,

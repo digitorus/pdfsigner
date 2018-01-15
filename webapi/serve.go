@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"strconv"
 	"time"
 
 	"io/ioutil"
@@ -24,11 +26,11 @@ import (
 type WebAPI struct {
 	r              *mux.Router
 	addr           string
-	qSign          queued_sign.QSign
+	qSign          *queued_sign.QSign
 	allowedSigners []string
 }
 
-func NewWebAPI(addr string, qs queued_sign.QSign, allowedSigners []string) *WebAPI {
+func NewWebAPI(addr string, qs *queued_sign.QSign, allowedSigners []string) *WebAPI {
 	wa := WebAPI{
 		addr:           addr,
 		qSign:          qs,
@@ -37,8 +39,8 @@ func NewWebAPI(addr string, qs queued_sign.QSign, allowedSigners []string) *WebA
 	}
 
 	wa.r.HandleFunc("/put", wa.handlePut).Methods("POST")
-	wa.r.HandleFunc("/check/{sessionID}", wa.handleCheckBySessionID).Methods("GET")
-	wa.r.HandleFunc("/get/", wa.handleGetBySessionID).Methods("GET")
+	wa.r.HandleFunc("/check-session/{sessionID}", wa.handleCheckBySessionID).Methods("GET")
+	wa.r.HandleFunc("/get-file/{sessionID}/{fileID}", wa.handleGetFileByID).Methods("GET")
 
 	return &wa
 }
@@ -108,11 +110,11 @@ func (wa *WebAPI) handleCheckBySessionID(w http.ResponseWriter, r *http.Request)
 	// get jobs for session
 	vars := mux.Vars(r)
 	sessionId := vars["sessionID"]
-	log.Println(sessionId)
 
 	sess, err := wa.qSign.GetSessionByID(sessionId)
 	if err != nil {
 		httpError(w, err, 500)
+		return
 	}
 
 	// respond with json
@@ -125,22 +127,41 @@ func (wa *WebAPI) handleCheckBySessionID(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (wa *WebAPI) handleGetBySessionID(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleGetFileByID(w http.ResponseWriter, r *http.Request) {
 	// get jobs for session
 	vars := mux.Vars(r)
 	sessionId := vars["sessionID"]
-	jobs, err := wa.qSign.GetSessionCompletedJobs(sessionId)
+	fileID := vars["fileID"]
+
+	// get file path
+	filePath, err := wa.qSign.GetCompletedJobFilePath(sessionId, fileID)
 	if err != nil {
 		httpError(w, err, 500)
+		return
 	}
 
-	// respond with json
-	j, err := json.Marshal(jobs)
+	// get file
+	file, err := os.Open(filePath)
 	if err != nil {
 		httpError(w, err, 500)
+		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(j)
+	defer file.Close()
+
+	// get file info
+	fileInfo, err := file.Stat()
+	if err != nil {
+		httpError(w, err, 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+	_, err = io.Copy(w, file)
+	if err != nil {
+		httpError(w, err, 500)
+		return
+	}
 }
 
 type fields struct {
@@ -148,6 +169,10 @@ type fields struct {
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
+	if p.FormName() != "signer" {
+		return nil
+	}
+
 	//parse params
 	slurp, err := ioutil.ReadAll(p)
 	if err != nil {
@@ -164,17 +189,26 @@ func parseFields(p *multipart.Part, f *fields) error {
 }
 
 func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
+	// return error if the provided file has not supported extension
+	ext := path.Ext(p.FileName())
+	if ext != "" && ext != ".pdf" {
+		return fmt.Errorf("not supported file: %s", p.FileName())
+	}
+
 	// parse pdf
-	if path.Ext(p.FileName()) == ".pdf" {
+	if ext == ".pdf" {
 		f, err := ioutil.TempFile("", "pdfsigner_cache")
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 
-		_, err = io.Copy(f, p)
+		written, err := io.Copy(f, p)
 		if err != nil {
 			return err
+		}
+		if written == 0 {
+			return errors.New("written 0 bytes")
 		}
 
 		*fileNames = append(*fileNames, f.Name())
@@ -183,7 +217,7 @@ func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
 	return nil
 }
 
-func pushJobs(qs queued_sign.QSign, f fields, fileNames []string) (string, error) {
+func pushJobs(qs *queued_sign.QSign, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}
