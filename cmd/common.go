@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var qSign queued_sign.QSign
+var qSign *queued_sign.QSign
 
 var (
 
