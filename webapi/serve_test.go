@@ -82,11 +82,18 @@ func TestUploadCheckDownload(t *testing.T) {
 	r, err := newMultipleFilesUploadRequest(
 		baseURL+"/put",
 		map[string]string{
-			"signer": "simple",
+			"signer":      "simple",
+			"name":        "My Name",
+			"location":    "My Location",
+			"reason":      "My Reason",
+			"contactInfo": "My ContactInfo",
+			"certType":    "1",
+			"approval":    "true",
 		}, fileParts)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// create recorder
 	w := httptest.NewRecorder()
 
@@ -132,8 +139,8 @@ func TestUploadCheckDownload(t *testing.T) {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	if len(w.Body.Bytes()) != 9001 {
-		t.Fatalf("file size is not correct")
+	if len(w.Body.Bytes()) != 9005 {
+		t.Fatalf("body size is not correct")
 	}
 }
 

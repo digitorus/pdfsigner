@@ -19,6 +19,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
+	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
@@ -166,23 +167,50 @@ func (wa *WebAPI) handleGetFileByID(w http.ResponseWriter, r *http.Request) {
 
 type fields struct {
 	signerName string
+	signData   signer.SignData
+	//
+	//name        string
+	//location    string
+	//reason      string
+	//contactInfo string
+	//certType    int
+	//approval    bool
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
-	if p.FormName() != "signer" {
-		return nil
-	}
-
-	//parse params
-	slurp, err := ioutil.ReadAll(p)
-	if err != nil {
-		return nil
-	}
-
 	switch p.FormName() {
-	case "signer":
-		f.signerName = string(slurp)
-	case "other":
+	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
+		//parse params
+		slurp, err := ioutil.ReadAll(p)
+		if err != nil {
+			return nil
+		}
+		str := string(slurp)
+
+		switch p.FormName() {
+		case "signer":
+			f.signerName = str
+		case "name":
+			f.signData.Signature.Info.Name = str
+		case "location":
+			f.signData.Signature.Info.Location = str
+		case "reason":
+			f.signData.Signature.Info.Reason = str
+		case "contactInfo":
+			f.signData.Signature.Info.ContactInfo = str
+		case "certType":
+			i, err := strconv.Atoi(str)
+			if err != nil {
+				return err
+			}
+			f.signData.Signature.CertType = uint32(i)
+		case "approval":
+			b, err := strconv.ParseBool(str)
+			if err != nil {
+				return err
+			}
+			f.signData.Signature.Approval = b
+		}
 	}
 
 	return nil
@@ -223,7 +251,8 @@ func pushJobs(qs *queued_sign.QSign, f fields, fileNames []string) (string, erro
 	}
 
 	totalJobs := len(fileNames)
-	sessionID := qs.NewSession(totalJobs)
+
+	sessionID := qs.NewSession(totalJobs, f.signData)
 	priority := determinePriority(totalJobs)
 
 	for _, fileName := range fileNames {

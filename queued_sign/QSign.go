@@ -26,12 +26,13 @@ type ThreadSafeSession struct {
 }
 
 type Session struct {
-	ID                   string         `json:"id"`
-	TotalJobs            int            `json:"total_jobs"`
-	CompletedJobs        []Job          `json:"completed_jobs"`
-	CompletedJobsMapByID map[string]Job `json:"-"`
-	IsCompleted          bool           `json:"session_is_completed"`
-	HadErrors            bool           `json:"had_errors"`
+	ID                   string          `json:"id"`
+	TotalJobs            int             `json:"total_jobs"`
+	CompletedJobs        []Job           `json:"completed_jobs"`
+	CompletedJobsMapByID map[string]Job  `json:"-"`
+	IsCompleted          bool            `json:"session_is_completed"`
+	HadErrors            bool            `json:"had_errors"`
+	SignData             signer.SignData `json:"-"`
 }
 
 type Job struct {
@@ -64,11 +65,16 @@ func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize
 	q.signers[signerName] = qs
 }
 
-func (q *QSign) NewSession(totalJobs int) string {
+func (q *QSign) NewSession(totalJobs int, signData signer.SignData) string {
 	id := xid.New().String()
 	s := ThreadSafeSession{
-		Session: &Session{ID: id, TotalJobs: totalJobs, CompletedJobsMapByID: make(map[string]Job, 1)},
-		m:       &sync.Mutex{},
+		Session: &Session{
+			ID:                   id,
+			TotalJobs:            totalJobs,
+			SignData:             signData,
+			CompletedJobsMapByID: make(map[string]Job, 1),
+		},
+		m: &sync.Mutex{},
 	}
 
 	q.sessions[id] = s
@@ -116,8 +122,13 @@ func (q *QSign) SignNextJob(signerName string) error {
 	item := qSigner.pq.Pop()
 	job := item.Value.(Job)
 
+	signData, err := q.mergeSessionSignerSignData(job.SessionID, qSigner.signData)
+	if err != nil {
+		return err
+	}
+
 	//sign
-	err := signer.SignFile(job.inputFilePath, job.outputFilePath, qSigner.signData)
+	err = signer.SignFile(job.inputFilePath, job.outputFilePath, signData)
 	if err != nil {
 		job.Error = err.Error()
 	}
@@ -126,6 +137,32 @@ func (q *QSign) SignNextJob(signerName string) error {
 	q.addCompletedJob(job)
 
 	return nil
+}
+
+func (q *QSign) mergeSessionSignerSignData(sessionID string, signerSignData signer.SignData) (signer.SignData, error) {
+	if _, exists := q.sessions[sessionID]; !exists {
+		return signerSignData, errors.New("session is not in map")
+	}
+
+	sessionSignData := q.sessions[sessionID].Session.SignData
+	signData := signer.SignData(signerSignData)
+
+	switch {
+	case sessionSignData.Signature.Info.Name != "":
+		signData.Signature.Info.Name = sessionSignData.Signature.Info.Name
+	case sessionSignData.Signature.Info.Location != "":
+		signData.Signature.Info.Location = sessionSignData.Signature.Info.Location
+	case sessionSignData.Signature.Info.Reason != "":
+		signData.Signature.Info.Reason = sessionSignData.Signature.Info.Reason
+	case sessionSignData.Signature.Info.ContactInfo != "":
+		signData.Signature.Info.ContactInfo = sessionSignData.Signature.Info.ContactInfo
+	case sessionSignData.Signature.CertType != 0:
+		signData.Signature.CertType = sessionSignData.Signature.CertType
+	case sessionSignData.Signature.Approval != signData.Signature.Approval:
+		signData.Signature.Approval = sessionSignData.Signature.Approval
+	}
+
+	return signData, nil
 }
 
 func (q *QSign) GetSessionCompletedJobs(sessionID string) ([]Job, error) {
