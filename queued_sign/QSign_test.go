@@ -32,7 +32,8 @@ func TestQSignersMap(t *testing.T) {
 	qs.AddSigner("simple", d, 10)
 
 	// create session
-	sessionID := qs.NewSession(1)
+	var signData signer.SignData
+	sessionID := qs.NewSession(1, signData)
 	session, err := qs.GetSessionByID(sessionID)
 	if err != nil {
 		t.Fatal(err)
