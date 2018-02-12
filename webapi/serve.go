@@ -168,13 +168,6 @@ func (wa *WebAPI) handleGetFileByID(w http.ResponseWriter, r *http.Request) {
 type fields struct {
 	signerName string
 	signData   signer.SignData
-	//
-	//name        string
-	//location    string
-	//reason      string
-	//contactInfo string
-	//certType    int
-	//approval    bool
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
