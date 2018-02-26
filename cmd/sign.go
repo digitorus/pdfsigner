@@ -20,7 +20,7 @@ var signPEMCmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
 	},
 }
 
@@ -32,7 +32,7 @@ var signPKSC11Cmd = &cobra.Command{
 		c := signerConfig{}
 		bindSignerFlagsToConfig(cmd, &c)
 		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
 	},
 }
 
@@ -41,6 +41,8 @@ var signBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
+		requireConfig(cmd)
+
 		c := getSignerConfigByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &c)
 
@@ -51,7 +53,7 @@ var signBySignerNameCmd = &cobra.Command{
 			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
 		}
 
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
 	},
 }
 
@@ -61,21 +63,18 @@ func init() {
 	//PEM sign command
 	signCmd.AddCommand(signPEMCmd)
 	parseCommonFlags(signPEMCmd)
-	parseInputPathFlag(signPEMCmd)
 	parseOutputPathFlag(signPEMCmd)
 	parsePEMCertificateFlags(signPEMCmd)
 
 	//PKSC11 sign command
 	signCmd.AddCommand(signPKSC11Cmd)
 	parseCommonFlags(signPKSC11Cmd)
-	parseInputPathFlag(signPKSC11Cmd)
 	parseOutputPathFlag(signPKSC11Cmd)
 	parsePKSC11CertificateFlags(signPKSC11Cmd)
 
 	// sign with signer from config inputFile
 	signCmd.AddCommand(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
-	parseInputPathFlag(signBySignerNameCmd)
 	parseOutputPathFlag(signBySignerNameCmd)
 	parsePEMCertificateFlags(signBySignerNameCmd)
 	parsePKSC11CertificateFlags(signBySignerNameCmd)

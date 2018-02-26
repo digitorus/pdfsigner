@@ -4,10 +4,11 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	"github.com/spf13/viper"
 )
 
 func storeTempFile(file io.Reader) (string, error) {
@@ -35,18 +36,26 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	return matchedFiles, err
 }
 
-//signer.SignFile(fullFilePath, outputFolder, signData)
-
-func SignFilesByPatterns(filePatterns []string, signData signer.SignData) {
+func SignFilesByPatterns(filePatterns []string, outputPathFlag string, signData signer.SignData) {
+	// get files
 	files, err := findFilesByPatterns(filePatterns)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, f := range files {
-		if err := signer.SignFile(f, viper.GetString("out"), signData); err != nil {
+		// generate signed file path
+		dir, fileName := path.Split(f)
+		fileNameArr := strings.Split(fileName, path.Ext(fileName))
+		fileNameArr = fileNameArr[:len(fileNameArr)-1]
+		fileNameNoExt := strings.Join(fileNameArr, "")
+		signedFilePath := path.Join(dir, fileNameNoExt+"_signed"+path.Ext(fileName))
+
+		// sign file
+		if err := signer.SignFile(f, signedFilePath, signData); err != nil {
 			log.Fatal(err)
 		}
+
+		log.Println("Signed PDF file written to: " + signedFilePath)
 	}
-	log.Println("Signed PDF written to " + viper.GetString("out"))
 }

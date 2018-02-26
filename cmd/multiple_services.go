@@ -5,18 +5,17 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
-	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
 )
 
 // multiCmd represents the mixed command
 var multiCmd = &cobra.Command{
-	Use:   "mixed",
-	Short: "A brief description of your command",
-	Long:  `A longer description that spans multiple lines`,
+	Use:   "multiple-services",
+	Short: "Runs multiple services of the config file",
+	Long:  `This command runs multiple services taken from the config file`,
 	Run: func(cmd *cobra.Command, serviceNames []string) {
-		qSign = queued_sign.NewQSign()
+		requireConfig(cmd)
 
 		for _, n := range serviceNames {
 			// get service by name
@@ -30,7 +29,7 @@ var multiCmd = &cobra.Command{
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
 	// only allow single signer string or array setting
 	if configSignerName != "" && len(configSignerNames) > 1 {
-		log.Fatal("please only use signer or signers setting for service")
+		log.Fatal("only use signer or signers setting for service")
 	}
 
 	if serviceType == "watch" && configSignerName != "" {
@@ -84,7 +83,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
-	wa := webapi.NewWebAPI(service.Addr, qSign, service.Signers)
+	wa := webapi.NewWebAPI(service.Addr, qSign, qVerify, service.Signers)
 	wa.Serve()
 }
 

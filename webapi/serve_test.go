@@ -15,6 +15,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
+	"bitbucket.org/digitorus/pdfsigner/queued_verify"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,8 +62,11 @@ func runTest(m *testing.M) int {
 	qs.AddSigner("simple", signData, 10)
 	qs.Runner()
 
+	qv := queued_verify.NewQVerify()
+	qv.Runner()
+
 	// create web api
-	wa = NewWebAPI(addr, qs, []string{
+	wa = NewWebAPI(addr, qs, qv, []string{
 		"simple",
 	})
 
@@ -80,7 +84,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 	// create multipart request
 	r, err := newMultipleFilesUploadRequest(
-		baseURL+"/put",
+		baseURL+"/sign/schedule",
 		map[string]string{
 			"signer":      "simple",
 			"name":        "My Name",
@@ -96,10 +100,9 @@ func TestUploadCheckDownload(t *testing.T) {
 
 	// create recorder
 	w := httptest.NewRecorder()
-
 	// make request
 	wa.r.ServeHTTP(w, r)
-	//
+
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
@@ -113,7 +116,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// test check
-	r = httptest.NewRequest("GET", baseURL+"/check-session/"+sessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/check/"+sessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
@@ -132,7 +135,8 @@ func TestUploadCheckDownload(t *testing.T) {
 	assert.Equal(t, "", session.CompletedJobs[1].Error)
 
 	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/get-file/"+sessionID+"/"+session.CompletedJobs[0].ID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/get-file/"+sessionID+"/"+session.CompletedJobs[0].ID, nil)
+	log.Println(r)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {

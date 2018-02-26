@@ -1,22 +1,27 @@
 package cmd
 
 import (
-	"errors"
 	"log"
 
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
+	"bitbucket.org/digitorus/pdfsigner/queued_verify"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var qSign *queued_sign.QSign
+var qVerify *queued_verify.QVerify
+
+func init() {
+	qSign = queued_sign.NewQSign()
+	qVerify = queued_verify.NewQVerify()
+}
 
 var (
-
 	// common flags
 	signerNameFlag           string
 	certificateChainPathFlag string
-	inputFileNameFlag        string
+	inputPathFlag            string
+	outputPathFlag           string
 
 	// Signature flags
 	signatureApprovalFlag     bool
@@ -66,22 +71,25 @@ func parsePKSC11CertificateFlags(cmd *cobra.Command) {
 }
 
 func parseInputPathFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("in", "", "Input path")
-	viper.BindPFlag("in", cmd.PersistentFlags().Lookup("in"))
+	cmd.PersistentFlags().StringVar(&inputPathFlag, "in", "", "Input path")
+	cmd.MarkPersistentFlagRequired("in")
 }
 
 func parseOutputPathFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().String("out", "", "Output path")
-	viper.BindPFlag("out", cmd.PersistentFlags().Lookup("out"))
+	cmd.PersistentFlags().StringVar(&outputPathFlag, "out", "", "Output path")
+	cmd.MarkPersistentFlagRequired("out")
 }
 
 func parseSignerName(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
+	cmd.MarkPersistentFlagRequired("signer-name")
 }
 
 func parseServeFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "serve address")
+	cmd.MarkPersistentFlagRequired("serve-address")
 	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "serve port")
+	cmd.MarkPersistentFlagRequired("serve-port")
 }
 
 func getAddrPort() string {
@@ -139,23 +147,39 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 }
 
 func getSignerConfigByName(signerName string) signerConfig {
+	if signerName == "" {
+		log.Fatal("signer name is empty")
+	}
+
 	var s signerConfig
 	for _, s = range signerConfigs {
 		if s.Name == signerName {
 			return s
 		}
 	}
-	log.Fatal(errors.New("signer not found"))
+	log.Fatal("signer not found")
 	return s
 }
 
 func getConfigServiceByName(serviceName string) serviceConfig {
+	if serviceName == "" {
+		log.Fatal("service name is empty")
+	}
+
 	var s serviceConfig
 	for _, s = range servicesConfig {
 		if s.Name == serviceName {
 			return s
 		}
 	}
-	log.Fatal(errors.New("service not found"))
+
+	log.Fatal("service not found")
 	return s
+}
+
+func requireConfig(cmd *cobra.Command) {
+	v, err := cmd.Flags().GetString("config")
+	if err != nil || v == "" {
+		log.Fatal("config is not provided")
+	}
 }

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"log"
+
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
@@ -40,10 +42,12 @@ var servePKSC11Cmd = &cobra.Command{
 }
 
 var serveWithSingleSignerCmd = &cobra.Command{
-	Use:   "signer",
-	Short: "Signs PDF with serve from the config",
-	Long:  `Long multiline description here`,
+	Use:   "single-signer",
+	Short: "Serve with single signer",
+	Long:  `It allows to run signer from the config and override it's settings'`,
 	Run: func(cmd *cobra.Command, attr []string) {
+		requireConfig(cmd)
+
 		// get config signer by name
 		config := getSignerConfigByName(signerNameFlag)
 		bindSignerFlagsToConfig(cmd, &config)
@@ -63,10 +67,16 @@ var serveWithSingleSignerCmd = &cobra.Command{
 }
 
 var serveWithMultipleSignersCmd = &cobra.Command{
-	Use:   "signer",
-	Short: "Signs PDF with serve from the config",
-	Long:  `Long multiline description here`,
+	Use:   "multiple-signers",
+	Short: "Serve with multiple signers from the config",
+	Long:  `It runs multiple signers. Settings couldn't be overwritten'`,
 	Run: func(cmd *cobra.Command, signerNames []string) {
+		requireConfig(cmd)
+
+		if len(signerNames) < 1 {
+			log.Fatal("signers are not provided")
+		}
+
 		for _, sn := range signerNames {
 			setupSigner(sn)
 		}
@@ -75,14 +85,13 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 }
 
 func serveWithUnnamedSigner(signData signer.SignData) {
-	// TODO: hash something from signer to identify completed jobs inside db
-	id := "someid"
+	id := "unnamed-signer"
 	qSign.AddSigner(id, signData, 10)
 	serve()
 }
 
 func serve() {
-	wa := webapi.NewWebAPI(getAddrPort(), qSign, []string{})
+	wa := webapi.NewWebAPI(getAddrPort(), qSign, qVerify, []string{})
 	wa.Serve()
 }
 
@@ -117,5 +126,4 @@ func init() {
 	// serve with serve from config inputFile
 	serveCmd.AddCommand(serveWithMultipleSignersCmd)
 	parseServeFlags(serveWithMultipleSignersCmd)
-
 }

@@ -57,8 +57,12 @@ func initConfig() {
 
 	viper.AutomaticEnv() // read in environment variables that match
 	// If a config inputFile is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
+	err := viper.ReadInConfig()
+	if err == nil {
 		fmt.Println("Using config inputFile:", viper.ConfigFileUsed())
+	}
+	if err != nil && RootCmd.Flags().Changed("config") {
+		log.Fatal(err)
 	}
 
 	// unmarshal signers
