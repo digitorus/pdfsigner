@@ -35,6 +35,7 @@ type serviceConfig struct {
 	In      string
 	Out     string
 	Addr    string
+	Port    string
 }
 
 // initConfig reads in config inputFile and ENV variables if set.

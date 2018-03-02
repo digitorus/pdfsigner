@@ -136,7 +136,6 @@ func TestUploadCheckDownload(t *testing.T) {
 
 	// test get completed jobs
 	r = httptest.NewRequest("GET", baseURL+"/sign/get-file/"+sessionID+"/"+session.CompletedJobs[0].ID, nil)
-	log.Println(r)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {

@@ -2,7 +2,8 @@ package files
 
 import (
 	"log"
-	"path/filepath"
+	"path"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -24,12 +25,10 @@ func Watch(watchFolder string, cb callback) {
 			case event := <-watcher.Events:
 				if event.Op&fsnotify.Create == fsnotify.Create {
 					inputFileName := event.Name
-					inputFileExtension := filepath.Ext(inputFileName)
+					inputFileExtension := strings.ToLower(path.Ext(inputFileName))
 
-					if inputFileExtension == "pdf" {
-						fullFilePath := filepath.Join(watchFolder, inputFileName)
-
-						cb(fullFilePath)
+					if inputFileExtension == ".pdf" {
+						cb(inputFileName)
 					}
 				}
 

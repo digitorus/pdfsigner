@@ -2,6 +2,7 @@ package queued_sign
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
@@ -130,7 +131,10 @@ func (q *QSign) SignNextJob(signerName string) error {
 	//sign
 	err = signer.SignFile(job.inputFilePath, job.outputFilePath, signData)
 	if err != nil {
+		log.Printf("Couldn't sign file: %v, %+v", job.inputFilePath, err)
 		job.Error = err.Error()
+	} else {
+		log.Println("File signed:", job.outputFilePath)
 	}
 
 	// update session completed jobs
@@ -217,7 +221,10 @@ func (q *QSign) Runner() {
 	for _, s := range q.signers {
 		go func() {
 			for {
-				q.SignNextJob(s.name)
+				err := q.SignNextJob(s.name)
+				if err != nil {
+					log.Printf("Couldn't sign file: %v, %+v", s.name, err)
+				}
 			}
 		}()
 	}

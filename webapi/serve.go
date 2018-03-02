@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -47,8 +48,7 @@ func (wa *WebAPI) Serve() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	wa.qSign.Runner()
-	wa.qVerify.Runner()
-
-	s.ListenAndServe()
+	if err := s.ListenAndServe(); err != nil {
+		log.Fatal("Coudn't start Web API:", err)
+	}
 }
