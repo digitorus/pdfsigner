@@ -71,6 +71,8 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpError(w, err, 500)
 	}
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Location", "/sign/"+sessionID)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(j)
 }

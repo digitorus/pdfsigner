@@ -101,8 +101,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	w := httptest.NewRecorder()
 	// make request
 	wa.r.ServeHTTP(w, r)
-
-	if w.Code != http.StatusOK {
+	if w.Code != http.StatusCreated {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
@@ -113,6 +112,10 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 	if scheduleResponse.SessionID == "" {
 		t.Fatal("not received sessionID")
+	}
+
+	if w.Header().Get("Location") != "/sign/"+scheduleResponse.SessionID {
+		t.Fatal("location is not set")
 	}
 
 	// wait for signing files
