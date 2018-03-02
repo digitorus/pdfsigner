@@ -60,12 +60,12 @@ type httpErr struct {
 
 func httpError(w http.ResponseWriter, err error, code int) {
 	e := httpErr{Message: err.Error(), Code: code}
-	w.WriteHeader(code)
 	// respond with json
 	j, err := json.Marshal(e)
 	if err != nil {
 		httpError(w, err, 500)
 	}
+	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(j)
 }
