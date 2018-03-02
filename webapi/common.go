@@ -1,6 +1,7 @@
 package webapi
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -52,9 +53,21 @@ func determinePriority(totalJobs int) priority_queue.Priority {
 	return priority
 }
 
+type httpErr struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+}
+
 func httpError(w http.ResponseWriter, err error, code int) {
-	fmt.Printf("%v", err)
-	http.Error(w, err.Error(), code)
+	e := httpErr{Message: err.Error(), Code: code}
+	w.WriteHeader(code)
+	// respond with json
+	j, err := json.Marshal(e)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
 }
 
 func dumpRequest(r *http.Request) {
