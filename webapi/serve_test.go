@@ -26,12 +26,11 @@ type filePart struct {
 }
 
 var (
-	wa        *WebAPI
-	qs        *queued_sign.QSign
-	sessionID string
-	proto     = "http://"
-	addr      = "localhost:3000"
-	baseURL   = proto + addr
+	wa      *WebAPI
+	qs      *queued_sign.QSign
+	proto   = "http://"
+	addr    = "localhost:3000"
+	baseURL = proto + addr
 )
 
 // TestMain setup / tear down before tests
@@ -84,7 +83,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 	// create multipart request
 	r, err := newMultipleFilesUploadRequest(
-		baseURL+"/sign/schedule",
+		baseURL+"/sign",
 		map[string]string{
 			"signer":      "simple",
 			"name":        "My Name",
@@ -116,7 +115,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// test check
-	r = httptest.NewRequest("GET", baseURL+"/sign/check/"+sessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
@@ -135,7 +134,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	assert.Equal(t, "", session.CompletedJobs[1].Error)
 
 	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/sign/get-file/"+sessionID+"/"+session.CompletedJobs[0].ID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID+"/"+session.CompletedJobs[0].ID+"/download", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {

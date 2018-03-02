@@ -28,9 +28,9 @@ func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, al
 	}
 
 	// sign
-	wa.r.HandleFunc("/sign/schedule", wa.handleSignSchedule).Methods("POST")
-	wa.r.HandleFunc("/sign/check/{sessionID}", wa.handleSignCheck).Methods("GET")
-	wa.r.HandleFunc("/sign/get-file/{sessionID}/{fileID}", wa.handleSignGetFile).Methods("GET")
+	wa.r.HandleFunc("/sign", wa.handleSignSchedule).Methods("POST")
+	wa.r.HandleFunc("/sign/{sessionID}", wa.handleSignCheck).Methods("GET")
+	wa.r.HandleFunc("/sign/{sessionID}/{fileID}/download", wa.handleSignGetFile).Methods("GET")
 
 	//verify
 	wa.r.HandleFunc("/verify/schedule", wa.handleVerifySchedule).Methods("POST")
