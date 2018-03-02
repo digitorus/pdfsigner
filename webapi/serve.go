@@ -7,6 +7,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
+	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/gorilla/mux"
 )
 
@@ -16,14 +17,16 @@ type WebAPI struct {
 	qSign          *queued_sign.QSign
 	qVerify        *queued_verify.QVerify
 	allowedSigners []string
+	version        version.Version
 }
 
-func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, allowedSigners []string) *WebAPI {
+func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, allowedSigners []string, version version.Version) *WebAPI {
 	wa := WebAPI{
 		addr:           addr,
 		qSign:          qs,
 		qVerify:        qv,
 		allowedSigners: allowedSigners,
+		version:        version,
 		r:              mux.NewRouter(),
 	}
 
@@ -33,6 +36,7 @@ func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, al
 	wa.r.HandleFunc("/sign/{sessionID}/{fileID}/download", wa.handleSignGetFile).Methods("GET")
 	wa.r.HandleFunc("/sign/{sessionID}", wa.handleSignDelete).Methods("DELETE")
 	wa.r.HandleFunc("/queue/{signerName}", wa.handleGetQueueSize).Methods("GET")
+	wa.r.HandleFunc("/version", wa.handleGetVersion).Methods("GET")
 
 	//verify
 	wa.r.HandleFunc("/verify/schedule", wa.handleVerifySchedule).Methods("POST")

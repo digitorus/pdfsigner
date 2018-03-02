@@ -132,7 +132,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
-	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, qSign, qVerify, service.Signers)
+	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, qSign, qVerify, service.Signers, ver)
 	wa.Serve()
 }
 

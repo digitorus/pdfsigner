@@ -5,10 +5,12 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/spf13/cobra"
 )
 
 var configFilePathFlag string
+var ver version.Version
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -22,7 +24,8 @@ var RootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
+func Execute(v version.Version) {
+	ver = v
 	//RootCmd.SetArgs(os.Args[1:2])
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)

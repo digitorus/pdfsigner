@@ -17,6 +17,7 @@ import (
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
 	"bitbucket.org/digitorus/pdfsigner/signer"
+	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,7 +68,7 @@ func runTest(m *testing.M) int {
 	// create web api
 	wa = NewWebAPI(addr, qs, qv, []string{
 		"simple",
-	})
+	}, version.Version{Version: "0.1"})
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 
@@ -125,7 +126,6 @@ func TestUploadCheckDownload(t *testing.T) {
 	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
-
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
@@ -166,6 +166,22 @@ func TestUploadCheckDownload(t *testing.T) {
 	if w.Code == http.StatusOK {
 		t.Fatalf("not removed")
 	}
+
+	// test get version
+	r = httptest.NewRequest("GET", baseURL+"/version", nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+	var ver version.Version
+	if err := json.NewDecoder(w.Body).Decode(&ver); err != nil {
+		t.Fatal(err)
+	}
+	if ver.Version != "0.1" {
+		t.Fatal("Version is not correct")
+	}
+
 }
 
 // Creates a new multiple files upload http request with optional extra params
