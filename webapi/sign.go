@@ -171,6 +171,13 @@ func parseFields(p *multipart.Part, f *fields) error {
 	return nil
 }
 
+func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
+	// get jobs for session
+	vars := mux.Vars(r)
+	sessionId := vars["sessionID"]
+	wa.qSign.DeleteSession(sessionId)
+}
+
 func pushSignJob(qs *queued_sign.QSign, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")

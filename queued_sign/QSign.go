@@ -83,6 +83,10 @@ func (q *QSign) NewSession(totalJobs int, signData signer.SignData) string {
 	return id
 }
 
+func (q *QSign) DeleteSession(sessionID string) {
+	delete(q.sessions, sessionID)
+}
+
 func (q *QSign) PushJob(signerName, sessionID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
 	if _, exists := q.signers[signerName]; !exists {
 		return "", errors.New("signer is not in map")

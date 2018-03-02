@@ -140,9 +140,24 @@ func TestUploadCheckDownload(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
-
 	if len(w.Body.Bytes()) != 9005 {
 		t.Fatalf("body size is not correct")
+	}
+
+	// test delete job
+	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+sessionID, nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID, nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
+
+	if w.Code == http.StatusOK {
+		t.Fatalf("not removed")
 	}
 }
 
