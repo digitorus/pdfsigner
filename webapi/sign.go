@@ -3,9 +3,7 @@ package webapi
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,6 +17,10 @@ import (
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
+
+type handleSignScheduleResponse struct {
+	SessionID string `json:"session_id"`
+}
 
 func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	// put job with specified signer
@@ -63,10 +65,14 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = fmt.Fprint(w, sessionID)
+	// respond with json
+	res := handleSignScheduleResponse{sessionID}
+	j, err := json.Marshal(res)
 	if err != nil {
-		log.Println(err)
+		httpError(w, err, 500)
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(j)
 }
 
 func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +93,6 @@ func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(j)
-
 }
 
 func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {

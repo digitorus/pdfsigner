@@ -105,9 +105,13 @@ func TestUploadCheckDownload(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
+
 	// get session id
-	sessionID := w.Body.String()
-	if sessionID == "" {
+	var scheduleResponse handleSignScheduleResponse
+	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
+		t.Fatal(err)
+	}
+	if scheduleResponse.SessionID == "" {
 		t.Fatal("not received sessionID")
 	}
 
@@ -115,7 +119,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// test check
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
@@ -134,7 +138,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	assert.Equal(t, "", session.CompletedJobs[1].Error)
 
 	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID+"/"+session.CompletedJobs[0].ID+"/download", nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID+"/"+session.CompletedJobs[0].ID+"/download", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
@@ -145,14 +149,14 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 
 	// test delete job
-	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+sessionID, nil)
+	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+sessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
