@@ -56,7 +56,8 @@ func initConfig() {
 		viper.SetConfigName(".pdfsigner")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.AutomaticEnv()      // read in environment variables that match
+	viper.SetEnvPrefix("PDF") // set env prefix
 	// If a config inputFile is found, read it in.
 	err := viper.ReadInConfig()
 	if err == nil {
