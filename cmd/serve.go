@@ -92,10 +92,10 @@ func serveWithUnnamedSigner(signData signer.SignData) {
 
 func serve() {
 	wa := webapi.NewWebAPI(getAddrPort(), qSign, qVerify, []string{})
-	wa.Serve()
-
 	qSign.Runner()
 	qVerify.Runner()
+
+	wa.Serve()
 }
 
 func init() {
