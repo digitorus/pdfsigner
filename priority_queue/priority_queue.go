@@ -92,3 +92,13 @@ func (q *PriorityQueue) Len(p Priority) (int, error) {
 
 	return -1, errors.New("wrong priority name")
 }
+
+type LenAll struct {
+	Low    int `json:"low"`
+	Medium int `json:"medium"`
+	High   int `json:"high"`
+}
+
+func (q *PriorityQueue) LenAll() LenAll {
+	return LenAll{len(q.low), len(q.medium), len(q.high)}
+}

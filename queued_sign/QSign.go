@@ -221,6 +221,14 @@ func (q *QSign) GetCompletedJobFilePath(sessionID, jobID string) (string, error)
 	return job.outputFilePath, nil
 }
 
+func (q *QSign) GetQueueSizeBySignerName(signerName string) (priority_queue.LenAll, error) {
+	if _, exists := q.signers[signerName]; !exists {
+		return priority_queue.LenAll{}, errors.New("signer is not in map")
+	}
+
+	return q.signers[signerName].pq.LenAll(), nil
+}
+
 func (q *QSign) Runner() {
 	for _, s := range q.signers {
 		go func() {
