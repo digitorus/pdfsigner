@@ -24,7 +24,7 @@ type signerConfig struct {
 	SignData     signer.SignData
 }
 
-// used for mixed command
+// used for multiple-services command
 var servicesConfig []serviceConfig
 
 type serviceConfig struct {

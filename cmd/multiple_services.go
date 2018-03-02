@@ -21,28 +21,40 @@ var multiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		requireConfig(cmd)
 
-		if len(serviceNames) < 1 {
-			log.Fatal("no service names provided")
-		}
-
+		// setup wait group
 		var wg sync.WaitGroup
-		wg.Add(len(serviceNames))
 
-		for _, n := range serviceNames {
-			// get service config by name
-			serviceConf := getConfigServiceByName(n)
-			setupSigners(serviceConf.Type, serviceConf.Signer, serviceConf.Signers)
-
-			go func(serviceConf serviceConfig) {
-				setupService(serviceConf)
-				wg.Done()
-			}(serviceConf)
+		if len(serviceNames) > 1 {
+			// setup services by name
+			wg.Add(len(serviceNames))
+			for _, n := range serviceNames {
+				// get service config by name
+				serviceConf := getConfigServiceByName(n)
+				setupServiceWithSigners(serviceConf, &wg)
+			}
+		} else {
+			// setup all services
+			wg.Add(len(servicesConfig))
+			for _, s := range servicesConfig {
+				setupServiceWithSigners(s, &wg)
+			}
 		}
 
+		// run queues
 		runQueues()
 
+		// wait
 		wg.Wait()
 	},
+}
+
+func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
+	setupSigners(serviceConf.Type, serviceConf.Signer, serviceConf.Signers)
+
+	go func(serviceConf serviceConfig) {
+		setupService(serviceConf)
+		wg.Done()
+	}(serviceConf)
 }
 
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
