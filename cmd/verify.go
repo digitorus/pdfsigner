@@ -11,7 +11,7 @@ import (
 // verifyCmd represents the verify command
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
-	Short: "Verifies PDF signature",
+	Short: "Verify PDF signature",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, inputFileNames []string) {
 		for _, f := range inputFileNames {

@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// multiCmd represents the mixed command
+// multiCmd represents the multi command
 var multiCmd = &cobra.Command{
 	Use:   "multiple-services",
-	Short: "Runs multiple services of the config file",
+	Short: "Run multiple services using the config file",
 	Long:  `This command runs multiple services taken from the config file`,
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		requireConfig(cmd)

@@ -11,13 +11,13 @@ import (
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Sign command",
+	Short: "Serve Web API",
 	Long:  `Long multiline description here`,
 }
 
 var servePEMCmd = &cobra.Command{
 	Use:   "pem",
-	Short: "Sign PDF with PEM formatted certificate",
+	Short: "Serve using PEM signer",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		config := signerConfig{}
@@ -30,7 +30,7 @@ var servePEMCmd = &cobra.Command{
 
 var servePKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
-	Short: "Signs PDF with PSKC11",
+	Short: "Serve using PKSC11 signer",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		config := signerConfig{}
@@ -43,7 +43,7 @@ var servePKSC11Cmd = &cobra.Command{
 
 var serveWithSingleSignerCmd = &cobra.Command{
 	Use:   "single-signer",
-	Short: "Serve with single signer",
+	Short: "Serve with single signer from the config. Overrides settings with CLI",
 	Long:  `It allows to run signer from the config and override it's settings'`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		requireConfig(cmd)
@@ -91,11 +91,11 @@ func serveWithUnnamedSigner(signData signer.SignData) {
 }
 
 func serve() {
-	qSign.Runner()
-	qVerify.Runner()
-
 	wa := webapi.NewWebAPI(getAddrPort(), qSign, qVerify, []string{})
 	wa.Serve()
+
+	qSign.Runner()
+	qVerify.Runner()
 }
 
 func init() {
