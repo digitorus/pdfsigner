@@ -21,6 +21,10 @@ var multiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		requireConfig(cmd)
 
+		if len(servicesConfig) < 1 {
+			log.Fatal("no services found inside the config")
+		}
+
 		// setup wait group
 		var wg sync.WaitGroup
 
