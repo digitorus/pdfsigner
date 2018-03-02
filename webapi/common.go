@@ -65,8 +65,8 @@ func httpError(w http.ResponseWriter, err error, code int) {
 	if err != nil {
 		httpError(w, err, 500)
 	}
-	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
 	w.Write(j)
 }
 
