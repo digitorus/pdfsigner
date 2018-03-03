@@ -62,7 +62,8 @@ func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
 }
 
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
-	if serviceType == "watch" {
+	switch serviceType {
+	case "watch":
 		if len(configSignerNames) > 1 {
 			log.Fatal(`Use signer instead of signers config setting for watch`)
 		}
@@ -71,9 +72,7 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 			setupSigner(configSignerName)
 			return
 		}
-	}
-
-	if serviceType == "serve" {
+	case "serve":
 		if configSignerName != "" {
 			log.Fatal(`Use signers instead of signer config setting for serve`)
 		}
@@ -84,6 +83,8 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 			}
 			return
 		}
+	default:
+		log.Fatal("service type is not set inside the config")
 	}
 }
 
