@@ -6,3 +6,5 @@ temp
 testfiles/testfile20_signed.pdf
 lic.*
 badger/
+passwd
+.realize
