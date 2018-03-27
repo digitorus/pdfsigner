@@ -12,67 +12,67 @@ import (
 )
 
 type QVerify struct {
-	sessions map[string]ThreadSafeSession
-	pq       *priority_queue.PriorityQueue
+	jobs map[string]ThreadSafeJob
+	pq   *priority_queue.PriorityQueue
 }
 
-type ThreadSafeSession struct {
-	Session *Session
-	m       *sync.Mutex
-}
-
-type Session struct {
-	ID                   string         `json:"id"`
-	TotalJobs            int            `json:"total_jobs"`
-	CompletedJobs        []Job          `json:"completed_jobs"`
-	CompletedJobsMapByID map[string]Job `json:"-"`
-	IsCompleted          bool           `json:"session_is_completed"`
-	HadErrors            bool           `json:"had_errors"`
+type ThreadSafeJob struct {
+	Job *Job
+	m   *sync.Mutex
 }
 
 type Job struct {
+	ID                    string          `json:"id"`
+	Total                 int             `json:"total_tasks"`
+	CompletedTasks        []Task          `json:"completed_task"`
+	CompletedTasksMapByID map[string]Task `json:"-"`
+	IsCompleted           bool            `json:"job_is_completed"`
+	HadErrors             bool            `json:"had_errors"`
+}
+
+type Task struct {
 	ID             string `json:"id"`
 	Error          string `json:"error,omitempty"`
-	SessionID      string `json:"-"`
+	JobID          string `json:"-"`
 	inputFilePath  string `json:"-"`
 	outputFilePath string `json:"-"`
 }
 
 func NewQVerify() *QVerify {
 	return &QVerify{
-		sessions: make(map[string]ThreadSafeSession, 1),
-		pq:       priority_queue.New(10),
+		jobs: make(map[string]ThreadSafeJob, 1),
+		pq:   priority_queue.New(10),
 	}
 }
 
-func (q *QVerify) NewSession(totalJobs int) string {
+func (q *QVerify) AddJob(totalTasks int) string {
 	id := xid.New().String()
-	s := ThreadSafeSession{
-		Session: &Session{
-			ID:                   id,
-			TotalJobs:            totalJobs,
-			CompletedJobsMapByID: make(map[string]Job, 1),
+	s := ThreadSafeJob{
+		Job: &Job{
+			ID:    id,
+			Total: totalTasks,
+			CompletedTasksMapByID: make(map[string]Task, 1),
 		},
 		m: &sync.Mutex{},
 	}
 
-	q.sessions[id] = s
+	q.jobs[id] = s
 
 	return id
 }
 
-func (q *QVerify) PushJob(sessionID, inputFilePath string, priority priority_queue.Priority) (string, error) {
-	if _, exists := q.sessions[sessionID]; !exists {
-		return "", errors.New("session is not in map")
+func (q *QVerify) AddTask(jobID, inputFilePath string, priority priority_queue.Priority) (string, error) {
+	if _, exists := q.jobs[jobID]; !exists {
+		return "", errors.New("job is not in map")
 	}
 
-	// generate unique job id
+	// generate unique task id
 	id := xid.New().String()
-	//create job
-	j := Job{
+	//create task
+	j := Task{
 		ID:            id,
 		inputFilePath: inputFilePath,
-		SessionID:     sessionID,
+		JobID:         jobID,
 	}
 
 	//create queue item
@@ -87,11 +87,11 @@ func (q *QVerify) PushJob(sessionID, inputFilePath string, priority priority_que
 	return id, nil
 }
 
-func (q *QVerify) VerifyNextJob() error {
+func (q *QVerify) VerifyNextTask() error {
 	item := q.pq.Pop()
-	job := item.Value.(Job)
+	task := item.Value.(Task)
 
-	inputFile, err := os.Open(job.inputFilePath)
+	inputFile, err := os.Open(task.inputFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,54 +99,54 @@ func (q *QVerify) VerifyNextJob() error {
 
 	_, err = verify.Verify(inputFile)
 	if err != nil {
-		job.Error = err.Error()
+		task.Error = err.Error()
 	}
 
-	// update session completed jobs
-	q.addCompletedJob(job)
+	// update job completed tasks
+	q.addCompletedTask(task)
 
 	return nil
 }
 
-func (q *QVerify) GetSessionCompletedJobs(sessionID string) ([]Job, error) {
-	if _, exists := q.sessions[sessionID]; !exists {
-		return []Job{}, errors.New("session is not in map")
+func (q *QVerify) GetCompletedJobTasks(jobID string) ([]Task, error) {
+	if _, exists := q.jobs[jobID]; !exists {
+		return []Task{}, errors.New("job is not in map")
 	}
 
-	return q.sessions[sessionID].Session.CompletedJobs, nil
+	return q.jobs[jobID].Job.CompletedTasks, nil
 }
 
-func (q *QVerify) GetSessionByID(sessionID string) (Session, error) {
-	if _, exists := q.sessions[sessionID]; !exists {
-		return Session{}, errors.New("session is not in map")
+func (q *QVerify) GetJobByID(jobID string) (Job, error) {
+	if _, exists := q.jobs[jobID]; !exists {
+		return Job{}, errors.New("job is not in map")
 	}
 
-	return *q.sessions[sessionID].Session, nil
+	return *q.jobs[jobID].Job, nil
 }
 
-func (q *QVerify) addCompletedJob(job Job) {
-	q.sessions[job.SessionID].m.Lock()
+func (q *QVerify) addCompletedTask(task Task) {
+	q.jobs[task.JobID].m.Lock()
 
-	s := *q.sessions[job.SessionID].Session
+	s := *q.jobs[task.JobID].Job
 
 	// update values
-	s.CompletedJobs = append(s.CompletedJobs, job)
-	s.CompletedJobsMapByID[job.ID] = job
-	s.IsCompleted = s.TotalJobs == len(s.CompletedJobs)
-	if job.Error != "" {
+	s.CompletedTasks = append(s.CompletedTasks, task)
+	s.CompletedTasksMapByID[task.ID] = task
+	s.IsCompleted = s.Total == len(s.CompletedTasks)
+	if task.Error != "" {
 		s.HadErrors = true
 	}
 
-	// update session
-	*q.sessions[job.SessionID].Session = s
+	// update job
+	*q.jobs[task.JobID].Job = s
 
-	q.sessions[job.SessionID].m.Unlock()
+	q.jobs[task.JobID].m.Unlock()
 }
 
 func (q *QVerify) Runner() {
 	go func() {
 		for {
-			q.VerifyNextJob()
+			q.VerifyNextTask()
 		}
 	}()
 }

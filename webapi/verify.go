@@ -41,31 +41,31 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sessionID, err := pushVerifyJob(wa.qVerify, fileNames)
+	jobID, err := addVerifyJob(wa.qVerify, fileNames)
 	if err != nil {
-		httpError(w, errors2.Wrap(err, "push jobs"), 500)
+		httpError(w, errors2.Wrap(err, "push tasks"), 500)
 		return
 	}
 
-	_, err = fmt.Fprint(w, sessionID)
+	_, err = fmt.Fprint(w, jobID)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
-	// get jobs for session
+	// get tasks for job
 	vars := mux.Vars(r)
-	sessionId := vars["sessionID"]
+	jobID := vars["jobID"]
 
-	sess, err := wa.qVerify.GetSessionByID(sessionId)
+	job, err := wa.qVerify.GetJobByID(jobID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
 	}
 
 	// respond with json
-	j, err := json.Marshal(sess)
+	j, err := json.Marshal(job)
 	if err != nil {
 		httpError(w, err, 500)
 	}
@@ -73,18 +73,18 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
-func pushVerifyJob(qs *queued_verify.QVerify, fileNames []string) (string, error) {
-	totalJobs := len(fileNames)
+func addVerifyJob(qs *queued_verify.QVerify, fileNames []string) (string, error) {
+	totalTasks := len(fileNames)
 
-	sessionID := qs.NewSession(totalJobs)
-	priority := determinePriority(totalJobs)
+	jobID := qs.AddJob(totalTasks)
+	priority := determinePriority(totalTasks)
 
 	for _, fileName := range fileNames {
-		_, err := qs.PushJob(sessionID, fileName, priority)
+		_, err := qs.AddTask(jobID, fileName, priority)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	return sessionID, nil
+	return jobID, nil
 }

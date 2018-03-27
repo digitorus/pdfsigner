@@ -43,9 +43,9 @@ func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
 	return nil
 }
 
-func determinePriority(totalJobs int) priority_queue.Priority {
+func determinePriority(totalTasks int) priority_queue.Priority {
 	var priority priority_queue.Priority
-	if totalJobs == 1 {
+	if totalTasks == 1 {
 		priority = priority_queue.HighPriority
 	} else {
 		priority = priority_queue.MediumPriority

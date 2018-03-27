@@ -19,7 +19,7 @@ import (
 )
 
 type handleSignScheduleResponse struct {
-	SessionID string `json:"session_id"`
+	JobID string `json:"job_id"`
 }
 
 func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
@@ -59,37 +59,37 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sessionID, err := pushSignJob(wa.qSign, f, fileNames)
+	jobID, err := addSignJob(wa.qSign, f, fileNames)
 	if err != nil {
-		httpError(w, errors2.Wrap(err, "push jobs"), 500)
+		httpError(w, errors2.Wrap(err, "add tasks"), 500)
 		return
 	}
 
 	// respond with json
-	res := handleSignScheduleResponse{sessionID}
+	res := handleSignScheduleResponse{jobID}
 	j, err := json.Marshal(res)
 	if err != nil {
 		httpError(w, err, 500)
 	}
 	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Location", "/sign/"+sessionID)
+	w.Header().Set("Location", "/sign/"+jobID)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(j)
 }
 
 func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
-	// get jobs for session
+	// get tasks for job
 	vars := mux.Vars(r)
-	sessionId := vars["sessionID"]
+	jobID := vars["jobID"]
 
-	sess, err := wa.qSign.GetSessionByID(sessionId)
+	job, err := wa.qSign.GetJobByID(jobID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
 	}
 
 	// respond with json
-	j, err := json.Marshal(sess)
+	j, err := json.Marshal(job)
 	if err != nil {
 		httpError(w, err, 500)
 	}
@@ -98,13 +98,13 @@ func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {
-	// get jobs for session
+	// get tasks for job
 	vars := mux.Vars(r)
-	sessionId := vars["sessionID"]
-	fileID := vars["fileID"]
+	jobID := vars["jobID"]
+	taskID := vars["taskID"]
 
 	// get file path
-	filePath, err := wa.qSign.GetCompletedJobFilePath(sessionId, fileID)
+	filePath, err := wa.qSign.GetCompletedTaskFilePath(jobID, taskID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
@@ -179,28 +179,28 @@ func parseFields(p *multipart.Part, f *fields) error {
 }
 
 func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
-	// get jobs for session
+	// get tasks for job
 	vars := mux.Vars(r)
-	sessionId := vars["sessionID"]
-	wa.qSign.DeleteSession(sessionId)
+	jobID := vars["jobID"]
+	wa.qSign.DeleteJob(jobID)
 }
 
-func pushSignJob(qs *queued_sign.QSign, f fields, fileNames []string) (string, error) {
+func addSignJob(qs *queued_sign.QSign, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}
 
-	totalJobs := len(fileNames)
+	totalTasks := len(fileNames)
 
-	sessionID := qs.NewSession(totalJobs, f.signData)
-	priority := determinePriority(totalJobs)
+	jobID := qs.AddJob(totalTasks, f.signData)
+	priority := determinePriority(totalTasks)
 
 	for _, fileName := range fileNames {
-		_, err := qs.PushJob(f.signerName, sessionID, fileName, fileName+"_signed.pdf", priority)
+		_, err := qs.AddTask(f.signerName, jobID, fileName, fileName+"_signed.pdf", priority)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	return sessionID, nil
+	return jobID, nil
 }

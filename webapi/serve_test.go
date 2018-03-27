@@ -106,16 +106,16 @@ func TestUploadCheckDownload(t *testing.T) {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	// get session id
+	// get job id
 	var scheduleResponse handleSignScheduleResponse
 	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
 		t.Fatal(err)
 	}
-	if scheduleResponse.SessionID == "" {
-		t.Fatal("not received sessionID")
+	if scheduleResponse.JobID == "" {
+		t.Fatal("not received jobID")
 	}
 
-	if w.Header().Get("Location") != "/sign/"+scheduleResponse.SessionID {
+	if w.Header().Get("Location") != "/sign/"+scheduleResponse.JobID {
 		t.Fatal("location is not set")
 	}
 
@@ -123,25 +123,25 @@ func TestUploadCheckDownload(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// test check
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	var session queued_sign.Session
-	if err := json.NewDecoder(w.Body).Decode(&session); err != nil {
+	var job queued_sign.Job
+	if err := json.NewDecoder(w.Body).Decode(&job); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, true, session.IsCompleted)
-	assert.Equal(t, 2, len(session.CompletedJobs))
-	assert.Equal(t, "", session.CompletedJobs[0].Error)
-	assert.Equal(t, "", session.CompletedJobs[1].Error)
+	assert.Equal(t, true, job.IsCompleted)
+	assert.Equal(t, 2, len(job.CompletedTasks))
+	assert.Equal(t, "", job.CompletedTasks[0].Error)
+	assert.Equal(t, "", job.CompletedTasks[1].Error)
 
 	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID+"/"+session.CompletedJobs[0].ID+"/download", nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+job.CompletedTasks[0].ID+"/download", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
@@ -152,14 +152,14 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 
 	// test delete job
-	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
+	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.SessionID, nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 

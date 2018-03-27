@@ -33,31 +33,31 @@ func TestQSignersMap(t *testing.T) {
 
 	// create session
 	var signData signer.SignData
-	sessionID := qs.NewSession(1, signData)
-	session, err := qs.GetSessionByID(sessionID)
+	jobID := qs.AddJob(1, signData)
+	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, sessionID, session.ID)
-	assert.Equal(t, 1, session.TotalJobs)
+	assert.Equal(t, jobID, job.ID)
+	assert.Equal(t, 1, job.TotalTasks)
 
 	// add job
-	qs.PushJob(
+	qs.AddTask(
 		"simple",
-		sessionID,
+		jobID,
 		"../testfiles/testfile20.pdf",
 		"../testfiles/testfile20_signed.pdf",
 		priority_queue.HighPriority,
 	)
 
 	// sign job
-	qs.SignNextJob("simple")
+	qs.SignNextTask("simple")
 
-	session, err = qs.GetSessionByID(sessionID)
+	job, err = qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, true, session.IsCompleted)
-	assert.Equal(t, 1, len(session.CompletedJobs))
-	assert.Equal(t, "", session.CompletedJobs[0].Error)
+	assert.Equal(t, true, job.IsCompleted)
+	assert.Equal(t, 1, len(job.CompletedTasks))
+	assert.Equal(t, "", job.CompletedTasks[0].Error)
 }

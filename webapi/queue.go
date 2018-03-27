@@ -8,7 +8,7 @@ import (
 )
 
 func (wa *WebAPI) handleGetQueueSize(w http.ResponseWriter, r *http.Request) {
-	// get jobs for session
+	// get tasks for job
 	vars := mux.Vars(r)
 	signerName := vars["signerName"]
 
