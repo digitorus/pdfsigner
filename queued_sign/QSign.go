@@ -38,10 +38,11 @@ type Job struct {
 
 type Task struct {
 	ID             string `json:"id"`
-	Error          string `json:"error,omitempty"`
 	JobID          string `json:"-"`
 	inputFilePath  string `json:"-"`
 	outputFilePath string `json:"-"`
+	Status         string `json:"status"`
+	Error          string `json:"error,omitempty"`
 }
 
 func NewQSign() *QSign {
@@ -104,6 +105,7 @@ func (q *QSign) AddTask(signerName, jobID, inputFilePath, outputFilePath string,
 		inputFilePath:  inputFilePath,
 		outputFilePath: outputFilePath,
 		JobID:          jobID,
+		Status:         "Pending",
 	}
 
 	//create queue item
@@ -136,8 +138,10 @@ func (q *QSign) SignNextTask(signerName string) error {
 	err = signer.SignFile(task.inputFilePath, task.outputFilePath, signData)
 	if err != nil {
 		log.Printf("Couldn't sign file: %v, %+v", task.inputFilePath, err)
+		task.Status = "Failed"
 		task.Error = err.Error()
 	} else {
+		task.Status = "Completed"
 		log.Println("File signed:", task.outputFilePath)
 	}
 
