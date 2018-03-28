@@ -58,6 +58,6 @@ func TestQSignersMap(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, true, job.IsCompleted)
-	assert.Equal(t, 1, len(job.CompletedTasks))
-	assert.Equal(t, "", job.CompletedTasks[0].Error)
+	assert.Equal(t, 1, len(job.ProcessedTasks))
+	assert.Equal(t, "", job.ProcessedTasks[0].Error)
 }

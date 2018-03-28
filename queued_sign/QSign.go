@@ -29,8 +29,8 @@ type ThreadSafeJob struct {
 type Job struct {
 	ID                    string          `json:"id"`
 	TotalTasks            int             `json:"total_tasks"`
-	CompletedTasks        []Task          `json:"completed_tasks"`
-	CompletedTasksMapByID map[string]Task `json:"-"`
+	ProcessedTasks        []Task          `json:"processed_tasks"`
+	ProcessedTasksMapByID map[string]Task `json:"-"`
 	IsCompleted           bool            `json:"job_is_completed"`
 	HadErrors             bool            `json:"had_errors"`
 	SignData              signer.SignData `json:"-"`
@@ -74,7 +74,7 @@ func (q *QSign) AddJob(totalTasks int, signData signer.SignData) string {
 			ID:                    id,
 			TotalTasks:            totalTasks,
 			SignData:              signData,
-			CompletedTasksMapByID: make(map[string]Task, 1),
+			ProcessedTasksMapByID: make(map[string]Task, 1),
 		},
 		m: &sync.Mutex{},
 	}
@@ -146,7 +146,7 @@ func (q *QSign) SignNextTask(signerName string) error {
 	}
 
 	// update job completed tasks
-	q.addCompletedTask(task)
+	q.addProcessedTask(task)
 
 	return nil
 }
@@ -182,7 +182,7 @@ func (q *QSign) GetCompletedJobTasks(jobID string) ([]Task, error) {
 		return []Task{}, errors.New("job is not in map")
 	}
 
-	return q.jobs[jobID].Job.CompletedTasks, nil
+	return q.jobs[jobID].Job.ProcessedTasks, nil
 }
 
 func (q *QSign) GetJobByID(jobID string) (Job, error) {
@@ -193,15 +193,15 @@ func (q *QSign) GetJobByID(jobID string) (Job, error) {
 	return *q.jobs[jobID].Job, nil
 }
 
-func (q *QSign) addCompletedTask(task Task) {
+func (q *QSign) addProcessedTask(task Task) {
 	q.jobs[task.JobID].m.Lock()
 
 	s := *q.jobs[task.JobID].Job
 
 	// update values
-	s.CompletedTasks = append(s.CompletedTasks, task)
-	s.CompletedTasksMapByID[task.ID] = task
-	s.IsCompleted = s.TotalTasks == len(s.CompletedTasks)
+	s.ProcessedTasks = append(s.ProcessedTasks, task)
+	s.ProcessedTasksMapByID[task.ID] = task
+	s.IsCompleted = s.TotalTasks == len(s.ProcessedTasks)
 	if task.Error != "" {
 		s.HadErrors = true
 	}
@@ -217,7 +217,7 @@ func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 		return "", errors.New("job is not in map")
 	}
 
-	task, ok := q.jobs[jobID].Job.CompletedTasksMapByID[taskID]
+	task, ok := q.jobs[jobID].Job.ProcessedTasksMapByID[taskID]
 	if !ok {
 		return "", errors.New("task not found in map")
 	}

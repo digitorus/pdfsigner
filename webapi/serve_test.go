@@ -136,12 +136,12 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 
 	assert.Equal(t, true, job.IsCompleted)
-	assert.Equal(t, 2, len(job.CompletedTasks))
-	assert.Equal(t, "", job.CompletedTasks[0].Error)
-	assert.Equal(t, "", job.CompletedTasks[1].Error)
+	assert.Equal(t, 2, len(job.ProcessedTasks))
+	assert.Equal(t, "", job.ProcessedTasks[0].Error)
+	assert.Equal(t, "", job.ProcessedTasks[1].Error)
 
 	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+job.CompletedTasks[0].ID+"/download", nil)
+	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+job.ProcessedTasks[0].ID+"/download", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	if w.Code != http.StatusOK {
