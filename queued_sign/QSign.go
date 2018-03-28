@@ -2,6 +2,7 @@ package queued_sign
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
@@ -214,11 +215,11 @@ func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 	}
 
 	if task.Status == StatusPending {
-		return "", errors.New("file couldn't be loaded the task is not processed yet")
+		return "", errors.New("task is not processed yet")
 	}
 
 	if task.Status == StatusFailed {
-		return "", errors.New("file couldn't be loaded the task failed")
+		return "", errors.New(fmt.Sprintf("task failed with error: %v", task.Error))
 	}
 
 	return task.outputFilePath, nil
@@ -238,7 +239,7 @@ func (q *QSign) Runner() {
 			for {
 				err := q.SignNextTask(s.name)
 				if err != nil {
-					log.Printf("Couldn't sign file: %v, %+v", s.name, err)
+					log.Printf("couldn't sign file: %v, %+v", s.name, err)
 				}
 			}
 		}()
