@@ -130,25 +130,26 @@ func TestUploadCheckDownload(t *testing.T) {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
 
-	var job queued_sign.Job
-	if err := json.NewDecoder(w.Body).Decode(&job); err != nil {
+	var jobStatus JobStatus
+	if err := json.NewDecoder(w.Body).Decode(&jobStatus); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, true, job.IsCompleted)
-	assert.Equal(t, 2, len(job.ProcessedTasks))
-	assert.Equal(t, "", job.ProcessedTasks[0].Error)
-	assert.Equal(t, "", job.ProcessedTasks[1].Error)
+	//assert.Equal(t, true, job.IsCompleted)
+	assert.Equal(t, 2, len(jobStatus.Tasks))
+	for _, task := range jobStatus.Tasks {
+		assert.Equal(t, queued_sign.StatusCompleted, task.Status)
 
-	// test get completed jobs
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+job.ProcessedTasks[0].ID+"/download", nil)
-	w = httptest.NewRecorder()
-	wa.r.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Fatalf("status not ok: %v", w.Body.String())
-	}
-	if len(w.Body.Bytes()) != 9005 {
-		t.Fatalf("body size is not correct")
+		// test get completed task
+		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
+		w = httptest.NewRecorder()
+		wa.r.ServeHTTP(w, r)
+		if w.Code != http.StatusOK {
+			t.Fatalf("status not ok: %v", w.Body.String())
+		}
+		if len(w.Body.Bytes()) != 9005 {
+			t.Fatalf("body size is not correct")
+		}
 	}
 
 	// test delete job

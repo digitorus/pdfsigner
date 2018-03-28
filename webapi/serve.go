@@ -32,7 +32,7 @@ func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, al
 
 	// sign
 	wa.r.HandleFunc("/sign", wa.handleSignSchedule).Methods("POST")
-	wa.r.HandleFunc("/sign/{jobID}", wa.handleSignCheck).Methods("GET")
+	wa.r.HandleFunc("/sign/{jobID}", wa.handleSignStatus).Methods("GET")
 	wa.r.HandleFunc("/sign/{jobID}/{taskID}/download", wa.handleSignGetFile).Methods("GET")
 	wa.r.HandleFunc("/sign/{jobID}", wa.handleSignDelete).Methods("DELETE")
 	wa.r.HandleFunc("/queue/{signerName}", wa.handleGetQueueSize).Methods("GET")

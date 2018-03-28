@@ -42,13 +42,16 @@ func TestQSignersMap(t *testing.T) {
 	assert.Equal(t, 1, job.TotalTasks)
 
 	// add job
-	qs.AddTask(
+	taskID, err := qs.AddTask(
 		"simple",
 		jobID,
 		"../testfiles/testfile20.pdf",
 		"../testfiles/testfile20_signed.pdf",
 		priority_queue.HighPriority,
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// sign job
 	qs.SignNextTask("simple")
@@ -57,7 +60,6 @@ func TestQSignersMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, true, job.IsCompleted)
-	assert.Equal(t, 1, len(job.ProcessedTasks))
-	assert.Equal(t, "", job.ProcessedTasks[0].Error)
+	assert.Equal(t, 1, len(job.TasksMap))
+	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status)
 }

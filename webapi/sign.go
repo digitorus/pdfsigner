@@ -77,7 +77,12 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
-func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
+type JobStatus struct {
+	queued_sign.Job
+	Tasks []queued_sign.Task `json:"tasks"`
+}
+
+func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
@@ -88,8 +93,16 @@ func (wa *WebAPI) handleSignCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	status := r.URL.Query().Get("status")
+	tasks, err := job.GetTasks(status)
+	if err != nil {
+		httpError(w, err, 500)
+	}
+
+	jobStatus := JobStatus{job, tasks}
+
 	// respond with json
-	j, err := json.Marshal(job)
+	j, err := json.Marshal(jobStatus)
 	if err != nil {
 		httpError(w, err, 500)
 	}

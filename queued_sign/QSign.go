@@ -3,16 +3,21 @@ package queued_sign
 import (
 	"errors"
 	"log"
-	"sync"
 
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/rs/xid"
 )
 
+var (
+	StatusPending   = "Pending"
+	StatusFailed    = "Failed"
+	StatusCompleted = "Completed"
+)
+
 type QSign struct {
 	signers map[string]QSigner
-	jobs    map[string]ThreadSafeJob
+	jobs    map[string]*Job
 }
 
 type QSigner struct {
@@ -21,19 +26,32 @@ type QSigner struct {
 	signData signer.SignData
 }
 
-type ThreadSafeJob struct {
-	Job *Job
-	m   *sync.Mutex
+type Job struct {
+	ID         string          `json:"id"`
+	TotalTasks int             `json:"total"`
+	TasksMap   map[string]Task `json:"-"`
+	SignData   signer.SignData `json:"-"`
 }
 
-type Job struct {
-	ID                    string          `json:"id"`
-	TotalTasks            int             `json:"total_tasks"`
-	ProcessedTasks        []Task          `json:"processed_tasks"`
-	ProcessedTasksMapByID map[string]Task `json:"-"`
-	IsCompleted           bool            `json:"job_is_completed"`
-	HadErrors             bool            `json:"had_errors"`
-	SignData              signer.SignData `json:"-"`
+func (j *Job) GetTasks(status string) ([]Task, error) {
+	switch status {
+	case StatusCompleted:
+	case StatusFailed:
+	case StatusPending:
+	case "":
+		status = StatusCompleted
+	default:
+		return []Task{}, errors.New("status is not correct")
+	}
+
+	var tasks []Task
+	for _, t := range j.TasksMap {
+		if t.Status == status {
+			tasks = append(tasks, t)
+		}
+	}
+
+	return tasks, nil
 }
 
 type Task struct {
@@ -48,7 +66,7 @@ type Task struct {
 func NewQSign() *QSign {
 	return &QSign{
 		signers: make(map[string]QSigner, 1),
-		jobs:    make(map[string]ThreadSafeJob, 1),
+		jobs:    make(map[string]*Job, 1),
 	}
 }
 
@@ -69,17 +87,14 @@ func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize
 
 func (q *QSign) AddJob(totalTasks int, signData signer.SignData) string {
 	id := xid.New().String()
-	s := ThreadSafeJob{
-		Job: &Job{
-			ID:                    id,
-			TotalTasks:            totalTasks,
-			SignData:              signData,
-			ProcessedTasksMapByID: make(map[string]Task, 1),
-		},
-		m: &sync.Mutex{},
+	j := &Job{
+		ID:         id,
+		TotalTasks: totalTasks,
+		SignData:   signData,
+		TasksMap:   make(map[string]Task, 1),
 	}
 
-	q.jobs[id] = s
+	q.jobs[id] = j
 
 	return id
 }
@@ -105,7 +120,7 @@ func (q *QSign) AddTask(signerName, jobID, inputFilePath, outputFilePath string,
 		inputFilePath:  inputFilePath,
 		outputFilePath: outputFilePath,
 		JobID:          jobID,
-		Status:         "Pending",
+		Status:         StatusPending,
 	}
 
 	//create queue item
@@ -113,6 +128,9 @@ func (q *QSign) AddTask(signerName, jobID, inputFilePath, outputFilePath string,
 		Value:    t,
 		Priority: priority,
 	}
+
+	//add task to tasks map
+	q.jobs[jobID].TasksMap[t.ID] = t
 
 	//add item to queue
 	q.signers[signerName].pq.Push(i)
@@ -138,15 +156,15 @@ func (q *QSign) SignNextTask(signerName string) error {
 	err = signer.SignFile(task.inputFilePath, task.outputFilePath, signData)
 	if err != nil {
 		log.Printf("Couldn't sign file: %v, %+v", task.inputFilePath, err)
-		task.Status = "Failed"
+		task.Status = StatusFailed
 		task.Error = err.Error()
 	} else {
-		task.Status = "Completed"
+		task.Status = StatusCompleted
 		log.Println("File signed:", task.outputFilePath)
 	}
 
-	// update job completed tasks
-	q.addProcessedTask(task)
+	// update tasks map
+	q.jobs[task.JobID].TasksMap[task.ID] = task
 
 	return nil
 }
@@ -156,7 +174,7 @@ func (q *QSign) mergeJobSignerSignData(jobID string, signerSignData signer.SignD
 		return signerSignData, errors.New("job is not in map")
 	}
 
-	jobSignData := q.jobs[jobID].Job.SignData
+	jobSignData := q.jobs[jobID].SignData
 	signData := signer.SignData(signerSignData)
 
 	switch {
@@ -177,39 +195,12 @@ func (q *QSign) mergeJobSignerSignData(jobID string, signerSignData signer.SignD
 	return signData, nil
 }
 
-func (q *QSign) GetCompletedJobTasks(jobID string) ([]Task, error) {
-	if _, exists := q.jobs[jobID]; !exists {
-		return []Task{}, errors.New("job is not in map")
-	}
-
-	return q.jobs[jobID].Job.ProcessedTasks, nil
-}
-
 func (q *QSign) GetJobByID(jobID string) (Job, error) {
 	if _, exists := q.jobs[jobID]; !exists {
 		return Job{}, errors.New("job is not in map")
 	}
 
-	return *q.jobs[jobID].Job, nil
-}
-
-func (q *QSign) addProcessedTask(task Task) {
-	q.jobs[task.JobID].m.Lock()
-
-	s := *q.jobs[task.JobID].Job
-
-	// update values
-	s.ProcessedTasks = append(s.ProcessedTasks, task)
-	s.ProcessedTasksMapByID[task.ID] = task
-	s.IsCompleted = s.TotalTasks == len(s.ProcessedTasks)
-	if task.Error != "" {
-		s.HadErrors = true
-	}
-
-	// update job
-	*q.jobs[task.JobID].Job = s
-
-	q.jobs[task.JobID].m.Unlock()
+	return *q.jobs[jobID], nil
 }
 
 func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
@@ -217,9 +208,17 @@ func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 		return "", errors.New("job is not in map")
 	}
 
-	task, ok := q.jobs[jobID].Job.ProcessedTasksMapByID[taskID]
+	task, ok := q.jobs[jobID].TasksMap[taskID]
 	if !ok {
 		return "", errors.New("task not found in map")
+	}
+
+	if task.Status == StatusPending {
+		return "", errors.New("file couldn't be loaded the task is not processed yet")
+	}
+
+	if task.Status == StatusFailed {
+		return "", errors.New("file couldn't be loaded the task failed")
 	}
 
 	return task.outputFilePath, nil
