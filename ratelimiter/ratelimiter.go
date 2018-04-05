@@ -64,6 +64,7 @@ func NewRateLimiter(limits ...Limit) *RateLimiter {
 	rl := RateLimiter{}
 
 	for _, l := range limits {
+		l.CurCount = l.MaxCount
 		rl.limits = append(rl.limits, &l)
 	}
 

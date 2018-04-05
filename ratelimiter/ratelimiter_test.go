@@ -71,9 +71,11 @@ func TestLimiter2(t *testing.T) {
 }
 
 func TestState(t *testing.T) {
-	rl := NewRateLimiter(Limit{MaxCount: 3, Interval: 10 * time.Millisecond})
+	rl := NewRateLimiter(Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
 	limits := rl.GetLimits()
-	assert.Equal(t, 0, limits[0].CurCount)
-	rl.Allow()
 	assert.Equal(t, 2, limits[0].CurCount)
+	rl.Allow()
+	assert.Equal(t, 1, limits[0].CurCount)
+	rl.Allow()
+	assert.Equal(t, 0, limits[0].CurCount)
 }
