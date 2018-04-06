@@ -15,16 +15,25 @@ limitations under the License.
 package ratelimiter
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
+
+	"bitbucket.org/digitorus/pdfsigner/db"
+	"bitbucket.org/digitorus/pdfsigner/license"
+	"github.com/gtank/cryptopasta"
 )
 
 type Limit struct {
 	Unlimited bool          `json:"unlimited"`
 	MaxCount  int           `json:"max_count"`
 	Interval  time.Duration `json:"interval"`
-	CurCount  int           `json:"cur_count"`
-	LastTime  time.Time     `json:"last_time"`
+	LimitState
+}
+
+type LimitState struct {
+	CurCount int       `json:"cur_count,omitempty"`
+	LastTime time.Time `json:"last_time,omitempty"`
 }
 
 func (l *Limit) allow() bool {
@@ -64,7 +73,6 @@ func NewRateLimiter(limits ...Limit) *RateLimiter {
 	rl := RateLimiter{}
 
 	for _, l := range limits {
-		l.CurCount = l.MaxCount
 		rl.limits = append(rl.limits, &l)
 	}
 
@@ -88,4 +96,48 @@ func (rl *RateLimiter) Allow() bool {
 
 func (rl *RateLimiter) GetLimits() []*Limit {
 	return rl.limits
+}
+
+func (rl *RateLimiter) SaveState() error {
+	var limitStates []LimitState
+	for _, l := range rl.limits {
+		limitStates = append(limitStates, l.LimitState)
+	}
+
+	limitStatesBytes, err := json.Marshal(limitStates)
+	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &license.LD.CryptoKey)
+	if err != nil {
+		return err
+	}
+
+	err = db.SaveByKey("limits", limitsStatesCiphered)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (rl *RateLimiter) LoadState() error {
+	limitStatesCiphered, err := db.LoadByKey("limits")
+	if err != nil {
+		return err
+	}
+
+	limitStatesBytes, err := cryptopasta.Decrypt(limitStatesCiphered, &license.LD.CryptoKey)
+	if err != nil {
+		return err
+	}
+
+	var limitStates []LimitState
+	err = json.Unmarshal(limitStatesBytes, &limitStates)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(rl.limits); i++ {
+		rl.limits[i].LimitState = limitStates[i]
+	}
+
+	return nil
 }

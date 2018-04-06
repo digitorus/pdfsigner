@@ -120,6 +120,7 @@ func (s *SignData) SetRevocationSettings() {
 
 func SignFile(input, output string, s SignData) error {
 	if !rl.Allow() {
+		// set timeout and restart
 		return errors.Wrap(errors.New("limit is over"), "")
 	}
 
