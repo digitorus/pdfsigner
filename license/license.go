@@ -161,6 +161,10 @@ func (ld LicenseData) loadLimitState() error {
 		return err
 	}
 
+	if len(limitStates) == 0 {
+		return errors.New("no limits provided within license")
+	}
+
 	for i := 0; i < len(ld.Limits); i++ {
 		ld.Limits[i].LimitState = limitStates[i]
 	}
