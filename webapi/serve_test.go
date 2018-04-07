@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
 	"bitbucket.org/digitorus/pdfsigner/signer"
@@ -41,6 +42,11 @@ func TestMain(m *testing.M) {
 
 // runTest initializes the environment
 func runTest(m *testing.M) int {
+	err := license.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create new QSign
 	qs = queued_sign.NewQSign()
 
@@ -80,6 +86,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	//create file parts
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile20.pdf"},
+		{"testfile2", "../testfiles/testfile20.pdf"},
 		{"testfile2", "../testfiles/testfile20.pdf"},
 	}
 	// create multipart request
@@ -136,7 +143,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 
 	//assert.Equal(t, true, job.IsCompleted)
-	assert.Equal(t, 2, len(jobStatus.Tasks))
+	assert.Equal(t, 3, len(jobStatus.Tasks))
 	for _, task := range jobStatus.Tasks {
 		assert.Equal(t, queued_sign.StatusCompleted, task.Status)
 

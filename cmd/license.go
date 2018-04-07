@@ -16,11 +16,12 @@ package cmd
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 
-	"bitbucket.org/digitorus/pdfsigner/db"
 	"bitbucket.org/digitorus/pdfsigner/license"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -29,50 +30,59 @@ var licenseCmd = &cobra.Command{
 	Use:   "license",
 	Short: "Update license",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := loadDB()
+
+	},
+}
+
+// licenseInfoCmd represents the license info command
+var licenseSetupCmd = &cobra.Command{
+	Use:   "setup",
+	Short: "license setup",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := initializeLicense()
 		if err != nil {
-			err := readStdIn()
-			if err != nil {
-				log.Fatal(err)
-			}
+			log.Fatal(err)
 		}
+
+		fmt.Printf(`Licensed to %s until %s`, license.LD.Email, license.LD.End.Format("2006-01-02"))
+	},
+}
+
+// licenseInfoCmd represents the license info command
+var licenseInfoCmd = &cobra.Command{
+	Use:   "info",
+	Short: "license info",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := license.Load()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf(`Licensed to %s until %s`, license.LD.Email, license.LD.End.Format("2006-01-02"))
+		license.LD.Info()
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(licenseCmd)
+	licenseCmd.AddCommand(licenseSetupCmd)
+	licenseCmd.AddCommand(licenseInfoCmd)
 }
 
-func readStdIn() error {
+func initializeLicense() error {
 	// read license from input
+	fmt.Fprint(os.Stdout, "Enter license:")
 	licenseBytes, err := bufio.NewReader(os.Stdin).ReadBytes('\n')
 	if err != nil {
-		return err
+		return errors.Wrap(err, "")
 	}
 
-	// load license data
-	err = license.ExtractLicense(licenseBytes)
-	if err != nil {
-		return err
-	}
+	// TODO: remove after tests done
+	licenseBytes = []byte(license.LicenseB32)
 
-	// save license to db
-	err = db.SaveByKey("license", licenseBytes)
+	err = license.Initialize(licenseBytes)
 	if err != nil {
-		return err
-	}
-}
-
-func loadDB() error {
-	lic, err := license.LoadLicense()
-	if err != nil {
-		return err
-	}
-
-	// load license data
-	err = license.ExtractLicense(lic)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "")
 	}
 
 	return nil

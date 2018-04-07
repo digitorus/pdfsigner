@@ -1,13 +1,19 @@
 package signer
 
 import (
+	"log"
 	"testing"
 	"time"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
+	"bitbucket.org/digitorus/pdfsigner/license"
 )
 
 func TestSigner(t *testing.T) {
+	err := license.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	// create signer
 	signData := SignData{
 		Signature: sign.SignDataSignature{
@@ -24,11 +30,24 @@ func TestSigner(t *testing.T) {
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 
-	err := SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
+	err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
 	if err != nil {
 		t.Fatal(err)

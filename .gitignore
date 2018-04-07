@@ -5,3 +5,4 @@ config.toml
 temp
 testfiles/testfile20_signed.pdf
 lic.*
+badger/

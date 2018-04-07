@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,14 @@ var ver version.Version
 var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
 	Short: "A brief description of your application",
-	Long:  `Long multiline description`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		err := license.Load()
+		if err != nil {
+			return initializeLicense()
+		}
+		return nil
+	},
+	Long: `Long multiline description`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//      Run: func(cmd *cobra.Command, args []string) { },

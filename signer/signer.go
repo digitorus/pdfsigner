@@ -9,7 +9,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsign/revocation"
 	"bitbucket.org/digitorus/pdfsign/sign"
-	"bitbucket.org/digitorus/pdfsigner/ratelimiter"
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pkcs11"
 	"github.com/pkg/errors"
 )
@@ -119,7 +119,7 @@ func (s *SignData) SetRevocationSettings() {
 }
 
 func SignFile(input, output string, s SignData) error {
-	if !rl.Allow() {
+	if !license.LD.RL.Allow() {
 		// set timeout and restart
 		return errors.Wrap(errors.New("limit is over"), "")
 	}
@@ -127,10 +127,4 @@ func SignFile(input, output string, s SignData) error {
 	s.Signature.Info.Date = time.Now().Local()
 	err := sign.SignFile(input, output, sign.SignData(s))
 	return err
-}
-
-var rl *ratelimiter.RateLimiter
-
-func init() {
-	rl = ratelimiter.NewRateLimiter(ratelimiter.Limit{MaxCount: 1, Interval: 10 * time.Millisecond})
 }
