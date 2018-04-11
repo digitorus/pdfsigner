@@ -21,7 +21,7 @@ import (
 )
 
 func TestLimiter1(t *testing.T) {
-	rl := NewRateLimiter(Limit{MaxCount: 1, Interval: 10 * time.Millisecond})
+	rl := NewRateLimiter(&Limit{MaxCount: 1, Interval: 10 * time.Millisecond})
 	var result bool
 	result = rl.Allow()
 	if !result {
@@ -44,7 +44,7 @@ func TestLimiter1(t *testing.T) {
 }
 
 func TestLimiter2(t *testing.T) {
-	rl := NewRateLimiter(Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
+	rl := NewRateLimiter(&Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
 	var result bool
 	for i := 0; i < 2; i++ {
 		result = rl.Allow()
@@ -71,7 +71,7 @@ func TestLimiter2(t *testing.T) {
 }
 
 func TestState(t *testing.T) {
-	rl := NewRateLimiter(Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
+	rl := NewRateLimiter(&Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
 	state := rl.GetState()
 	assert.Equal(t, 0, state[0].CurCount)
 	rl.Allow()

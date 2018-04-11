@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 )
 
@@ -58,4 +59,6 @@ func SignFilesByPatterns(filePatterns []string, outputPathFlag string, signData 
 
 		log.Println("Signed PDF file written to: " + signedFilePath)
 	}
+
+	license.LD.SaveLimitState()
 }

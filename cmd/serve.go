@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
@@ -93,8 +94,12 @@ func serveWithUnnamedSigner(signData signer.SignData) {
 func serve() {
 	wa := webapi.NewWebAPI(getAddrPort(), qSign, qVerify, []string{}, ver)
 
+	// run queue runners
 	qSign.Runner()
 	qVerify.Runner()
+
+	// run license auto save
+	license.LD.AutoSave()
 
 	wa.Serve()
 }

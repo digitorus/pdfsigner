@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/ratelimiter"
+	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/gtank/cryptopasta"
 	"github.com/hyperboloide/lk"
 )
@@ -27,12 +27,12 @@ func main() {
 	doc := license.LicenseData{
 		Email: "test@example.com",
 		End:   time.Now().Add(time.Hour * 24 * 365), // 1 year
-		Limits: []ratelimiter.Limit{
-			ratelimiter.Limit{Unlimited: false, MaxCount: 2, Interval: time.Second},
-			ratelimiter.Limit{Unlimited: false, MaxCount: 10, Interval: time.Minute},
-			ratelimiter.Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
-			ratelimiter.Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
-			ratelimiter.Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
+		Limits: []*ratelimiter.Limit{
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 2, Interval: time.Second},
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 10, Interval: time.Minute},
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
 		},
 	}
 

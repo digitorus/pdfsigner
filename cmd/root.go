@@ -17,7 +17,7 @@ var ver version.Version
 var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
 	Short: "A brief description of your application",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		err := license.Load()
 		if err != nil {
 			return initializeLicense()

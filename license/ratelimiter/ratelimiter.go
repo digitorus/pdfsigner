@@ -15,7 +15,6 @@ limitations under the License.
 package ratelimiter
 
 import (
-	"log"
 	"sync"
 	"time"
 )
@@ -42,12 +41,18 @@ func (l *Limit) allow() bool {
 			l.CurCount--
 			return true
 		}
+
 		return false
 	}
 
 	l.CurCount = l.MaxCount - 1
 	l.LastTime = time.Now()
 	return true
+}
+
+func (l *Limit) left() time.Duration {
+	waited := time.Now().Sub(l.LastTime)
+	return l.Interval - waited
 }
 
 // RateLimiter was inspired by https://github.com/golang/go/wiki/RateLimiting.
@@ -65,12 +70,14 @@ type RateLimiter struct {
 // equal to MaxCount/interval. For example, if you want to a max QPS of 5000,
 // and want to limit bursts to no more than 500, you'd specify a MaxCount of 500
 // and an interval of 100*time.Millilsecond.
-func NewRateLimiter(limits ...Limit) *RateLimiter {
+func NewRateLimiter(limits ...*Limit) *RateLimiter {
 	rl := RateLimiter{}
-
-	for _, l := range limits {
-		rl.limits = append(rl.limits, &l)
-	}
+	//for _, l := range limits {
+	//	if l.LastTime.IsZero() {
+	//		l.CurCount = l.MaxCount
+	//	}
+	//}
+	rl.limits = limits
 
 	return &rl
 }
@@ -82,10 +89,7 @@ func (rl *RateLimiter) Allow() bool {
 	defer rl.mu.Unlock()
 
 	for _, l := range rl.limits {
-
 		if !l.allow() {
-			log.Println(l.MaxCount)
-			log.Println(l.Interval)
 			return false
 		}
 	}
@@ -93,8 +97,18 @@ func (rl *RateLimiter) Allow() bool {
 	return true
 }
 
+func (rl *RateLimiter) Left() time.Duration {
+	for _, l := range rl.limits {
+		if !l.allow() {
+			return l.left()
+		}
+	}
+	return 0
+}
+
 func (rl *RateLimiter) GetState() []LimitState {
 	var limitStates []LimitState
+
 	for _, l := range rl.limits {
 		limitStates = append(limitStates, l.LimitState)
 	}

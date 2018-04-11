@@ -11,7 +11,6 @@ import (
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pkcs11"
-	"github.com/pkg/errors"
 )
 
 type SignData sign.SignData
@@ -120,8 +119,9 @@ func (s *SignData) SetRevocationSettings() {
 
 func SignFile(input, output string, s SignData) error {
 	if !license.LD.RL.Allow() {
-		// set timeout and restart
-		return errors.Wrap(errors.New("limit is over"), "")
+		left := license.LD.RL.Left()
+		log.Println(license.ErrOverLimit, "wait for:", left)
+		time.Sleep(left)
 	}
 
 	s.Signature.Info.Date = time.Now().Local()

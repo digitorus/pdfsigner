@@ -8,24 +8,24 @@ import (
 	"time"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
-	"bitbucket.org/digitorus/pdfsigner/ratelimiter"
+	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/gtank/cryptopasta"
 	"github.com/hyperboloide/lk"
 	errors2 "github.com/pkg/errors"
 )
 
+var ErrOverLimit = errors.New("limit is over")
+
 var LD LicenseData // loaded license data
 
 type LicenseData struct {
-	Email     string              `json:"email"`
-	End       time.Time           `json:"end"`
-	Limits    []ratelimiter.Limit `json:"limits"`
+	Email     string               `json:"email"`
+	End       time.Time            `json:"end"`
+	Limits    []*ratelimiter.Limit `json:"limits"`
 	CryptoKey [32]byte
 	RL        *ratelimiter.RateLimiter
+	lastState []ratelimiter.LimitState
 }
-
-// A previously generated license b32 encoded. In real life you should read it from a file...
-const LicenseB32 = "FT7YCAYBAEDUY2LDMVXHGZIB76BAAAIDAECEIYLUMEAQUAABAFJAD74EAAAQCUYB76CAAAAABL7YGBIBAL7YMAAAAD7AF7H7QIA74AUPPMRGK3LBNFWCEORCORSXG5CAMV4GC3LQNRSS4Y3PNURCYITFNZSCEORCGIYDCOJNGA2C2MBXKQYTQORRGY5DENZOGU2TSNRYGAZDGNBLGAZDUMBQEIWCE3DJNVUXI4ZCHJNXWITVNZWGS3LJORSWIIR2MZQWY43FFQRG2YLYL5RW65LOOQRDUMRMEJUW45DFOJ3GC3BCHIYTAMBQGAYDAMBQGAWCE3DBON2F65DJNVSSEORCGAYDAMJNGAYS2MBRKQYDAORQGA5DAMC2EJ6SY6ZCOVXGY2LNNF2GKZBCHJTGC3DTMUWCE3LBPBPWG33VNZ2CEORRGAWCE2LOORSXE5TBNQRDUNRQGAYDAMBQGAYDAMBMEJWGC43UL52GS3LFEI5CEMBQGAYS2MBRFUYDCVBQGA5DAMB2GAYFUIT5FR5SE5LONRUW22LUMVSCEOTGMFWHGZJMEJWWC6C7MNXXK3TUEI5DEMBQGAWCE2LOORSXE5TBNQRDUMZWGAYDAMBQGAYDAMBQGAWCE3DBON2F65DJNVSSEORCGAYDAMJNGAYS2MBRKQYDAORQGA5DAMC2EJ6SY6ZCOVXGY2LNNF2GKZBCHJTGC3DTMUWCE3LBPBPWG33VNZ2CEORSGAYDAMBQFQRGS3TUMVZHMYLMEI5DQNRUGAYDAMBQGAYDAMBQGAWCE3DBON2F65DJNVSSEORCGAYDAMJNGAYS2MBRKQYDAORQGA5DAMC2EJ6SY6ZCOVXGY2LNNF2GKZBCHJTGC3DTMUWCE3LBPBPWG33VNZ2CEORSGAYDAMBQGAWCE2LOORSXE5TBNQRDUMRVHEZDAMBQGAYDAMBQGAYDAMBMEJWGC43UL52GS3LFEI5CEMBQGAYS2MBRFUYDCVBQGA5DAMB2GAYFUIT5LUWCEQ3SPFYHI32LMV4SEOS3GAWDALBQFQYCYMBMGAWDALBQFQYCYMBMGAWDALBQFQYCYMBMGAWDALBQFQYCYMBMGAWDALBQFQYCYMBMGAWDALBQFQYCYMBMGAWDAXJMEJJEYIR2NZ2WY3D5AEYQFVEO4FTR5GJ6XT6YL4EU4OOPGP73D6AAH5DKOPIFYPXLA6DNQFHULFQME5SLIEP4KRZYR6KUD2PILIATCAXSNKKQPNJ6O2UUTS7IODUZ6DSXQWZU33UDHIK7LMZ45IMOOKAFQJXJ6MF74RVHNPCZVUFRYOXFZCAAA==="
 
 // the public key b32 encoded from the private key using: lkgen pub my_private_key_file`.
 // It should be hardcoded somewhere in your app.
@@ -36,9 +36,6 @@ func Initialize(licenseBytes []byte) error {
 	ld, err := newExtractLicense(licenseBytes)
 	if err != nil {
 		return errors2.Wrap(err, "")
-	}
-	if len(ld.Limits) == 0 {
-		return errors2.Wrap(errors.New("no limits provided for license"), "")
 	}
 
 	// save license to db
@@ -110,7 +107,11 @@ func newExtractLicense(licenseB32 []byte) (LicenseData, error) {
 	// Now you just have to check that the end date is after time.Now() then you can continue!
 	if ld.End.Before(time.Now()) {
 		return ld, errors2.Wrap(errors.New(fmt.Sprintf("License expired on: %s", ld.End.Format("2006-01-02"))), "")
-	} else {
+	}
+
+	// check limits
+	if len(ld.Limits) == 0 {
+		return ld, errors2.Wrap(errors.New("no limits provided for license"), "")
 	}
 
 	// set byte versions of the license
@@ -127,9 +128,26 @@ func newExtractLicense(licenseB32 []byte) (LicenseData, error) {
 	return ld, nil
 }
 
-func (ld LicenseData) SaveLimitState() error {
+func (ld *LicenseData) isStateChanged() bool {
+	if len(ld.lastState) == 0 {
+		return true
+	}
+
+	for i, s := range ld.RL.GetState() {
+		if s.CurCount != ld.lastState[i].CurCount || s.LastTime != ld.lastState[i].LastTime {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ld *LicenseData) SaveLimitState() error {
+	if !ld.isStateChanged() {
+		return nil
+	}
+
 	limitStates := ld.RL.GetState()
-	log.Println(limitStates)
 	limitStatesBytes, err := json.Marshal(limitStates)
 	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &ld.CryptoKey)
 	if err != nil {
@@ -172,7 +190,14 @@ func (ld LicenseData) loadLimitState() error {
 	return nil
 }
 
-func (ld LicenseData) Info() {
+func (ld *LicenseData) AutoSave() {
+	go func(ld *LicenseData) {
+		time.Sleep(1 * time.Second)
+		ld.SaveLimitState()
+	}(ld)
+}
+
+func (ld *LicenseData) Info() {
 	log.Println(ld.RL.GetState())
 	log.Println(ld.Limits)
 }

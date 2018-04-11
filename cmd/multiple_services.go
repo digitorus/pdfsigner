@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"bitbucket.org/digitorus/pdfsigner/files"
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
@@ -46,6 +47,9 @@ var multiCmd = &cobra.Command{
 
 		// run queues
 		runQueues()
+
+		// run auto save license
+		license.LD.AutoSave()
 
 		// wait
 		wg.Wait()
@@ -140,6 +144,7 @@ func setupServe(service serviceConfig) {
 func runQueues() {
 	qSign.Runner()
 	qVerify.Runner()
+
 }
 
 func init() {

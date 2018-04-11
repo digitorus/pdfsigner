@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bitbucket.org/digitorus/pdfsigner/files"
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/spf13/cobra"
 )
@@ -62,6 +63,7 @@ func runSingleCmdWatch(signData signer.SignData) {
 	files.Watch(inputPathFlag, func(filePath string) {
 		signer.SignFile(filePath, outputPathFlag, signData)
 	})
+	license.LD.AutoSave()
 }
 
 func init() {

@@ -17,8 +17,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"strings"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"github.com/pkg/errors"
@@ -70,16 +73,17 @@ func init() {
 }
 
 func initializeLicense() error {
-	// read license from input
-	fmt.Fprint(os.Stdout, "Enter license:")
-	licenseBytes, err := bufio.NewReader(os.Stdin).ReadBytes('\n')
+	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
+	fmt.Fprint(os.Stdout, "Enter license file path:")
+	licenseFilePath, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 
-	// TODO: remove after tests done
-	licenseBytes = []byte(license.LicenseB32)
-
+	licenseBytes, err := ioutil.ReadFile(path.Clean(strings.TrimSpace(licenseFilePath)))
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
 	err = license.Initialize(licenseBytes)
 	if err != nil {
 		return errors.Wrap(err, "")

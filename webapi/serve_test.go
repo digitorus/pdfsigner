@@ -127,7 +127,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	}
 
 	// wait for signing files
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// test check
 	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
