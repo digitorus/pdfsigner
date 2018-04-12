@@ -39,19 +39,27 @@ func TestFlow(t *testing.T) {
 	err = Load()
 	assert.NoError(t, err)
 
-	assert.True(t, LD.RL.Allow())
+	allow, _ := LD.RL.Allow()
+	assert.True(t, allow)
 	assert.Equal(t, 1, LD.Limits[0].CurCount)
-	assert.True(t, LD.RL.Allow())
+
+	allow, _ = LD.RL.Allow()
+	assert.True(t, allow)
 	assert.Equal(t, 0, LD.Limits[0].CurCount)
 	time.Sleep(1 * time.Second)
-	assert.True(t, LD.RL.Allow())
+
+	allow, _ = LD.RL.Allow()
+	assert.True(t, allow)
 	assert.Equal(t, 1, LD.Limits[0].CurCount)
-	assert.True(t, LD.RL.Allow())
+
+	allow, _ = LD.RL.Allow()
+	assert.True(t, allow)
 	assert.Equal(t, 0, LD.Limits[0].CurCount)
 	assert.Equal(t, 6, LD.Limits[1].CurCount)
-	assert.False(t, LD.RL.Allow())
-	left, _ := LD.RL.Left()
-	assert.True(t, left > 0)
+
+	allow, limit := LD.RL.Allow()
+	assert.False(t, allow)
+	assert.True(t, limit.Left() > 0)
 
 	// test save
 	err = LD.SaveLimitState()

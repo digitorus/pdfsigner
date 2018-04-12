@@ -50,7 +50,7 @@ func (l *Limit) allow() bool {
 	return true
 }
 
-func (l *Limit) left() time.Duration {
+func (l *Limit) Left() time.Duration {
 	waited := time.Now().Sub(l.LastTime)
 	return l.Interval - waited
 }
@@ -84,26 +84,17 @@ func NewRateLimiter(limits ...*Limit) *RateLimiter {
 
 // Allow returns true if a request is within the rate limit norms.
 // Otherwise, it returns false.
-func (rl *RateLimiter) Allow() bool {
+func (rl *RateLimiter) Allow() (bool, *Limit) {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
 	for _, l := range rl.limits {
 		if !l.allow() {
-			return false
+			return false, l
 		}
 	}
 
-	return true
-}
-
-func (rl *RateLimiter) Left() (time.Duration, *Limit) {
-	for _, l := range rl.limits {
-		if !l.allow() {
-			return l.left(), l
-		}
-	}
-	return 0, nil
+	return true, nil
 }
 
 func (rl *RateLimiter) GetState() []LimitState {

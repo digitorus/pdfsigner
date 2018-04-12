@@ -24,21 +24,21 @@ import (
 func TestLimiter1(t *testing.T) {
 	rl := NewRateLimiter(&Limit{MaxCount: 1, Interval: 10 * time.Millisecond})
 	var result bool
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if !result {
 		t.Error("Allow: false, want true")
 	}
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
 
 	time.Sleep(11 * time.Millisecond)
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if !result {
 		t.Error("Allow: false, want true")
 	}
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
@@ -48,24 +48,24 @@ func TestLimiter2(t *testing.T) {
 	rl := NewRateLimiter(&Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
 	var result bool
 	for i := 0; i < 2; i++ {
-		result = rl.Allow()
+		result, _ = rl.Allow()
 		if !result {
 			t.Errorf("Allow(%d): false, want true", i)
 		}
 	}
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
 
 	time.Sleep(11 * time.Millisecond)
 	for i := 0; i < 2; i++ {
-		result = rl.Allow()
+		result, _ = rl.Allow()
 		if !result {
 			t.Errorf("Allow(%d): false, want true", i)
 		}
 	}
-	result = rl.Allow()
+	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
@@ -82,7 +82,7 @@ func TestLimiter3(t *testing.T) {
 	)
 
 	for i := 0; i < 20; i++ {
-		allowed := rl.Allow()
+		allowed, _ := rl.Allow()
 		if !allowed {
 			left, _ := rl.Left()
 			time.Sleep(left)
