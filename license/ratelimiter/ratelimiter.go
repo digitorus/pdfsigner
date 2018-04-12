@@ -97,13 +97,13 @@ func (rl *RateLimiter) Allow() bool {
 	return true
 }
 
-func (rl *RateLimiter) Left() time.Duration {
+func (rl *RateLimiter) Left() (time.Duration, *Limit) {
 	for _, l := range rl.limits {
 		if !l.allow() {
-			return l.left()
+			return l.left(), l
 		}
 	}
-	return 0
+	return 0, nil
 }
 
 func (rl *RateLimiter) GetState() []LimitState {

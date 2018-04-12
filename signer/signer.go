@@ -126,10 +126,11 @@ func SignFile(input, output string, s SignData) error {
 	}
 
 	if !license.LD.RL.Allow() {
-		left := license.LD.RL.Left()
-		if time.Now().Add(left).After(license.LD.End) {
+		left, limit := license.LD.RL.Left()
+		if license.IsTotalLimit(limit) {
 			return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
 		}
+
 		log.Println(license.ErrOverLimit, "wait for:", left)
 		time.Sleep(left)
 	}

@@ -15,6 +15,7 @@ import (
 )
 
 var ErrOverLimit = errors.New("limit is over")
+var TotalTimeDuration = time.Duration(999999999)
 
 var LD LicenseData // loaded license data
 
@@ -31,7 +32,7 @@ type LicenseData struct {
 
 // the public key b32 encoded from the private key using: lkgen pub my_private_key_file`.
 // It should be hardcoded somewhere in your app.
-const PublicKeyBase32 = "ARQ2WKB6BSAT57LXO5CJ3RNXUE254NECPOF366VICHLWNKCAWK23YOZHQCVYOKJDA3W36AW4PVGJR5TJGQWNLV4UWTLRPPQMUK36WWY7HNSRQMIIEWHJ4K7HCF6O7DA7ORWY3EFHIQCOZDTJGJJSMNPQIWWA===="
+const PublicKeyBase32 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
 
 func Initialize(licenseBytes []byte) error {
 	// load license data
@@ -79,16 +80,16 @@ func Load() error {
 	return nil
 }
 
-func newExtractLicense(licenseB32 []byte) (LicenseData, error) {
+func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	ld := LicenseData{}
 	// Unmarshal the public key.
-	publicKey, err := lk.PublicKeyFromB32String(PublicKeyBase32)
+	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase32)
 	if err != nil {
 		return ld, errors2.Wrap(err, "")
 	}
 
 	// Unmarshal the customer license.
-	license, err := lk.LicenseFromB32String(string(licenseB32))
+	license, err := lk.LicenseFromB64String(string(licenseB64))
 	if err != nil {
 		return ld, errors2.Wrap(err, "")
 	}
@@ -202,4 +203,8 @@ func (ld *LicenseData) AutoSave() {
 func (ld *LicenseData) Info() {
 	log.Println(ld.RL.GetState())
 	log.Println(ld.Limits)
+}
+
+func IsTotalLimit(limit *ratelimiter.Limit) bool {
+	return limit.Interval == TotalTimeDuration
 }
