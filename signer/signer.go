@@ -3,6 +3,8 @@ package signer
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pkcs11"
+	errors2 "github.com/pkg/errors"
 )
 
 type SignData sign.SignData
@@ -118,8 +121,15 @@ func (s *SignData) SetRevocationSettings() {
 }
 
 func SignFile(input, output string, s SignData) error {
+	if time.Now().After(license.LD.End) {
+		return errors2.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", license.LD.End)), "")
+	}
+
 	if !license.LD.RL.Allow() {
 		left := license.LD.RL.Left()
+		if time.Now().Add(left).After(license.LD.End) {
+			return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
+		}
 		log.Println(license.ErrOverLimit, "wait for:", left)
 		time.Sleep(left)
 	}

@@ -35,6 +35,7 @@ var multiCmd = &cobra.Command{
 			for _, n := range serviceNames {
 				// get service config by name
 				serviceConf := getConfigServiceByName(n)
+
 				setupServiceWithSigners(serviceConf, &wg)
 			}
 		} else {
@@ -65,9 +66,16 @@ func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
 	}(serviceConf)
 }
 
+var directoryWatchersCount int
+
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
 	switch serviceType {
 	case "watch":
+		directoryWatchersCount++
+		if directoryWatchersCount > license.LD.MaxDirectoryWatchers {
+			log.Fatal("License: maximum directory watchers exceded, allowed:", license.LD.MaxDirectoryWatchers)
+		}
+
 		if len(configSignerNames) > 1 {
 			log.Fatal(`Use signer instead of signers config setting for watch`)
 		}

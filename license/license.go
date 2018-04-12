@@ -19,17 +19,19 @@ var ErrOverLimit = errors.New("limit is over")
 var LD LicenseData // loaded license data
 
 type LicenseData struct {
-	Email     string               `json:"email"`
-	End       time.Time            `json:"end"`
-	Limits    []*ratelimiter.Limit `json:"limits"`
-	CryptoKey [32]byte
-	RL        *ratelimiter.RateLimiter
+	Email                string               `json:"email"`
+	End                  time.Time            `json:"end"`
+	Limits               []*ratelimiter.Limit `json:"rate_limits"`
+	MaxDirectoryWatchers int                  `json:"max_directory_watchers"`
+
+	CryptoKey [32]byte                 `json:"omitempty"`
+	RL        *ratelimiter.RateLimiter `json:"omitempty"`
 	lastState []ratelimiter.LimitState
 }
 
 // the public key b32 encoded from the private key using: lkgen pub my_private_key_file`.
 // It should be hardcoded somewhere in your app.
-const PublicKeyBase32 = "ARYV7JMXD2ESN57WTBTHMFFPQDN4OX7NQAZXX6WBUNUDTPBNHQW4MP6KNY5S7MK2OVM34QU3PBIMXOEFR5GTCRMBAO3NBYHMP7NXCRMY2FRD7DOOP7P5QUHESJ3KWZMXC3QCLZI6KAMJDPYAWYVP64TEUCDQ===="
+const PublicKeyBase32 = "ARQ2WKB6BSAT57LXO5CJ3RNXUE254NECPOF366VICHLWNKCAWK23YOZHQCVYOKJDA3W36AW4PVGJR5TJGQWNLV4UWTLRPPQMUK36WWY7HNSRQMIIEWHJ4K7HCF6O7DA7ORWY3EFHIQCOZDTJGJJSMNPQIWWA===="
 
 func Initialize(licenseBytes []byte) error {
 	// load license data

@@ -20,20 +20,23 @@ func main() {
 	privateKey, err := lk.NewPrivateKey()
 	if err != nil {
 		log.Fatal(err)
-
 	}
 
 	// create a license document:
+
+	licensePeriod := time.Hour * 24 * 365 // 1 year
 	doc := license.LicenseData{
 		Email: "test@example.com",
-		End:   time.Now().Add(time.Hour * 24 * 365), // 1 year
+		End:   time.Now().Add(licensePeriod), // 1 year
 		Limits: []*ratelimiter.Limit{
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 2, Interval: time.Second},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 10, Interval: time.Minute},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 20000000, Interval: licensePeriod}, //Total
 		},
+		MaxDirectoryWatchers: 2,
 	}
 
 	// marshall the document to json bytes:
