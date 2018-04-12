@@ -125,17 +125,27 @@ func SignFile(input, output string, s SignData) error {
 		return errors2.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", license.LD.End)), "")
 	}
 
-	if !license.LD.RL.Allow() {
-		left, limit := license.LD.RL.Left()
-		if license.IsTotalLimit(limit) {
-			return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
-		}
+	for {
+		if license.LD.RL.Allow() {
+			break
+		} else {
+			left, limit := license.LD.RL.Left()
+			if license.IsTotalLimit(limit) {
+				return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
+			}
 
-		log.Println(license.ErrOverLimit, "wait for:", left)
-		time.Sleep(left)
+			log.Println(license.ErrOverLimit, "wait for:", left)
+			time.Sleep(left)
+		}
 	}
 
 	s.Signature.Info.Date = time.Now().Local()
 	err := sign.SignFile(input, output, sign.SignData(s))
+	if err != nil {
+		return errors2.Wrap(err, "")
+	}
+
+	log.Println("File signed:", output)
+
 	return err
 }

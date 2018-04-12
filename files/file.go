@@ -56,8 +56,6 @@ func SignFilesByPatterns(filePatterns []string, outputPathFlag string, signData 
 		if err := signer.SignFile(f, signedFilePath, signData); err != nil {
 			log.Fatal(err)
 		}
-
-		log.Println("Signed PDF file written to: " + signedFilePath)
 	}
 
 	license.LD.SaveLimitState()

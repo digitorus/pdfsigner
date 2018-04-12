@@ -14,6 +14,7 @@ limitations under the License.
 package ratelimiter
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -67,6 +68,28 @@ func TestLimiter2(t *testing.T) {
 	result = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
+	}
+}
+
+func TestLimiter3(t *testing.T) {
+	rl := NewRateLimiter(
+		&Limit{Unlimited: false, MaxCount: 2, Interval: time.Second},
+		&Limit{Unlimited: false, MaxCount: 10, Interval: time.Minute},
+		&Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
+		&Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
+		&Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
+		&Limit{Unlimited: false, MaxCount: 20000000, Interval: 9999999999},
+	)
+
+	for i := 0; i < 20; i++ {
+		allowed := rl.Allow()
+		if !allowed {
+			left, _ := rl.Left()
+			time.Sleep(left)
+			log.Println("---")
+			continue
+		}
+		log.Println("allowed")
 	}
 }
 

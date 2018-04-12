@@ -161,7 +161,6 @@ func (q *QSign) SignNextTask(signerName string) error {
 		task.Error = err.Error()
 	} else {
 		task.Status = StatusCompleted
-		log.Println("File signed:", task.outputFilePath)
 	}
 
 	// update tasks map
