@@ -15,7 +15,7 @@ import (
 )
 
 var ErrOverLimit = errors.New("limit is over")
-var TotalTimeDuration = time.Duration(999999999)
+var TotalLimitDuration = time.Duration(999999999)
 
 var LD LicenseData // loaded license data
 
@@ -25,8 +25,8 @@ type LicenseData struct {
 	Limits               []*ratelimiter.Limit `json:"rate_limits"`
 	MaxDirectoryWatchers int                  `json:"max_directory_watchers"`
 
-	CryptoKey [32]byte                 `json:"omitempty"`
 	RL        *ratelimiter.RateLimiter `json:"omitempty"`
+	cryptoKey [32]byte
 	lastState []ratelimiter.LimitState
 }
 
@@ -126,7 +126,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	publicKeyBytes := publicKey.ToBytes()
 	licenseBytes = append(licenseBytes, publicKeyBytes...)
 	hash := cryptopasta.Hash("hash for license", licenseBytes)
-	copy(ld.CryptoKey[:], hash[:32])
+	copy(ld.cryptoKey[:], hash[:32])
 
 	return ld, nil
 }
@@ -152,7 +152,7 @@ func (ld *LicenseData) SaveLimitState() error {
 
 	limitStates := ld.RL.GetState()
 	limitStatesBytes, err := json.Marshal(limitStates)
-	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &ld.CryptoKey)
+	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &ld.cryptoKey)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (ld LicenseData) loadLimitState() error {
 		return err
 	}
 
-	limitStatesBytes, err := cryptopasta.Decrypt(limitStatesCiphered, &ld.CryptoKey)
+	limitStatesBytes, err := cryptopasta.Decrypt(limitStatesCiphered, &ld.cryptoKey)
 	if err != nil {
 		return err
 	}
@@ -206,5 +206,5 @@ func (ld *LicenseData) Info() {
 }
 
 func IsTotalLimit(limit *ratelimiter.Limit) bool {
-	return limit.Interval == TotalTimeDuration
+	return limit.Interval == TotalLimitDuration
 }

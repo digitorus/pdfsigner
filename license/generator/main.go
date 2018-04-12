@@ -40,7 +40,7 @@ func main() {
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
 			&ratelimiter.Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
-			&ratelimiter.Limit{Unlimited: false, MaxCount: 20000000, Interval: license.TotalTimeDuration}, //Total
+			&ratelimiter.Limit{Unlimited: false, MaxCount: 20000000, Interval: license.TotalLimitDuration}, //Total
 		},
 		MaxDirectoryWatchers: 2,
 	}

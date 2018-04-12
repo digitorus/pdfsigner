@@ -152,7 +152,6 @@ func setupServe(service serviceConfig) {
 func runQueues() {
 	qSign.Runner()
 	qVerify.Runner()
-
 }
 
 func init() {
