@@ -25,7 +25,7 @@ type LicenseData struct {
 	Limits               []*ratelimiter.Limit `json:"l"`
 	MaxDirectoryWatchers int                  `json:"d"`
 
-	RL        *ratelimiter.RateLimiter `json:",omitempty"`
+	RL        *ratelimiter.RateLimiter `json:"-"`
 	cryptoKey [32]byte
 	lastState []ratelimiter.LimitState
 }
