@@ -20,10 +20,10 @@ import (
 )
 
 type Limit struct {
-	Unlimited bool          `json:"unlimited"`
-	MaxCount  int           `json:"max_count"`
-	Interval  time.Duration `json:"interval"`
-	LimitState
+	Unlimited  bool          `json:"unlimited"`
+	MaxCount   int           `json:"max_count"`
+	Interval   time.Duration `json:"interval"`
+	LimitState `json:"-"`
 }
 
 type LimitState struct {
