@@ -73,12 +73,12 @@ func TestLimiter2(t *testing.T) {
 
 func TestLimiter3(t *testing.T) {
 	rl := NewRateLimiter(
-		&Limit{Unlimited: false, MaxCount: 2, Interval: time.Second},
-		&Limit{Unlimited: false, MaxCount: 10, Interval: 10 * time.Second},
-		&Limit{Unlimited: false, MaxCount: 2000, Interval: time.Hour},
-		&Limit{Unlimited: false, MaxCount: 200000, Interval: 24 * time.Hour},
-		&Limit{Unlimited: false, MaxCount: 2000000, Interval: 720 * time.Hour},
-		&Limit{Unlimited: false, MaxCount: 20000000, Interval: 9999999999},
+		&Limit{MaxCount: 2, Interval: time.Second},
+		&Limit{MaxCount: 10, Interval: 10 * time.Second},
+		&Limit{MaxCount: 2000, Interval: time.Hour},
+		&Limit{MaxCount: 200000, Interval: 24 * time.Hour},
+		&Limit{MaxCount: 2000000, Interval: 720 * time.Hour},
+		&Limit{MaxCount: 20000000, Interval: 9999999999},
 	)
 
 	for i := 0; i < 20; i++ {

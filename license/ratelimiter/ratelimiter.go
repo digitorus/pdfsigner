@@ -20,19 +20,18 @@ import (
 )
 
 type Limit struct {
-	Unlimited  bool          `json:"unlimited"`
-	MaxCount   int           `json:"max_count"`
-	Interval   time.Duration `json:"interval"`
+	MaxCount   int           `json:"m"`
+	Interval   time.Duration `json:"i"`
 	LimitState `json:"-"`
 }
 
 type LimitState struct {
-	CurCount int       `json:"cur_count,omitempty"`
-	LastTime time.Time `json:"last_time,omitempty"`
+	CurCount int       `json:"c,omitempty"`
+	LastTime time.Time `json:"l,omitempty"`
 }
 
 func (l *Limit) allow() bool {
-	if l.Unlimited {
+	if l.IsUnlimited() {
 		return true
 	}
 
@@ -48,6 +47,10 @@ func (l *Limit) allow() bool {
 	l.CurCount = l.MaxCount - 1
 	l.LastTime = time.Now()
 	return true
+}
+
+func (l *Limit) IsUnlimited() bool {
+	return l.MaxCount == -1
 }
 
 func (l *Limit) Left() time.Duration {

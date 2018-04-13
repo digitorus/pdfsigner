@@ -19,12 +19,13 @@ var TotalLimitDuration = time.Duration(999999999)
 var LD LicenseData // loaded license data
 
 type LicenseData struct {
-	Email                string               `json:"email"`
+	Name                 string               `json:"n"`
+	Email                string               `json:"e"`
 	End                  time.Time            `json:"end"`
-	Limits               []*ratelimiter.Limit `json:"rate_limits"`
-	MaxDirectoryWatchers int                  `json:"max_directory_watchers"`
+	Limits               []*ratelimiter.Limit `json:"l"`
+	MaxDirectoryWatchers int                  `json:"d"`
 
-	RL        *ratelimiter.RateLimiter `json:"omitempty"`
+	RL        *ratelimiter.RateLimiter `json:",omitempty"`
 	cryptoKey [32]byte
 	lastState []ratelimiter.LimitState
 }
@@ -210,7 +211,7 @@ func (ld *LicenseData) Info() string {
 			res += fmt.Sprintf("Interval: %v, ", l.Interval)
 		}
 
-		if l.Unlimited {
+		if l.IsUnlimited() {
 			res += "Unlimited"
 		} else {
 			res += fmt.Sprintf("Maximum: %v, ", l.MaxCount)
