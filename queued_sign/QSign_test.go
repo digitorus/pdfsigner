@@ -4,12 +4,15 @@ import (
 	"testing"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
+	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestQSignersMap(t *testing.T) {
+	license.Load()
+
 	// create sign data
 	d := signer.SignData{
 		Signature: sign.SignDataSignature{
