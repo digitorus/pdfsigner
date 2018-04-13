@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
@@ -200,9 +199,20 @@ func (ld *LicenseData) AutoSave() {
 	}(ld)
 }
 
-func (ld *LicenseData) Info() {
-	log.Println(ld.RL.GetState())
-	log.Println(ld.Limits)
+func (ld *LicenseData) Info() string {
+	var res string
+	res += fmt.Sprintf("Licensed to %s until %v\n\n", ld.Email, ld.End.Format("02 Jan 2006"))
+
+	for _, l := range ld.Limits {
+		res += fmt.Sprintf("Interval: %v, ", l.Interval)
+		if l.Unlimited {
+			res += "Unlimited"
+		} else {
+			res += fmt.Sprintf("Maximum: %v, ", l.MaxCount)
+		}
+		res += fmt.Sprintf("Signed: %v, Counted from: %v\n", l.CurCount, l.LastTime.Format("02 Jan 2006 15:04:05"))
+	}
+	return res
 }
 
 func IsTotalLimit(limit *ratelimiter.Limit) bool {
