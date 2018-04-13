@@ -47,7 +47,7 @@ var licenseSetupCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Printf(`Licensed to %s until %s`, license.LD.Email, license.LD.End.Format("2006-01-02"))
+		fmt.Printf(license.LD.Info())
 	},
 }
 

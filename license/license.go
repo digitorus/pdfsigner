@@ -29,9 +29,9 @@ type LicenseData struct {
 	lastState []ratelimiter.LimitState
 }
 
-// the public key b32 encoded from the private key using: lkgen pub my_private_key_file`.
+// the public key b64 encoded from the private key using: lkgen pub my_private_key_file`.
 // It should be hardcoded somewhere in your app.
-const PublicKeyBase32 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
+const PublicKeyBase64 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
 
 func Initialize(licenseBytes []byte) error {
 	// load license data
@@ -82,7 +82,7 @@ func Load() error {
 func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	ld := LicenseData{}
 	// Unmarshal the public key.
-	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase32)
+	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase64)
 	if err != nil {
 		return ld, errors2.Wrap(err, "")
 	}
@@ -204,7 +204,12 @@ func (ld *LicenseData) Info() string {
 	res += fmt.Sprintf("Licensed to %s until %v\n\n", ld.Email, ld.End.Format("02 Jan 2006"))
 
 	for _, l := range ld.Limits {
-		res += fmt.Sprintf("Interval: %v, ", l.Interval)
+		if IsTotalLimit(l) {
+			res += fmt.Sprintf("Interval: Total ")
+		} else {
+			res += fmt.Sprintf("Interval: %v, ", l.Interval)
+		}
+
 		if l.Unlimited {
 			res += "Unlimited"
 		} else {
