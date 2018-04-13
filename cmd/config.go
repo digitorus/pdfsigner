@@ -75,4 +75,6 @@ func initConfig() {
 	if err := viper.UnmarshalKey("service", &servicesConfig); err != nil {
 		log.Fatal(err)
 	}
+
+	licenseFilePathFlag = viper.GetString("licensePath")
 }

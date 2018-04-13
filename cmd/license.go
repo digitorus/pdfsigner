@@ -73,10 +73,16 @@ func init() {
 
 func initializeLicense() error {
 	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
-	fmt.Fprint(os.Stdout, "Enter license file path:")
-	licenseFilePath, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		return errors.Wrap(err, "")
+	var licenseFilePath string
+	if licenseFilePathFlag != "" {
+		licenseFilePath = licenseFilePathFlag
+	} else {
+		fmt.Fprint(os.Stdout, "Enter license file path:")
+		var err error
+		licenseFilePath, err = bufio.NewReader(os.Stdin).ReadString('\n')
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
 	}
 
 	licenseBytes, err := ioutil.ReadFile(path.Clean(strings.TrimSpace(licenseFilePath)))

@@ -1,3 +1,5 @@
+licensePath = "./pdfsigner.lic"
+
 # mixed command
 [[service]]
 name = "watch1"

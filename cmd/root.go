@@ -11,6 +11,8 @@ import (
 )
 
 var configFilePathFlag string
+var licenseFilePathFlag string
+
 var ver version.Version
 
 // RootCmd represents the base command when called without any subcommands
@@ -53,4 +55,6 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	RootCmd.PersistentFlags().StringVar(&licenseFilePathFlag, "license", "", "license file path")
 }

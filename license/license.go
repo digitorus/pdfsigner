@@ -202,7 +202,7 @@ func (ld *LicenseData) AutoSave() {
 
 func (ld *LicenseData) Info() string {
 	var res string
-	res += fmt.Sprintf("Licensed to %s until %v\n\n", ld.Email, ld.End.Format("02 Jan 2006"))
+	res += fmt.Sprintf("Licensed to %s until %v\n", ld.Email, ld.End.Format("02 Jan 2006"))
 
 	for _, l := range ld.Limits {
 		if IsTotalLimit(l) {
@@ -214,9 +214,15 @@ func (ld *LicenseData) Info() string {
 		if l.IsUnlimited() {
 			res += "Unlimited"
 		} else {
-			res += fmt.Sprintf("Maximum: %v, ", l.MaxCount)
+			res += fmt.Sprintf("Maximum: %v", l.MaxCount)
 		}
-		res += fmt.Sprintf("Signed: %v, Counted from: %v\n", l.CurCount, l.LastTime.Format("02 Jan 2006 15:04:05"))
+
+		if l.CurCount != 0 && !l.LastTime.IsZero() {
+			res += fmt.Sprintf(", Signed: %v, Counted from: %v\n", l.CurCount, l.LastTime.Format("02 Jan 2006 15:04:05"))
+		} else {
+			res += "\n"
+		}
+
 	}
 	return res
 }
