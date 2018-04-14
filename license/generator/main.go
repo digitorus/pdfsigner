@@ -36,12 +36,13 @@ func main() {
 		Email: "test@example.com",
 		End:   time.Now().Add(time.Hour * 24 * 365), // 1 year
 		Limits: []*ratelimiter.Limit{
-			&ratelimiter.Limit{MaxCount: 2, Interval: time.Second},
-			&ratelimiter.Limit{MaxCount: 10, Interval: time.Minute},
-			&ratelimiter.Limit{MaxCount: 2000, Interval: time.Hour},
-			&ratelimiter.Limit{MaxCount: 200000, Interval: 24 * time.Hour},
-			&ratelimiter.Limit{MaxCount: 2000000, Interval: 720 * time.Hour},
-			&ratelimiter.Limit{MaxCount: 20000000, Interval: license.TotalLimitDuration}, //Total
+			&ratelimiter.Limit{MaxCount: 2, IntervalStr: "1s"},
+			&ratelimiter.Limit{MaxCount: 10, IntervalStr: "10s"},
+			&ratelimiter.Limit{MaxCount: 100, IntervalStr: "1m"},
+			&ratelimiter.Limit{MaxCount: 2000, IntervalStr: "1h"},
+			&ratelimiter.Limit{MaxCount: 200000, IntervalStr: "24h"},
+			&ratelimiter.Limit{MaxCount: 2000000, IntervalStr: "720h"},
+			&ratelimiter.Limit{MaxCount: 20000000, IntervalStr: license.TotalLimitDuration}, //Total, //Total
 		},
 		MaxDirectoryWatchers: 2,
 	}

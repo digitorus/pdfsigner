@@ -20,14 +20,15 @@ import (
 )
 
 type Limit struct {
-	MaxCount   int           `json:"m"`
-	Interval   time.Duration `json:"i"`
-	LimitState `json:"-"`
+	MaxCount    int           `json:"m"`
+	IntervalStr string        `json:"i"`
+	Interval    time.Duration `json:"-"`
+	LimitState  `json:"-"`
 }
 
 type LimitState struct {
-	CurCount int       `json:"c,omitempty"`
-	LastTime time.Time `json:"l,omitempty"`
+	CurCount int       `json:"c"`
+	LastTime time.Time `json:"l"`
 }
 
 func (l *Limit) allow() bool {

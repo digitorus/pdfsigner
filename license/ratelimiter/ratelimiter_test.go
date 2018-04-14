@@ -78,7 +78,7 @@ func TestLimiter3(t *testing.T) {
 		&Limit{MaxCount: 2000, Interval: time.Hour},
 		&Limit{MaxCount: 200000, Interval: 24 * time.Hour},
 		&Limit{MaxCount: 2000000, Interval: 720 * time.Hour},
-		&Limit{MaxCount: 20000000, Interval: 9999999999},
+		&Limit{MaxCount: 20000000, Interval: 864000 * time.Hour},
 	)
 
 	for i := 0; i < 20; i++ {

@@ -14,7 +14,7 @@ import (
 )
 
 var ErrOverLimit = errors.New("limit is over")
-var TotalLimitDuration = time.Duration(999999999)
+var TotalLimitDuration = "864000h"
 
 var LD LicenseData // loaded license data
 
@@ -115,6 +115,15 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	// check limits
 	if len(ld.Limits) == 0 {
 		return ld, errors2.Wrap(errors.New("no limits provided for license"), "")
+	}
+
+	// parse time limits
+	for _, l := range ld.Limits {
+		i, err := time.ParseDuration(l.IntervalStr)
+		if err != nil {
+			return ld, errors2.Wrap(errors.New("parse interval error"), "")
+		}
+		l.Interval = i
 	}
 
 	// set byte versions of the license
@@ -228,5 +237,5 @@ func (ld *LicenseData) Info() string {
 }
 
 func IsTotalLimit(limit *ratelimiter.Limit) bool {
-	return limit.Interval == TotalLimitDuration
+	return limit.IntervalStr == TotalLimitDuration
 }
