@@ -20,8 +20,10 @@ var multiCmd = &cobra.Command{
 	Short: "Run multiple services using the config file",
 	Long:  `This command runs multiple services taken from the config file`,
 	Run: func(cmd *cobra.Command, serviceNames []string) {
+		// fail if no config flag path provided
 		requireConfig(cmd)
 
+		// check if the config contains services
 		if len(servicesConfig) < 1 {
 			log.Fatal("no services found inside the config")
 		}
@@ -29,19 +31,21 @@ var multiCmd = &cobra.Command{
 		// setup wait group
 		var wg sync.WaitGroup
 
+		// setup services
 		if len(serviceNames) > 1 {
 			// setup services by name
 			wg.Add(len(serviceNames))
 			for _, n := range serviceNames {
 				// get service config by name
 				serviceConf := getConfigServiceByName(n)
-
+				// setup service with signers
 				setupServiceWithSigners(serviceConf, &wg)
 			}
 		} else {
 			// setup all services
 			wg.Add(len(servicesConfig))
 			for _, s := range servicesConfig {
+				// setup service with signers
 				setupServiceWithSigners(s, &wg)
 			}
 		}
@@ -57,6 +61,7 @@ var multiCmd = &cobra.Command{
 	},
 }
 
+// setupServiceWithSigners setup used by service signers and setup signer.
 func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
 	setupSigners(serviceConf.Type, serviceConf.Signer, serviceConf.Signers)
 
@@ -66,8 +71,10 @@ func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
 	}(serviceConf)
 }
 
+// directoryWatchersCount used to count the amount of directories watched. Required for license limits.
 var directoryWatchersCount int
 
+// setupSigners depending on the service type, watch or serve, setups the signer or signers
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
 	switch serviceType {
 	case "watch":
@@ -100,6 +107,7 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 	}
 }
 
+// setupSigner adds found inside the config by name signer to the queue for later use.
 func setupSigner(signerName string) {
 	// get config signer by name
 	config := getSignerConfigByName(signerName)
@@ -116,6 +124,7 @@ func setupSigner(signerName string) {
 	qSign.AddSigner(signerName, config.SignData, 10)
 }
 
+// setupService depending on the type of the service setups service
 func setupService(service serviceConfig) {
 	if service.Type == "watch" {
 		setupWatch(service.In, service.Out, service.Signer)
@@ -125,6 +134,7 @@ func setupService(service serviceConfig) {
 	}
 }
 
+// setupWatch setups watcher which watches the input folder and adds the tasks to the queue.
 func setupWatch(watchFolder, outputFilePath string, signerName string) {
 	files.Watch(watchFolder, func(inputFilePath string) {
 
@@ -143,12 +153,14 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 	})
 }
 
+// setupServe runs the web api according to the config settings
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
 	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, qSign, qVerify, service.Signers, ver)
 	wa.Serve()
 }
 
+// runQueues starts the mechanism to sign the files whenever they are getting into the queue.
 func runQueues() {
 	qSign.Runner()
 	qVerify.Runner()

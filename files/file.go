@@ -26,6 +26,7 @@ func storeTempFile(file io.Reader) (string, error) {
 	return tmpFile.Name(), nil
 }
 
+// findFilesByPatterns finds all files matched the patterns
 func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	for _, f := range patterns {
 		m, err := filepath.Glob(f)
@@ -37,6 +38,7 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	return matchedFiles, err
 }
 
+// SignFilesByPatterns signs files by matched patterns and stores it inside the same folder with _signed.pdf suffix
 func SignFilesByPatterns(filePatterns []string, outputPathFlag string, signData signer.SignData) {
 	// get files
 	files, err := findFilesByPatterns(filePatterns)

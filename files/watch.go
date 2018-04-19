@@ -10,6 +10,7 @@ import (
 
 type callback func(filePath string)
 
+// Watch watches inside the provided folder and runs callback when event happened
 func Watch(watchFolder string, cb callback) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

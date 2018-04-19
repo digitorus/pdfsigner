@@ -26,6 +26,7 @@ var versionCmd = &cobra.Command{
 	Short: "Get version",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		// print version
 		fmt.Println(
 			"Version", ver.Version,
 			"BuildDate", ver.BuildDate,

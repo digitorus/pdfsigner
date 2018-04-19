@@ -10,32 +10,55 @@ import (
 	"github.com/spf13/viper"
 )
 
+// servicesConfig stores configs for signers for multiple-services command
 // Since Viper is not supporting access to array, we need to make structures and unmarshal config manually
 var signerConfigs []signerConfig
 
+// serviceConfig is a config of the service
 type signerConfig struct {
-	Name         string
-	Type         string
-	CrtPath      string
-	KeyPath      string
-	LibPath      string
-	Pass         string
+	// Name is the name of the signer used to identify signer inside the config
+	Name string
+	// Type is the type of the signer. PEM, PKSC11.
+	Type string
+	// CrtPath is the path to the certificate file.
+	CrtPath string
+	// KeyPath is the path to the private key file
+	KeyPath string
+	// LibPath is the path to the PKSC11 library.
+	LibPath string
+	// Pass is the password for PSKC11.
+	Pass string
+	// CrtChainPath is the path to chain of the certificates
 	CrtChainPath string
-	SignData     signer.SignData
+	// SignData contains data needed for signing
+	SignData signer.SignData
 }
 
-// used for multiple-services command
+// servicesConfig stores configs for services for multiple-services command
 var servicesConfig []serviceConfig
 
+// serviceConfig is a config of the service
 type serviceConfig struct {
-	Name    string
-	Type    string
-	Signer  string   // signer name
-	Signers []string // signer names to serve with multiple signers
-	In      string
-	Out     string
-	Addr    string
-	Port    string
+	// Name is the name of the service
+	Name string
+	// Type is the type of the service. Watch, Serve.
+	Type string
+
+	// Watch config.
+	// Signer is the signer name to be used by watch.
+	Signer string
+	// In is the input folder used by watch.
+	In string
+	// Out is the output folder used by watch.
+	Out string
+
+	// Serve config.
+	// Signers is the signers names to be used by serve.
+	Signers []string
+	// Addr is the address on which to serve
+	Addr string
+	// Port is the port on which to serve
+	Port string
 }
 
 // initConfig reads in config inputFile and ENV variables if set.
@@ -76,5 +99,6 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
+	// assign licensePath config value to variable
 	licenseFilePathFlag = viper.GetString("licensePath")
 }

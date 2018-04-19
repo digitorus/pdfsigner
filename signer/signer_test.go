@@ -30,8 +30,8 @@ func TestSigner(t *testing.T) {
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 
-	for i := 0; i < 20; i++ {
-		err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData)
+	for i := 0; i < 1; i++ {
+		err = SignFile("../testfiles/testfile12.pdf", "../testfiles/testfile12_signed.pdf", signData)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -19,23 +19,34 @@ import (
 	"time"
 )
 
+// Limit represents the limit with current state
 type Limit struct {
-	MaxCount    int           `json:"m"`
-	IntervalStr string        `json:"i"`
-	Interval    time.Duration `json:"-"`
-	LimitState  `json:"-"`
+	// MaxCount represents maximum number of allowed works
+	MaxCount int `json:"m"`
+	// IntervalStr represents time interval in string representation, for maximum allowed works to run
+	IntervalStr string `json:"i"`
+	// Interval represents time interval in for maximum allowed works to run
+	Interval time.Duration `json:"-"`
+	// LimitState represents current state
+	LimitState `json:"-"`
 }
 
+// LimitState represents the state of the limit
 type LimitState struct {
-	CurCount int       `json:"c"`
+	// CurCount represents counter of allowed works
+	CurCount int `json:"c"`
+	// LastTime represents time since the counter started to count
 	LastTime time.Time `json:"l"`
 }
 
+// allow checks if the work is allowed
 func (l *Limit) allow() bool {
+	// check if the limit is unlimited
 	if l.IsUnlimited() {
 		return true
 	}
 
+	// check if the work is allowed
 	if time.Now().Sub(l.LastTime) < l.Interval {
 		if l.CurCount > 0 {
 			l.CurCount--
@@ -45,15 +56,18 @@ func (l *Limit) allow() bool {
 		return false
 	}
 
+	// initialize if run first time or if the interval is past
 	l.CurCount = l.MaxCount - 1
 	l.LastTime = time.Now()
 	return true
 }
 
+// IsUnlimited checks if the interval is unlimited
 func (l *Limit) IsUnlimited() bool {
 	return l.MaxCount == -1
 }
 
+// Left returns how much time needed to wait until the limiter would allow to run work again
 func (l *Limit) Left() time.Duration {
 	waited := time.Now().Sub(l.LastTime)
 	return l.Interval - waited
@@ -101,6 +115,7 @@ func (rl *RateLimiter) Allow() (bool, *Limit) {
 	return true, nil
 }
 
+// GetState returns current state of the limits
 func (rl *RateLimiter) GetState() []LimitState {
 	var limitStates []LimitState
 

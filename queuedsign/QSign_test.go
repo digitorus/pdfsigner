@@ -1,4 +1,4 @@
-package queued_sign
+package queuedsign
 
 import (
 	"testing"

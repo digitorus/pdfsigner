@@ -15,8 +15,8 @@ import (
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
+	"bitbucket.org/digitorus/pdfsigner/queuedsign"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/stretchr/testify/assert"
@@ -29,7 +29,7 @@ type filePart struct {
 
 var (
 	wa      *WebAPI
-	qs      *queued_sign.QSign
+	qs      *queuedsign.QSign
 	proto   = "http://"
 	addr    = "localhost:3000"
 	baseURL = proto + addr
@@ -48,7 +48,7 @@ func runTest(m *testing.M) int {
 	}
 
 	// create new QSign
-	qs = queued_sign.NewQSign()
+	qs = queuedsign.NewQSign()
 
 	// create signer
 	signData := signer.SignData{
@@ -145,7 +145,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	//assert.Equal(t, true, job.IsCompleted)
 	assert.Equal(t, 3, len(jobStatus.Tasks))
 	for _, task := range jobStatus.Tasks {
-		assert.Equal(t, queued_sign.StatusCompleted, task.Status)
+		assert.Equal(t, queuedsign.StatusCompleted, task.Status)
 
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)

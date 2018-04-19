@@ -3,16 +3,20 @@ package cmd
 import (
 	"log"
 
-	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
+	"bitbucket.org/digitorus/pdfsigner/queuedsign"
 	"github.com/spf13/cobra"
 )
 
-var qSign *queued_sign.QSign
+// qSign stores queue for signs
+var qSign *queuedsign.QSign
+
+// qVerify stores queue for verifications
 var qVerify *queued_verify.QVerify
 
 func init() {
-	qSign = queued_sign.NewQSign()
+	// initialize queues
+	qSign = queuedsign.NewQSign()
 	qVerify = queued_verify.NewQVerify()
 }
 
@@ -47,6 +51,7 @@ var (
 	servePortFlag string
 )
 
+// parseCommonFlags binds common flags to variables
 func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVar(&signatureApprovalFlag, "approval", false, "Approval")
 	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
@@ -60,31 +65,37 @@ func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain")
 }
 
+// parsePEMCertificateFlags binds PEM specific flags to variables
 func parsePEMCertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Certificate path")
 	cmd.PersistentFlags().StringVar(&privateKeyPathFlag, "key", "", "Private key path")
 }
 
+// parsePKSC11CertificateFlags binds PKSC11 specific flags to variables
 func parsePKSC11CertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&pksc11LibPathFlag, "lib", "", "Path to PKCS11 library")
 	cmd.PersistentFlags().StringVar(&pksc11PassFlag, "pass", "", "PKCS11 password")
 }
 
+// parseInputPathFlag binds input folder flag to variable
 func parseInputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&inputPathFlag, "in", "", "Input path")
 	cmd.MarkPersistentFlagRequired("in")
 }
 
+// parseOutputPathFlag binds output folder flag to variable
 func parseOutputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&outputPathFlag, "out", "", "Output path")
 	cmd.MarkPersistentFlagRequired("out")
 }
 
+// parseSignerName binds signer name flag to variable
 func parseSignerName(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
 	cmd.MarkPersistentFlagRequired("signer-name")
 }
 
+// parseServeFlags binds serve address and port flags to variables
 func parseServeFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "serve address")
 	cmd.MarkPersistentFlagRequired("serve-address")
@@ -92,11 +103,13 @@ func parseServeFlags(cmd *cobra.Command) {
 	cmd.MarkPersistentFlagRequired("serve-port")
 }
 
+// getAddrPort returns server address and port formatted
 func getAddrPort() string {
 	return serveAddrFlag + ":" + servePortFlag
 }
 
-// Since viper is not supporting binding flags to an item of the array we use this workaround
+// bindSignerFlagsToConfig binds signer specific flags to variables.
+// Since viper is not supporting binding flags to an item of the array we use this workaround.
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	// SignData
 	if cmd.PersistentFlags().Changed("approval") {
@@ -146,26 +159,33 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	}
 }
 
+// getSignerConfigByName returns config of the signer by name
 func getSignerConfigByName(signerName string) signerConfig {
 	if signerName == "" {
 		log.Fatal("signer name is empty")
 	}
 
+	// find signer config
 	var s signerConfig
 	for _, s = range signerConfigs {
 		if s.Name == signerName {
 			return s
 		}
 	}
+
+	// fail if signer not found
 	log.Fatal("signer not found")
+
 	return s
 }
 
+// getConfigServiceByName returns service config by name
 func getConfigServiceByName(serviceName string) serviceConfig {
 	if serviceName == "" {
 		log.Fatal("service name is empty")
 	}
 
+	// find service config
 	var s serviceConfig
 	for _, s = range servicesConfig {
 		if s.Name == serviceName {
@@ -173,10 +193,13 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 		}
 	}
 
+	// fail if service not found
 	log.Fatal("service not found")
+
 	return s
 }
 
+// requireConfig checks if the config flag is provided.
 func requireConfig(cmd *cobra.Command) {
 	v, err := cmd.Flags().GetString("config")
 	if err != nil || v == "" {

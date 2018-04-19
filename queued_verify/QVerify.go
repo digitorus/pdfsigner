@@ -11,6 +11,8 @@ import (
 	"github.com/rs/xid"
 )
 
+// TODO: rewrite the same way as sign queue
+// QVerify represents verification queue
 type QVerify struct {
 	jobs map[string]ThreadSafeJob
 	pq   *priority_queue.PriorityQueue

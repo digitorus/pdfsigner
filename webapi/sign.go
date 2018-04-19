@@ -12,7 +12,7 @@ import (
 
 	"mime/multipart"
 
-	"bitbucket.org/digitorus/pdfsigner/queued_sign"
+	"bitbucket.org/digitorus/pdfsigner/queuedsign"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
@@ -78,8 +78,8 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 }
 
 type JobStatus struct {
-	queued_sign.Job
-	Tasks []queued_sign.Task `json:"tasks"`
+	queuedsign.Job
+	Tasks []queuedsign.Task `json:"tasks"`
 }
 
 func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
@@ -198,7 +198,7 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
 	wa.qSign.DeleteJob(jobID)
 }
 
-func addSignJob(qs *queued_sign.QSign, f fields, fileNames []string) (string, error) {
+func addSignJob(qs *queuedsign.QSign, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}

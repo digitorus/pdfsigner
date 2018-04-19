@@ -18,11 +18,15 @@ const (
 	HighPriority
 )
 
+// Item is used to push to and pop value with priority
 type Item struct {
-	Value    interface{}
+	// Value represents any value
+	Value interface{}
+	// Priority represents priority of the signing reqeust
 	Priority Priority
 }
 
+// PriorityQueue represents priority channels
 type PriorityQueue struct {
 	high   chan Item
 	medium chan Item
@@ -39,10 +43,8 @@ func New(size int) *PriorityQueue {
 	return &q
 }
 
-// Push reads a file and stores it at temporary location so that it can be
-// processed later without consuming memory. The function returns a tracking
-// id or error.
-func (q *PriorityQueue) Push(i Item) error {
+// Push adds an item to the priority queue
+func (q *PriorityQueue) Push(i Item) {
 	switch i.Priority {
 	case HighPriority:
 		q.high <- i
@@ -51,10 +53,9 @@ func (q *PriorityQueue) Push(i Item) error {
 	case LowPriority:
 		q.low <- i
 	}
-
-	return nil
 }
 
+// Pop returns appropriate item from the priority queue
 func (q *PriorityQueue) Pop() Item {
 	for {
 		select {
@@ -80,6 +81,14 @@ func (q *PriorityQueue) Pop() Item {
 	}
 }
 
+// LenAll represents lengths of priority channels
+type LenAll struct {
+	Low    int `json:"low"`
+	Medium int `json:"medium"`
+	High   int `json:"high"`
+}
+
+// Len returns length of the channel by priority
 func (q *PriorityQueue) Len(p Priority) (int, error) {
 	switch p {
 	case LowPriority:
@@ -93,12 +102,7 @@ func (q *PriorityQueue) Len(p Priority) (int, error) {
 	return -1, errors.New("wrong priority name")
 }
 
-type LenAll struct {
-	Low    int `json:"low"`
-	Medium int `json:"medium"`
-	High   int `json:"high"`
-}
-
+// LenAll returns lengths of all priority channels
 func (q *PriorityQueue) LenAll() LenAll {
 	return LenAll{len(q.low), len(q.medium), len(q.high)}
 }

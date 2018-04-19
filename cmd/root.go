@@ -10,7 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// configFilePathFlag contains path to config file
 var configFilePathFlag string
+
+// licenseFilePathFlag contains path to license file
 var licenseFilePathFlag string
 
 var ver version.Version
@@ -20,16 +23,15 @@ var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
 	Short: "A brief description of your application",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// load license from the db
 		err := license.Load()
 		if err != nil {
+			// if the license couldn't be loaded try to initialize it
 			return initializeLicense()
 		}
 		return nil
 	},
 	Long: `Long multiline description`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//      Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -44,7 +46,9 @@ func Execute(v version.Version) {
 }
 
 func init() {
+	// set the log flags
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.

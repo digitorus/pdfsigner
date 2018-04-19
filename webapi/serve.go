@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/digitorus/pdfsigner/queued_sign"
 	"bitbucket.org/digitorus/pdfsigner/queued_verify"
+	"bitbucket.org/digitorus/pdfsigner/queuedsign"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/gorilla/mux"
 )
@@ -14,13 +14,13 @@ import (
 type WebAPI struct {
 	r              *mux.Router
 	addr           string
-	qSign          *queued_sign.QSign
+	qSign          *queuedsign.QSign
 	qVerify        *queued_verify.QVerify
 	allowedSigners []string
 	version        version.Version
 }
 
-func NewWebAPI(addr string, qs *queued_sign.QSign, qv *queued_verify.QVerify, allowedSigners []string, version version.Version) *WebAPI {
+func NewWebAPI(addr string, qs *queuedsign.QSign, qv *queued_verify.QVerify, allowedSigners []string, version version.Version) *WebAPI {
 	wa := WebAPI{
 		addr:           addr,
 		qSign:          qs,

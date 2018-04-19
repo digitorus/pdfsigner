@@ -33,7 +33,6 @@ var licenseCmd = &cobra.Command{
 	Use:   "license",
 	Short: "Update license",
 	Run: func(cmd *cobra.Command, args []string) {
-
 	},
 }
 
@@ -42,11 +41,13 @@ var licenseSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "license setup",
 	Run: func(cmd *cobra.Command, args []string) {
+		// initialize license
 		err := initializeLicense()
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// print license info
 		fmt.Printf(license.LD.Info())
 	},
 }
@@ -56,11 +57,13 @@ var licenseInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "license info",
 	Run: func(cmd *cobra.Command, args []string) {
+		// load license
 		err := license.Load()
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// print license info
 		fmt.Printf(license.LD.Info())
 	},
 }
@@ -71,12 +74,15 @@ func init() {
 	licenseCmd.AddCommand(licenseInfoCmd)
 }
 
+// initializeLicense loads the license file with provided path licenseFilePathFlag or stdin.
 func initializeLicense() error {
 	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
 	var licenseFilePath string
 	if licenseFilePathFlag != "" {
+		// try to get license from the flag provided
 		licenseFilePath = licenseFilePathFlag
 	} else {
+		// get license from the stdout
 		fmt.Fprint(os.Stdout, "Enter license file path:")
 		var err error
 		licenseFilePath, err = bufio.NewReader(os.Stdin).ReadString('\n')
@@ -85,10 +91,13 @@ func initializeLicense() error {
 		}
 	}
 
+	// get license bytes
 	licenseBytes, err := ioutil.ReadFile(path.Clean(strings.TrimSpace(licenseFilePath)))
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
+
+	// initialize license
 	err = license.Initialize(licenseBytes)
 	if err != nil {
 		return errors.Wrap(err, "")

@@ -1,4 +1,4 @@
-package queued_sign
+package queuedsign
 
 import (
 	"errors"
@@ -11,16 +11,23 @@ import (
 )
 
 var (
-	StatusPending   = "Pending"
-	StatusFailed    = "Failed"
+	// StatusPending represents
+	StatusPending = "Pending"
+	// StatusFailed is a failed status
+	StatusFailed = "Failed"
+	// StatusCompleted is a completed status
 	StatusCompleted = "Completed"
 )
 
+// QSign represents sign queue
 type QSign struct {
+	// signers represent all the signers by name of the signer
 	signers map[string]QSigner
-	jobs    map[string]*Job
+	// jobs represents jobs by id of the job
+	jobs map[string]*Job
 }
 
+// QSigner represents
 type QSigner struct {
 	name     string
 	pq       *priority_queue.PriorityQueue
@@ -28,7 +35,9 @@ type QSigner struct {
 }
 
 type Job struct {
-	ID         string          `json:"id"`
+	// ID represents id of the job
+	ID string `json:"id"`
+	// TotalTasks represents total number of tasks to add
 	TotalTasks int             `json:"total"`
 	TasksMap   map[string]Task `json:"-"`
 	SignData   signer.SignData `json:"-"`
@@ -58,8 +67,8 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 type Task struct {
 	ID             string `json:"id"`
 	JobID          string `json:"-"`
-	inputFilePath  string `json:"-"`
-	outputFilePath string `json:"-"`
+	inputFilePath  string
+	outputFilePath string
 	Status         string `json:"status"`
 	Error          string `json:"error,omitempty"`
 }
@@ -71,6 +80,7 @@ func NewQSign() *QSign {
 	}
 }
 
+// AddSigner adds signer to the queue signers pool
 func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize int) {
 	// skip if already setup
 	if _, exists := q.signers[signerName]; exists {
@@ -234,13 +244,13 @@ func (q *QSign) GetQueueSizeBySignerName(signerName string) (priority_queue.LenA
 
 func (q *QSign) Runner() {
 	for _, s := range q.signers {
-		go func() {
+		go func(name string) {
 			for {
-				err := q.SignNextTask(s.name)
+				err := q.SignNextTask(name)
 				if err != nil {
-					log.Printf("couldn't sign file: %v, %+v", s.name, err)
+					log.Printf("couldn't sign file: %v, %+v", name, err)
 				}
 			}
-		}()
+		}(s.name)
 	}
 }
