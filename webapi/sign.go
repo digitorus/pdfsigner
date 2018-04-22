@@ -77,6 +77,26 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 }
 
+func addSignJob(qs *queuedsign.QSign, f fields, fileNames []string) (string, error) {
+	if f.signerName == "" {
+		return "", errors.New("signer name is required")
+	}
+
+	totalTasks := len(fileNames)
+
+	jobID := qs.AddJob(f.signData)
+	priority := determinePriority(totalTasks)
+
+	for _, fileName := range fileNames {
+		_, err := qs.AddTask(f.signerName, jobID, fileName, fileName+"_signed.pdf", priority)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return jobID, nil
+}
+
 type JobStatus struct {
 	queuedsign.Job
 	Tasks []queuedsign.Task `json:"tasks"`
@@ -196,24 +216,4 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 	wa.qSign.DeleteJob(jobID)
-}
-
-func addSignJob(qs *queuedsign.QSign, f fields, fileNames []string) (string, error) {
-	if f.signerName == "" {
-		return "", errors.New("signer name is required")
-	}
-
-	totalTasks := len(fileNames)
-
-	jobID := qs.AddJob(totalTasks, f.signData)
-	priority := determinePriority(totalTasks)
-
-	for _, fileName := range fileNames {
-		_, err := qs.AddTask(f.signerName, jobID, fileName, fileName+"_signed.pdf", priority)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return jobID, nil
 }

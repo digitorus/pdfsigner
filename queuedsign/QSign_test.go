@@ -36,13 +36,12 @@ func TestQSignersMap(t *testing.T) {
 
 	// create session
 	var signData signer.SignData
-	jobID := qs.AddJob(1, signData)
+	jobID := qs.AddJob(signData)
 	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, jobID, job.ID)
-	assert.Equal(t, 1, job.TotalTasks)
 
 	// add job
 	taskID, err := qs.AddTask(
@@ -55,6 +54,8 @@ func TestQSignersMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Equal(t, 1, len(job.TasksMap))
 
 	// sign job
 	qs.SignNextTask("simple")

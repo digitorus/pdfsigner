@@ -3,8 +3,6 @@ package signer
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
@@ -16,8 +14,10 @@ import (
 	errors2 "github.com/pkg/errors"
 )
 
+// SignData is a SignData of the sign package, but with additional methods added
 type SignData sign.SignData
 
+// SetPEM sets specific to PEM settings
 func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	// Set certificate
 	certificate_data, err := ioutil.ReadFile(crtPath)
@@ -53,6 +53,7 @@ func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	s.SetRevocationSettings()
 }
 
+// SetPKSC11 sets specific to PKSC11 settings
 func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
 	// pkcs11 key
 	lib, err := pkcs11.FindLib(libPath)
@@ -92,6 +93,7 @@ func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
 	s.SetRevocationSettings()
 }
 
+// SetCertificateChains sets certificate chain settings
 func (s *SignData) SetCertificateChains(crtChainPath string) {
 	certificate_chains := make([][]*x509.Certificate, 0)
 	if crtChainPath == "" {
@@ -115,36 +117,30 @@ func (s *SignData) SetCertificateChains(crtChainPath string) {
 	s.CertificateChains = certificate_chains
 }
 
+// SetRevocationSettings sets default revocation settings
 func (s *SignData) SetRevocationSettings() {
 	s.RevocationData = revocation.InfoArchival{}
 	s.RevocationFunction = sign.DefaultEmbedRevocationStatusFunction
 }
 
+// SignFile checks the license, waits if limits are reached, if allowed signs the file
 func SignFile(input, output string, s SignData) error {
-	if time.Now().After(license.LD.End) {
-		return errors2.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", license.LD.End)), "")
-	}
-
-	for {
-		allow, limit := license.LD.RL.Allow()
-		if allow {
-			break
-		} else {
-			if license.IsTotalLimit(limit) {
-				return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
-			}
-
-			log.Println(license.ErrOverLimit, "wait for:", limit.Left())
-			time.Sleep(limit.Left())
-		}
-	}
-
-	s.Signature.Info.Date = time.Now().Local()
-	err := sign.SignFile(input, output, sign.SignData(s))
+	// check the license and wait if limits are reached
+	err := license.LD.Wait()
 	if err != nil {
 		return errors2.Wrap(err, "")
 	}
 
+	// set date
+	s.Signature.Info.Date = time.Now().Local()
+
+	// sign file
+	err = sign.SignFile(input, output, sign.SignData(s))
+	if err != nil {
+		return errors2.Wrap(err, "")
+	}
+
+	// log the result
 	log.Println("File signed:", output)
 
 	return err

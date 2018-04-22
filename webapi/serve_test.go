@@ -154,9 +154,7 @@ func TestUploadCheckDownload(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Fatalf("status not ok: %v", w.Body.String())
 		}
-		if len(w.Body.Bytes()) != 9005 {
-			t.Fatalf("body size is not correct")
-		}
+		assert.Equal(t, 8994, len(w.Body.Bytes()))
 	}
 
 	// test delete job

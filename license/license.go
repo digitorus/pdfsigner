@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
@@ -237,6 +238,35 @@ func (ld *LicenseData) AutoSave() {
 	}(ld)
 }
 
+// Wait validates license end data and limits, if one of the limits are reached,
+// waits the time till the work is allowed again
+func (ld *LicenseData) Wait() error {
+	// validate license data
+	if time.Now().After(ld.End) {
+		return errors2.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", ld.End)), "")
+	}
+
+	// check if the work is allowed by license limiters, if not wait
+	for {
+		allow, limit := ld.RL.Allow()
+		if allow {
+			break
+		} else {
+			// check the total limit
+			if isTotalLimit(limit) {
+				return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
+			}
+
+			// log sleep time information
+			log.Println(ErrOverLimit, "wait for:", limit.Left())
+
+			// sleep
+			time.Sleep(limit.Left())
+		}
+	}
+	return nil
+}
+
 // Info returns formatted information about the license
 func (ld *LicenseData) Info() string {
 	var res string
@@ -247,7 +277,7 @@ func (ld *LicenseData) Info() string {
 	// get limits information
 	for _, l := range ld.Limits {
 		// get interval
-		if IsTotalLimit(l) {
+		if isTotalLimit(l) {
 			res += fmt.Sprintf("Interval: Total ")
 		} else {
 			res += fmt.Sprintf("Interval: %v, ", l.Interval)
@@ -271,7 +301,7 @@ func (ld *LicenseData) Info() string {
 	return res
 }
 
-// IsTotalLimit checks if the provided limit is a total limit
-func IsTotalLimit(limit *ratelimiter.Limit) bool {
+// isTotalLimit checks if the provided limit is a total limit
+func isTotalLimit(limit *ratelimiter.Limit) bool {
 	return limit.IntervalStr == TotalLimitDuration
 }

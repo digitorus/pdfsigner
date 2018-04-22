@@ -146,7 +146,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		sessionID := qSign.AddJob(1, signer.SignData{})
+		sessionID := qSign.AddJob(signer.SignData{})
 
 		// push job
 		qSign.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
