@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/digitorus/pdfsigner/sign_queue"
-	"bitbucket.org/digitorus/pdfsigner/verify_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/gorilla/mux"
 )
@@ -17,10 +16,8 @@ type WebAPI struct {
 	r *mux.Router
 	// addr represents address
 	addr string
-	// qSign represents sign queue
-	qSign *signqueue.SignQueue
-	// qVerify represents verify queue
-	qVerify *verify_queue.QVerify
+	// queue represents sign queue
+	queue *queue.Queue
 	// allowedSigners represents signers that allowed to be used by the web api
 	allowedSigners []string
 	// version represents git version of the application
@@ -28,11 +25,10 @@ type WebAPI struct {
 }
 
 // NewWebAPI initializes web api with routes
-func NewWebAPI(addr string, qs *signqueue.SignQueue, qv *verify_queue.QVerify, allowedSigners []string, version version.Version) *WebAPI {
+func NewWebAPI(addr string, qs *queue.Queue, allowedSigners []string, version version.Version) *WebAPI {
 	wa := WebAPI{
 		addr:           addr,
-		qSign:          qs,
-		qVerify:        qv,
+		queue:          qs,
 		allowedSigners: allowedSigners,
 		version:        version,
 		r:              mux.NewRouter(),
@@ -55,6 +51,7 @@ func NewWebAPI(addr string, qs *signqueue.SignQueue, qv *verify_queue.QVerify, a
 
 // Serve starts the web server
 func (wa *WebAPI) Serve() {
+	// create server
 	s := &http.Server{
 		Addr:           wa.addr,
 		Handler:        wa.r,

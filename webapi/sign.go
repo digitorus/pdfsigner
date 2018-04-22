@@ -11,7 +11,7 @@ import (
 
 	"mime/multipart"
 
-	"bitbucket.org/digitorus/pdfsigner/sign_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
@@ -61,7 +61,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// add job to the queue
-	jobID, err := addSignJob(wa.qSign, f, fileNames)
+	jobID, err := addSignJob(wa.queue, f, fileNames)
 	if err != nil {
 		httpError(w, errors2.Wrap(err, "add tasks"), 500)
 		return
@@ -77,7 +77,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, res, http.StatusCreated)
 }
 
-func addSignJob(qs *signqueue.SignQueue, f fields, fileNames []string) (string, error) {
+func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}
@@ -98,8 +98,8 @@ func addSignJob(qs *signqueue.SignQueue, f fields, fileNames []string) (string, 
 }
 
 type JobStatus struct {
-	signqueue.Job
-	Tasks []signqueue.Task `json:"tasks"`
+	queue.Job
+	Tasks []queue.Task `json:"tasks"`
 }
 
 func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +107,7 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 
-	job, err := wa.qSign.GetJobByID(jobID)
+	job, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
@@ -131,7 +131,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {
 	taskID := vars["taskID"]
 
 	// get file path
-	filePath, err := wa.qSign.GetCompletedTaskFilePath(jobID, taskID)
+	filePath, err := wa.queue.GetCompletedTaskFilePath(jobID, taskID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
@@ -214,7 +214,7 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
 	jobID := vars["jobID"]
 
 	// delete job by id
-	wa.qSign.DeleteJob(jobID)
+	wa.queue.DeleteJob(jobID)
 
 	// respond with ok
 	w.WriteHeader(http.StatusOK)

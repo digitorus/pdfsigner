@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"bitbucket.org/digitorus/pdfsigner/verify_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
@@ -41,7 +41,7 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	jobID, err := addVerifyJob(wa.qVerify, fileNames)
+	jobID, err := addVerifyJob(wa.queue, fileNames)
 	if err != nil {
 		httpError(w, errors2.Wrap(err, "push tasks"), 500)
 		return
@@ -60,7 +60,7 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 	jobID := vars["jobID"]
 
 	// get job from the queue
-	job, err := wa.qVerify.GetJobByID(jobID)
+	job, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
 		httpError(w, err, 500)
 		return
@@ -71,18 +71,18 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // addVerifyJob adds verification job to the verification queue
-func addVerifyJob(qs *verify_queue.QVerify, fileNames []string) (string, error) {
+func addVerifyJob(qs *queue.Queue, fileNames []string) (string, error) {
 	totalTasks := len(fileNames)
 
 	// add job
-	jobID := qs.AddJob(totalTasks)
+	jobID := qs.AddJob()
 
 	// determine priority
 	priority := determinePriority(totalTasks)
 
 	// add tasks
 	for _, fileName := range fileNames {
-		_, err := qs.AddTask(jobID, fileName, priority)
+		_, err := qs.AddTask(queue.VerificationUnitName, jobID, fileName, "", priority)
 		if err != nil {
 			return "", err
 		}

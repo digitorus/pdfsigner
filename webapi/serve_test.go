@@ -15,9 +15,8 @@ import (
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/sign_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	"bitbucket.org/digitorus/pdfsigner/verify_queue"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +28,7 @@ type filePart struct {
 
 var (
 	wa      *WebAPI
-	qs      *signqueue.signQueue
+	q       *queue.Queue
 	proto   = "http://"
 	addr    = "localhost:3000"
 	baseURL = proto + addr
@@ -47,8 +46,8 @@ func runTest(m *testing.M) int {
 		log.Fatal(err)
 	}
 
-	// create new signQueue
-	qs = signqueue.NewSignQueue()
+	// create new queue
+	q = queue.NewQueue()
 
 	// create signer
 	signData := signer.SignData{
@@ -65,14 +64,11 @@ func runTest(m *testing.M) int {
 		},
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
-	qs.AddSigner("simple", signData, 10)
-	qs.Runner()
-
-	qv := verify_queue.NewQVerify()
-	qv.Runner()
+	q.AddUnit("simple", signData)
+	q.Runner()
 
 	// create web api
-	wa = NewWebAPI(addr, qs, qv, []string{
+	wa = NewWebAPI(addr, q, []string{
 		"simple",
 	}, version.Version{Version: "0.1"})
 
@@ -138,7 +134,7 @@ func TestFlow(t *testing.T) {
 	//assert.Equal(t, true, job.IsCompleted)
 	assert.Equal(t, 3, len(jobStatus.Tasks))
 	for _, task := range jobStatus.Tasks {
-		assert.Equal(t, signqueue.StatusCompleted, task.Status)
+		assert.Equal(t, queue.StatusCompleted, task.Status)
 
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)

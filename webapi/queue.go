@@ -12,7 +12,8 @@ func (wa *WebAPI) handleGetQueueSize(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	signerName := vars["signerName"]
 
-	queue, err := wa.qSign.GetQueueSizeBySignerName(signerName)
+	// get queue sizes by signer name
+	queue, err := wa.queue.GetQueueSizeByUnitName(signerName)
 	if err != nil {
 		httpError(w, err, 500)
 	}

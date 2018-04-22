@@ -8,7 +8,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/priority_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
@@ -121,7 +121,7 @@ func setupSigner(signerName string) {
 	}
 
 	// add signer to signers map
-	signQueue.AddSigner(signerName, config.SignData, 10)
+	signVerifyQueue.AddUnit(signerName, config.SignData)
 }
 
 // setupService depending on the type of the service setups service
@@ -146,24 +146,23 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		sessionID := signQueue.AddJob(signer.SignData{})
+		sessionID := signVerifyQueue.AddJob(signer.SignData{})
 
 		// push job
-		signQueue.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
+		signVerifyQueue.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
 	})
 }
 
 // setupServe runs the web api according to the config settings
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
-	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signQueue, verifyQueue, service.Signers, ver)
+	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signVerifyQueue, service.Signers, ver)
 	wa.Serve()
 }
 
 // runQueues starts the mechanism to sign the files whenever they are getting into the queue.
 func runQueues() {
-	signQueue.Runner()
-	verifyQueue.Runner()
+	signVerifyQueue.Runner()
 }
 
 func init() {

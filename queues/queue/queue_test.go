@@ -1,11 +1,11 @@
-package signqueue
+package queue
 
 import (
 	"testing"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/priority_queue"
+	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,13 +26,13 @@ func TestQSignersMap(t *testing.T) {
 			Approval: false,
 		},
 	}
-	d.SetPEM("../testfiles/test.crt", "../testfiles/test.pem", "")
+	d.SetPEM("../../testfiles/test.crt", "../../testfiles/test.pem", "")
 
-	// create SignQueue
-	qs := NewSignQueue()
+	// create Queue
+	qs := NewQueue()
 
 	// add signer
-	qs.AddSigner("simple", d, 10)
+	qs.AddUnit("simple", d)
 
 	// create session
 	var signData signer.SignData
@@ -47,8 +47,8 @@ func TestQSignersMap(t *testing.T) {
 	taskID, err := qs.AddTask(
 		"simple",
 		jobID,
-		"../testfiles/testfile20.pdf",
-		"../testfiles/testfile20_signed.pdf",
+		"../../testfiles/testfile20.pdf",
+		"../../testfiles/testfile20_signed.pdf",
 		priority_queue.HighPriority,
 	)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestQSignersMap(t *testing.T) {
 	assert.Equal(t, 1, len(job.TasksMap))
 
 	// sign job
-	qs.SignNextTask("simple")
+	qs.processNextTask("simple")
 
 	job, err = qs.GetJobByID(jobID)
 	if err != nil {
