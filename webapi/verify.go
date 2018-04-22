@@ -1,17 +1,17 @@
 package webapi
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
-	"bitbucket.org/digitorus/pdfsigner/queued_verify"
+	"bitbucket.org/digitorus/pdfsigner/verify_queue"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
 
+// handleVerifySchedule add a new verification job to the verification queue
 func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
 	// put job with specified signer
 	mr, err := r.MultipartReader()
@@ -53,11 +53,13 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleVerifyCheck check current status of the job
 func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 
+	// get job from the queue
 	job, err := wa.qVerify.GetJobByID(jobID)
 	if err != nil {
 		httpError(w, err, 500)
@@ -65,20 +67,20 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// respond with json
-	j, err := json.Marshal(job)
-	if err != nil {
-		httpError(w, err, 500)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(j)
+	respondJSON(w, job, http.StatusOK)
 }
 
-func addVerifyJob(qs *queued_verify.QVerify, fileNames []string) (string, error) {
+// addVerifyJob adds verification job to the verification queue
+func addVerifyJob(qs *verify_queue.QVerify, fileNames []string) (string, error) {
 	totalTasks := len(fileNames)
 
+	// add job
 	jobID := qs.AddJob(totalTasks)
+
+	// determine priority
 	priority := determinePriority(totalTasks)
 
+	// add tasks
 	for _, fileName := range fileNames {
 		_, err := qs.AddTask(jobID, fileName, priority)
 		if err != nil {

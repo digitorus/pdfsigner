@@ -1,7 +1,6 @@
 package webapi
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -12,16 +11,18 @@ import (
 
 	"mime/multipart"
 
-	"bitbucket.org/digitorus/pdfsigner/queuedsign"
+	"bitbucket.org/digitorus/pdfsigner/sign_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
 
+// handleSignScheduleResponse represents response for handleSignSchedule
 type handleSignScheduleResponse struct {
 	JobID string `json:"job_id"`
 }
 
+// handleSignSchedule adds a job to the queue
 func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	// put job with specified signer
 	mr, err := r.MultipartReader()
@@ -59,25 +60,24 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// add job to the queue
 	jobID, err := addSignJob(wa.qSign, f, fileNames)
 	if err != nil {
 		httpError(w, errors2.Wrap(err, "add tasks"), 500)
 		return
 	}
 
-	// respond with json
+	// create response
 	res := handleSignScheduleResponse{jobID}
-	j, err := json.Marshal(res)
-	if err != nil {
-		httpError(w, err, 500)
-	}
-	w.WriteHeader(http.StatusCreated)
+
+	// set location
 	w.Header().Set("Location", "/sign/"+jobID)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(j)
+
+	// respond with json
+	respondJSON(w, res, http.StatusCreated)
 }
 
-func addSignJob(qs *queuedsign.QSign, f fields, fileNames []string) (string, error) {
+func addSignJob(qs *signqueue.SignQueue, f fields, fileNames []string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}
@@ -98,8 +98,8 @@ func addSignJob(qs *queuedsign.QSign, f fields, fileNames []string) (string, err
 }
 
 type JobStatus struct {
-	queuedsign.Job
-	Tasks []queuedsign.Task `json:"tasks"`
+	signqueue.Job
+	Tasks []signqueue.Task `json:"tasks"`
 }
 
 func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
@@ -121,13 +121,7 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
 
 	jobStatus := JobStatus{job, tasks}
 
-	// respond with json
-	j, err := json.Marshal(jobStatus)
-	if err != nil {
-		httpError(w, err, 500)
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(j)
+	respondJSON(w, jobStatus, http.StatusOK)
 }
 
 func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {
@@ -180,6 +174,8 @@ func parseFields(p *multipart.Part, f *fields) error {
 		if err != nil {
 			return nil
 		}
+
+		// get field content
 		str := string(slurp)
 
 		switch p.FormName() {
@@ -211,9 +207,15 @@ func parseFields(p *multipart.Part, f *fields) error {
 	return nil
 }
 
+// handleSignDelete removes job from the queue
 func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
-	// get tasks for job
+	// get job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
+
+	// delete job by id
 	wa.qSign.DeleteJob(jobID)
+
+	// respond with ok
+	w.WriteHeader(http.StatusOK)
 }

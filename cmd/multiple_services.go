@@ -121,7 +121,7 @@ func setupSigner(signerName string) {
 	}
 
 	// add signer to signers map
-	qSign.AddSigner(signerName, config.SignData, 10)
+	signQueue.AddSigner(signerName, config.SignData, 10)
 }
 
 // setupService depending on the type of the service setups service
@@ -146,24 +146,24 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		sessionID := qSign.AddJob(signer.SignData{})
+		sessionID := signQueue.AddJob(signer.SignData{})
 
 		// push job
-		qSign.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
+		signQueue.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
 	})
 }
 
 // setupServe runs the web api according to the config settings
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
-	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, qSign, qVerify, service.Signers, ver)
+	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signQueue, verifyQueue, service.Signers, ver)
 	wa.Serve()
 }
 
 // runQueues starts the mechanism to sign the files whenever they are getting into the queue.
 func runQueues() {
-	qSign.Runner()
-	qVerify.Runner()
+	signQueue.Runner()
+	verifyQueue.Runner()
 }
 
 func init() {

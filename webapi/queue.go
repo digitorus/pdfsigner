@@ -1,12 +1,12 @@
 package webapi
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
+// handleGetQueueSize responses with queue size by signer name
 func (wa *WebAPI) handleGetQueueSize(w http.ResponseWriter, r *http.Request) {
 	// get tasks for job
 	vars := mux.Vars(r)
@@ -17,12 +17,5 @@ func (wa *WebAPI) handleGetQueueSize(w http.ResponseWriter, r *http.Request) {
 		httpError(w, err, 500)
 	}
 
-	// respond with json
-	j, err := json.Marshal(queue)
-	if err != nil {
-		httpError(w, err, 500)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(j)
+	respondJSON(w, queue, http.StatusOK)
 }

@@ -15,9 +15,9 @@ import (
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/queued_verify"
-	"bitbucket.org/digitorus/pdfsigner/queuedsign"
+	"bitbucket.org/digitorus/pdfsigner/sign_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
+	"bitbucket.org/digitorus/pdfsigner/verify_queue"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +29,7 @@ type filePart struct {
 
 var (
 	wa      *WebAPI
-	qs      *queuedsign.QSign
+	qs      *signqueue.signQueue
 	proto   = "http://"
 	addr    = "localhost:3000"
 	baseURL = proto + addr
@@ -47,8 +47,8 @@ func runTest(m *testing.M) int {
 		log.Fatal(err)
 	}
 
-	// create new QSign
-	qs = queuedsign.NewQSign()
+	// create new signQueue
+	qs = signqueue.NewSignQueue()
 
 	// create signer
 	signData := signer.SignData{
@@ -68,7 +68,7 @@ func runTest(m *testing.M) int {
 	qs.AddSigner("simple", signData, 10)
 	qs.Runner()
 
-	qv := queued_verify.NewQVerify()
+	qv := verify_queue.NewQVerify()
 	qv.Runner()
 
 	// create web api
@@ -81,7 +81,7 @@ func runTest(m *testing.M) int {
 	return m.Run()
 }
 
-func TestUploadCheckDownload(t *testing.T) {
+func TestFlow(t *testing.T) {
 	// test upload
 	//create file parts
 	fileParts := []filePart{
@@ -118,13 +118,8 @@ func TestUploadCheckDownload(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
 		t.Fatal(err)
 	}
-	if scheduleResponse.JobID == "" {
-		t.Fatal("not received jobID")
-	}
-
-	if w.Header().Get("Location") != "/sign/"+scheduleResponse.JobID {
-		t.Fatal("location is not set")
-	}
+	assert.NotEmpty(t, scheduleResponse.JobID)
+	assert.Equal(t, "/sign/"+scheduleResponse.JobID, w.Header().Get("Location"), "location is not set")
 
 	// wait for signing files
 	time.Sleep(2 * time.Second)
@@ -133,9 +128,7 @@ func TestUploadCheckDownload(t *testing.T) {
 	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Fatalf("status not ok: %v", w.Body.String())
-	}
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	var jobStatus JobStatus
 	if err := json.NewDecoder(w.Body).Decode(&jobStatus); err != nil {
@@ -145,15 +138,13 @@ func TestUploadCheckDownload(t *testing.T) {
 	//assert.Equal(t, true, job.IsCompleted)
 	assert.Equal(t, 3, len(jobStatus.Tasks))
 	for _, task := range jobStatus.Tasks {
-		assert.Equal(t, queuedsign.StatusCompleted, task.Status)
+		assert.Equal(t, signqueue.StatusCompleted, task.Status)
 
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
-		if w.Code != http.StatusOK {
-			t.Fatalf("status not ok: %v", w.Body.String())
-		}
+		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 		assert.Equal(t, 8994, len(w.Body.Bytes()))
 	}
 
@@ -161,33 +152,26 @@ func TestUploadCheckDownload(t *testing.T) {
 	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Fatalf("status not ok: %v", w.Body.String())
-	}
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
-	if w.Code == http.StatusOK {
-		t.Fatalf("not removed")
-	}
+	assert.NotEqual(t, http.StatusOK, w.Code, w.Body.String(), "not removed")
 
 	// test get version
 	r = httptest.NewRequest("GET", baseURL+"/version", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
-	if w.Code != http.StatusOK {
-		t.Fatalf("status not ok: %v", w.Body.String())
-	}
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
 	var ver version.Version
 	if err := json.NewDecoder(w.Body).Decode(&ver); err != nil {
 		t.Fatal(err)
 	}
-	if ver.Version != "0.1" {
-		t.Fatal("Version is not correct")
-	}
 
+	assert.Equal(t, ver.Version, "0.1")
 }
 
 // Creates a new multiple files upload http request with optional extra params

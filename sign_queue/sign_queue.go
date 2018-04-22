@@ -1,4 +1,4 @@
-package queuedsign
+package signqueue
 
 import (
 	"errors"
@@ -19,30 +19,31 @@ var (
 	StatusCompleted = "Completed"
 )
 
-// QSign represents sign queue
-type QSign struct {
+// SignQueue represents sign queue
+type SignQueue struct {
 	// signers represent all the signers by name of the signer
-	signers map[string]QSigner
+	signers map[string]queueSigner
 	// jobs represents jobs by id of the job
 	jobs map[string]*Job
 }
 
-// QSigner represents
-type QSigner struct {
+// queueSigner represents queue signer with it's priority queue
+type queueSigner struct {
 	// name represents the name of the signer
 	name string
-	// pq represents priority queue
-	pq *priority_queue.PriorityQueue
-	// signData represents
+	// signData represents sign data of the signer
 	signData signer.SignData
+	// pq represents priority queue used by the signer
+	pq *priority_queue.PriorityQueue
 }
 
+// Job represents a job for sign queue, stores tasks and sign data to override signers initial sign data
 type Job struct {
 	// ID represents id of the job
 	ID string `json:"id"`
 	// TasksMap represents tasks added to the job
 	TasksMap map[string]Task `json:"-"`
-	// SignData represents additional sign data added by request
+	// SignData represents additional sign data added by request to override signer initial sign data
 	SignData signer.SignData `json:"-"`
 }
 
@@ -88,21 +89,22 @@ type Task struct {
 	Error string `json:"error,omitempty"`
 }
 
-func NewQSign() *QSign {
-	return &QSign{
-		signers: make(map[string]QSigner, 1),
+// NewSignQueue creates new sign queue
+func NewSignQueue() *SignQueue {
+	return &SignQueue{
+		signers: make(map[string]queueSigner, 1),
 		jobs:    make(map[string]*Job, 1),
 	}
 }
 
 // AddSigner adds signer to signers map
-func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize int) {
+func (q *SignQueue) AddSigner(signerName string, signData signer.SignData, queueSize int) {
 	// skip if already setup
 	if _, exists := q.signers[signerName]; exists {
 		return
 	}
 
-	qs := QSigner{
+	qs := queueSigner{
 		name:     signerName,
 		pq:       priority_queue.New(queueSize),
 		signData: signData,
@@ -112,7 +114,7 @@ func (q *QSign) AddSigner(signerName string, signData signer.SignData, queueSize
 }
 
 // AddJob adds job to the jobs map
-func (q *QSign) AddJob(signData signer.SignData) string {
+func (q *SignQueue) AddJob(signData signer.SignData) string {
 	// generate unique id
 	id := xid.New().String()
 
@@ -130,12 +132,12 @@ func (q *QSign) AddJob(signData signer.SignData) string {
 }
 
 // DeleteJob deletes job from the jobs map
-func (q *QSign) DeleteJob(jobID string) {
+func (q *SignQueue) DeleteJob(jobID string) {
 	delete(q.jobs, jobID)
 }
 
 // AddTask adds task to the specific job by job id
-func (q *QSign) AddTask(signerName, jobID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
+func (q *SignQueue) AddTask(signerName, jobID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
 	// check if the signer is in the map
 	if _, exists := q.signers[signerName]; !exists {
 		return "", errors.New("signer is not in map")
@@ -173,7 +175,7 @@ func (q *QSign) AddTask(signerName, jobID, inputFilePath, outputFilePath string,
 }
 
 // SignNextTask signs task available for signing
-func (q *QSign) SignNextTask(signerName string) error {
+func (q *SignQueue) SignNextTask(signerName string) error {
 	if _, exists := q.signers[signerName]; !exists {
 		return errors.New("signer is not in map")
 	}
@@ -211,7 +213,7 @@ func (q *QSign) SignNextTask(signerName string) error {
 }
 
 // mergeJobSignerSignData merges job and signer signdata
-func (q *QSign) mergeJobSignerSignData(jobID string, signerSignData signer.SignData) (signer.SignData, error) {
+func (q *SignQueue) mergeJobSignerSignData(jobID string, signerSignData signer.SignData) (signer.SignData, error) {
 	// check if the job is in the jobs map
 	if _, exists := q.jobs[jobID]; !exists {
 		return signerSignData, errors.New("job is not in map")
@@ -242,7 +244,7 @@ func (q *QSign) mergeJobSignerSignData(jobID string, signerSignData signer.SignD
 	return signData, nil
 }
 
-func (q *QSign) GetJobByID(jobID string) (Job, error) {
+func (q *SignQueue) GetJobByID(jobID string) (Job, error) {
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
 		return Job{}, errors.New("job is not in map")
@@ -252,7 +254,7 @@ func (q *QSign) GetJobByID(jobID string) (Job, error) {
 }
 
 // GetCompletedTaskFilePath returns the file path if the task is completed
-func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
+func (q *SignQueue) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
 		return "", errors.New("job is not in map")
@@ -278,7 +280,7 @@ func (q *QSign) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 }
 
 // GetQueueSizeBySignerName returns lengths of the channels of all the priorities for the specific signer.
-func (q *QSign) GetQueueSizeBySignerName(signerName string) (priority_queue.LenAll, error) {
+func (q *SignQueue) GetQueueSizeBySignerName(signerName string) (priority_queue.LenAll, error) {
 	// check if the signer is in the map
 	if _, exists := q.signers[signerName]; !exists {
 		return priority_queue.LenAll{}, errors.New("signer is not in map")
@@ -288,7 +290,7 @@ func (q *QSign) GetQueueSizeBySignerName(signerName string) (priority_queue.LenA
 }
 
 // Runner starts separate go routine for each signer which signs associated job tasks when they appear
-func (q *QSign) Runner() {
+func (q *SignQueue) Runner() {
 	// run separate go routine for each signer
 	for _, s := range q.signers {
 		go func(name string) {

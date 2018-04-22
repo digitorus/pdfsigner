@@ -3,21 +3,21 @@ package cmd
 import (
 	"log"
 
-	"bitbucket.org/digitorus/pdfsigner/queued_verify"
-	"bitbucket.org/digitorus/pdfsigner/queuedsign"
+	"bitbucket.org/digitorus/pdfsigner/sign_queue"
+	"bitbucket.org/digitorus/pdfsigner/verify_queue"
 	"github.com/spf13/cobra"
 )
 
-// qSign stores queue for signs
-var qSign *queuedsign.QSign
+// signQueue stores queue for signs
+var signQueue *signqueue.SignQueue
 
-// qVerify stores queue for verifications
-var qVerify *queued_verify.QVerify
+// verifyQueue stores queue for verifications
+var verifyQueue *verify_queue.QVerify
 
 func init() {
 	// initialize queues
-	qSign = queuedsign.NewQSign()
-	qVerify = queued_verify.NewQVerify()
+	signQueue = signqueue.NewSignQueue()
+	verifyQueue = verify_queue.NewQVerify()
 }
 
 var (

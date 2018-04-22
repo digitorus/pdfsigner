@@ -1,4 +1,4 @@
-package queuedsign
+package signqueue
 
 import (
 	"testing"
@@ -28,8 +28,8 @@ func TestQSignersMap(t *testing.T) {
 	}
 	d.SetPEM("../testfiles/test.crt", "../testfiles/test.pem", "")
 
-	// create QSign
-	qs := NewQSign()
+	// create SignQueue
+	qs := NewSignQueue()
 
 	// add signer
 	qs.AddSigner("simple", d, 10)

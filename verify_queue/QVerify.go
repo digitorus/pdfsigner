@@ -1,4 +1,4 @@
-package queued_verify
+package verify_queue
 
 import (
 	"errors"
