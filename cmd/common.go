@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/spf13/cobra"
@@ -106,6 +106,8 @@ func getAddrPort() string {
 // bindSignerFlagsToConfig binds signer specific flags to variables.
 // Since viper is not supporting binding flags to an item of the array we use this workaround.
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
+	log.Debug("bindSignerFlagsToConfig")
+
 	// SignData
 	if cmd.PersistentFlags().Changed("approval") {
 		c.SignData.Signature.Approval = signatureApprovalFlag
@@ -177,7 +179,7 @@ func getSignerConfigByName(signerName string) signerConfig {
 // getConfigServiceByName returns service config by name
 func getConfigServiceByName(serviceName string) serviceConfig {
 	if serviceName == "" {
-		log.Fatal("service name is empty")
+		log.Fatal("service name is not provided")
 	}
 
 	// find service config

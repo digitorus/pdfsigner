@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"

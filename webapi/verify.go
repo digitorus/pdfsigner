@@ -3,7 +3,6 @@ package webapi
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
@@ -12,12 +11,11 @@ import (
 )
 
 // handleVerifySchedule add a new verification job to the verification queue
-func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) error {
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+		return httpError(w, errors2.Wrap(err, "read multipart"), 500)
 	}
 
 	var fileNames []string
@@ -29,32 +27,32 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
-			httpError(w, errors2.Wrap(err, "get multipart"), 500)
-			return
+			return httpError(w, errors2.Wrap(err, "get multipart"), 500)
 		}
 
 		//save pdf file to tmp
 		err = savePDFToTemp(p, &fileNames)
 		if err != nil {
-			httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
-			return
+			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
 		}
 	}
 
 	jobID, err := addVerifyJob(wa.queue, fileNames)
 	if err != nil {
-		httpError(w, errors2.Wrap(err, "push tasks"), 500)
-		return
+		return httpError(w, errors2.Wrap(err, "push tasks"), 500)
+
 	}
 
 	_, err = fmt.Fprint(w, jobID)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
+
+	return nil
 }
 
 // handleVerifyCheck check current status of the job
-func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) error {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
@@ -62,12 +60,11 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) {
 	// get job from the queue
 	job, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
 
 	// respond with json
-	respondJSON(w, job, http.StatusOK)
+	return respondJSON(w, job, http.StatusOK)
 }
 
 // addVerifyJob adds verification job to the verification queue

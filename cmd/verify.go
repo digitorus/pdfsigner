@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/verify"
 	"github.com/spf13/cobra"

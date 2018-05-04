@@ -23,12 +23,11 @@ type handleSignScheduleResponse struct {
 }
 
 // handleSignSchedule adds a job to the queue
-func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) error {
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+		return httpError(w, errors2.Wrap(err, "read multipart"), 500)
 	}
 
 	var f fields
@@ -41,30 +40,26 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
-			httpError(w, errors2.Wrap(err, "get multipart"), 500)
-			return
+			return httpError(w, errors2.Wrap(err, "get multipart"), 500)
 		}
 
 		//parse fields
 		err = parseFields(p, &f)
 		if err != nil {
-			httpError(w, errors2.Wrap(err, "parse fields"), 500)
-			return
+			return httpError(w, errors2.Wrap(err, "parse fields"), 500)
 		}
 
 		//save pdf file to tmp
 		err = savePDFToTemp(p, &fileNames)
 		if err != nil {
-			httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
-			return
+			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
 		}
 	}
 
 	// add job to the queue
 	jobID, err := addSignJob(wa.queue, f, fileNames)
 	if err != nil {
-		httpError(w, errors2.Wrap(err, "add tasks"), 500)
-		return
+		return httpError(w, errors2.Wrap(err, "add tasks"), 500)
 	}
 
 	// create response
@@ -74,7 +69,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Location", "/sign/"+jobID)
 
 	// respond with json
-	respondJSON(w, res, http.StatusCreated)
+	return respondJSON(w, res, http.StatusCreated)
 }
 
 func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
@@ -102,29 +97,28 @@ type JobStatus struct {
 	Tasks []queue.Task `json:"tasks"`
 }
 
-func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 
 	job, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
 
 	status := r.URL.Query().Get("status")
 	tasks, err := job.GetTasks(status)
 	if err != nil {
-		httpError(w, err, 500)
+		return httpError(w, err, 500)
 	}
 
 	jobStatus := JobStatus{job, tasks}
 
-	respondJSON(w, jobStatus, http.StatusOK)
+	return respondJSON(w, jobStatus, http.StatusOK)
 }
 
-func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) error {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
@@ -133,32 +127,30 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) {
 	// get file path
 	filePath, err := wa.queue.GetCompletedTaskFilePath(jobID, taskID)
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
 
 	// get file
 	file, err := os.Open(filePath)
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
 	defer file.Close()
 
 	// get file info
 	fileInfo, err := file.Stat()
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
 	_, err = io.Copy(w, file)
 	if err != nil {
-		httpError(w, err, 500)
-		return
+		return httpError(w, err, 500)
 	}
+
+	return nil
 }
 
 type fields struct {
@@ -208,7 +200,7 @@ func parseFields(p *multipart.Part, f *fields) error {
 }
 
 // handleSignDelete removes job from the queue
-func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) error {
 	// get job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
@@ -218,4 +210,5 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) {
 
 	// respond with ok
 	w.WriteHeader(http.StatusOK)
+	return nil
 }

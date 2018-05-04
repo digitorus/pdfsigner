@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"

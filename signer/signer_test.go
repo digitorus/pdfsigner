@@ -1,9 +1,10 @@
 package signer
 
 import (
-	"log"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (wa *WebAPI) handleGetVersion(w http.ResponseWriter, r *http.Request) {
+func (wa *WebAPI) handleGetVersion(w http.ResponseWriter, r *http.Request) error {
 	// respond with json
-	respondJSON(w, wa.version, http.StatusOK)
+	return respondJSON(w, wa.version, http.StatusOK)
 }

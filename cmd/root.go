@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
@@ -29,6 +28,7 @@ var RootCmd = &cobra.Command{
 			// if the license couldn't be loaded try to initialize it
 			return initializeLicense()
 		}
+
 		return nil
 	},
 	Long: `Long multiline description`,
@@ -47,8 +47,6 @@ func Execute(v version.Version) {
 
 func init() {
 	// set the log flags
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.

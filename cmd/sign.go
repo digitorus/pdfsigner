@@ -22,7 +22,6 @@ var signPEMCmd = &cobra.Command{
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
-
 		// set sign data
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 

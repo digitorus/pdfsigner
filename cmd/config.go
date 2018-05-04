@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	homedir "github.com/mitchellh/go-homedir"
@@ -63,6 +64,8 @@ type serviceConfig struct {
 
 // initConfig reads in config inputFile and ENV variables if set.
 func initConfig() {
+	log.Info("Loading config...")
+
 	if configFilePathFlag != "" {
 		// Use config inputFile from the flag.
 		viper.SetConfigFile(configFilePathFlag)

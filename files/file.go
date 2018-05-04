@@ -3,10 +3,11 @@ package files
 import (
 	"io"
 	"io/ioutil"
-	"log"
 	"path"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"

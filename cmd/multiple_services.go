@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"log"
 	"path"
 	"strings"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/license"

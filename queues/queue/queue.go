@@ -3,8 +3,9 @@ package queue
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/verify"
 	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"

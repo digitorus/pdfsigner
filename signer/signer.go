@@ -4,8 +4,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/revocation"
 	"bitbucket.org/digitorus/pdfsign/sign"

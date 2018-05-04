@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"

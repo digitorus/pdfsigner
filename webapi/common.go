@@ -1,7 +1,6 @@
 package webapi
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -53,41 +52,8 @@ func determinePriority(totalTasks int) priority_queue.Priority {
 	} else {
 		priority = priority_queue.MediumPriority
 	}
+
 	return priority
-}
-
-// httpErr represents the error response to the user
-type httpErr struct {
-	// Message represents error message
-	Message string `json:"message"`
-	// Code represents error code
-	Code int `json:"code"`
-}
-
-// httpError writes to the response writer error and the code in json format
-func httpError(w http.ResponseWriter, err error, code int) {
-	e := httpErr{Message: err.Error(), Code: code}
-	// respond with json
-	respondJSON(w, e, code)
-}
-
-// respondJSON responds with json
-func respondJSON(w http.ResponseWriter, data interface{}, code int) {
-	// marshal data
-	j, err := json.Marshal(data)
-	if err != nil {
-		httpError(w, err, 500)
-		return
-	}
-
-	// set response code
-	w.WriteHeader(code)
-
-	// set content type
-	w.Header().Set("Content-Type", "application/json")
-
-	// respond with json
-	w.Write(j)
 }
 
 // dumpRequest dumps request, only for debugging

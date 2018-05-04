@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
 	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
@@ -42,6 +43,8 @@ const PublicKeyBase64 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH
 
 // Initialize extracts license from the bytes provided to LD variable and stores it inside the db
 func Initialize(licenseBytes []byte) error {
+	log.Info("Initializing license...")
+
 	// load license data
 	ld, err := newExtractLicense(licenseBytes)
 	if err != nil {
@@ -71,22 +74,24 @@ func Initialize(licenseBytes []byte) error {
 
 // Load loads the license from the db and extracts it to LD variable
 func Load() error {
+	log.Info("Loading license from the DB...")
+
 	// load license from the db
 	license, err := db.LoadByKey("license")
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors2.Wrap(err, "couldn't load license from the db")
 	}
 
 	// load license data
 	ld, err := newExtractLicense(license)
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors2.Wrap(err, "couldn't extract license")
 	}
 
 	// load limit state from the db
 	err = ld.loadLimitState()
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors2.Wrap(err, "couldn't load license limits")
 	}
 
 	// initialize rate limiter
@@ -99,6 +104,8 @@ func Load() error {
 }
 
 func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
+	log.Info("Extracting license...")
+
 	ld := LicenseData{}
 	// Unmarshal the public key.
 	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase64)

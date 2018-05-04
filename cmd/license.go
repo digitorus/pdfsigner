@@ -18,10 +18,11 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"github.com/pkg/errors"

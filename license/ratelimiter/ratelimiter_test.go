@@ -14,9 +14,10 @@ limitations under the License.
 package ratelimiter
 
 import (
-	"log"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 )

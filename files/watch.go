@@ -1,9 +1,10 @@
 package files
 
 import (
-	"log"
 	"path"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/fsnotify/fsnotify"
 )
