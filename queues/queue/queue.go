@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/verify"
@@ -303,7 +304,12 @@ func signTask(task Task, jobSignData signer.SignData, signerSignData signer.Sign
 
 	err := signer.SignFile(task.inputFilePath, task.outputFilePath, signData)
 	if err != nil {
-		log.Printf("Couldn't sign file: %v, %+v", task.inputFilePath, err)
+		log.WithFields(log.Fields{
+			"inputFile":  task.inputFilePath,
+			"outputFile": task.outputFilePath,
+			"signData":   signData,
+		}).Warnf("Couldn't sign file: %s", err)
+
 		return err
 	}
 
@@ -313,7 +319,7 @@ func signTask(task Task, jobSignData signer.SignData, signerSignData signer.Sign
 func verifyTask(task Task) error {
 	inputFile, err := os.Open(task.inputFilePath)
 	if err != nil {
-		log.Fatal(err)
+		return errors2.Wrap(err, "")
 	}
 	defer inputFile.Close()
 

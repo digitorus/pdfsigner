@@ -73,8 +73,6 @@ func runTest(m *testing.M) int {
 		"simple",
 	}, version.Version{Version: "0.1"})
 
-	log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
-
 	return m.Run()
 }
 
