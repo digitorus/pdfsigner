@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sync/atomic"
-	"time"
 
+	"bitbucket.org/digitorus/pdfsigner/db"
+	"github.com/gin-gonic/gin/json"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -55,12 +56,8 @@ type Job struct {
 	TasksMap map[string]Task `json:"-"`
 	// signData represents additional sign data added by request to override signer initial sign data
 	signData signer.SignData `json:"-"`
-	// totalAddedTasks represents total added tasks to the job, incremented atomically
-	totalAddedTasks uint32
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
 	totalProcesedTasks uint32
-
-	lastTaskAddedTime time.Time
 }
 
 // Task represents a single unit of work(file)
@@ -68,11 +65,11 @@ type Task struct {
 	// ID represents id of the task
 	ID string `json:"id"`
 	// JobID represents id of the job task is assigned to
-	JobID string `json:"-"`
-	// inputFilePath represents path to the unprocessed file
-	inputFilePath string
-	// outputFilePath represents path to the processed file
-	outputFilePath string
+	JobID string `json:"job_id"`
+	// InputFilePath represents path to the unprocessed file
+	InputFilePath string `json:"input_file_path"`
+	// OutputFilePath represents path to the processed file
+	OutputFilePath string `json:"output_file_path"`
 	// Status represents the status of the task. Pending, Failed, Completed.
 	Status string `json:"status"`
 	// Error represents error if the task failed
@@ -191,14 +188,23 @@ func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, p
 		return "", errors.New("job is not in map")
 	}
 
+	task, err := q.addTask(unitName, jobID, inputFilePath, outputFilePath, priority)
+	if err != nil {
+		return "", err
+	}
+
+	return task.ID, nil
+}
+
+func (q *Queue) addTask(unitName, jobID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (Task, error) {
 	// generate unique task id
 	id := xid.New().String()
 
 	//create task
 	t := Task{
 		ID:             id,
-		inputFilePath:  inputFilePath,
-		outputFilePath: outputFilePath,
+		InputFilePath:  inputFilePath,
+		OutputFilePath: outputFilePath,
 		JobID:          jobID,
 		Status:         StatusPending,
 	}
@@ -215,10 +221,33 @@ func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, p
 	//add item to queue
 	q.units[unitName].pq.Push(i)
 
-	// increment total added tasks to job
-	atomic.AddUint32(&q.jobs[jobID].totalAddedTasks, 1)
+	return t, nil
+}
 
-	return id, nil
+func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames []string, priority priority_queue.Priority) error {
+	// check if the unit is in the map
+	if _, exists := q.units[unitName]; !exists {
+		return errors.New("unit is not in map")
+	}
+	// check if the job is in the map
+	job, exists := q.jobs[jobID]
+	if !exists {
+		return errors.New("job is not in map")
+	}
+
+	for _, f := range fileNames {
+		_, err := q.addTask(unitName, jobID, f, f+"_signed", priority)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := q.SaveToDB(job)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // processNextTask signs task available for signing
@@ -265,18 +294,13 @@ func (q *Queue) processNextTask(unitName string) error {
 	atomic.AddUint32(&job.totalProcesedTasks, 1)
 
 	if len(job.TasksMap) == int(job.totalProcesedTasks) {
-		// save state to the db after one second or close db session
+		err := q.SaveToDB(job)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-func (q *Queue) saveToDB() {
-
-}
-
-func (q *Queue) loadFromDB() {
-
 }
 
 func (q *Queue) GetJobByID(jobID string) (Job, error) {
@@ -311,7 +335,7 @@ func (q *Queue) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
 		return "", errors.New(fmt.Sprintf("task failed with error: %v", task.Error))
 	}
 
-	return task.outputFilePath, nil
+	return task.OutputFilePath, nil
 }
 
 // GetQueueSizeByUnitName returns lengths of the channels of all the priorities for the specific signer.
@@ -345,11 +369,11 @@ func signTask(task Task, jobSignData signer.SignData, signerSignData signer.Sign
 		signData.Signature.Approval = jobSignData.Signature.Approval
 	}
 
-	err := signer.SignFile(task.inputFilePath, task.outputFilePath, signData)
+	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"inputFile":  task.inputFilePath,
-			"outputFile": task.outputFilePath,
+			"inputFile":  task.InputFilePath,
+			"outputFile": task.OutputFilePath,
 			"signData":   signData,
 		}).Warnf("Couldn't sign file: %s", err)
 
@@ -360,7 +384,7 @@ func signTask(task Task, jobSignData signer.SignData, signerSignData signer.Sign
 }
 
 func verifyTask(task Task) error {
-	inputFile, err := os.Open(task.inputFilePath)
+	inputFile, err := os.Open(task.InputFilePath)
 	if err != nil {
 		return errors2.Wrap(err, "")
 	}
@@ -388,4 +412,26 @@ func (q *Queue) Runner() {
 		}(s.name)
 	}
 
+}
+
+func (q *Queue) SaveToDB(job *Job) error {
+	var marshaledMap = map[string][]byte{}
+	for _, t := range job.TasksMap {
+		marshaledTask, err := json.Marshal(t)
+		if err != nil {
+			return err
+		}
+		marshaledMap[t.ID] = marshaledTask
+	}
+
+	err := db.BatchUpsertTasks(marshaledMap)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (q *Queue) LoadFromDB() error {
+	return nil
 }

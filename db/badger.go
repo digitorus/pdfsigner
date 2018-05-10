@@ -15,23 +15,6 @@ func init() {
 	opts.ValueDir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
 }
 
-type DB struct {
-	db *badger.DB
-}
-
-func NewDBConnection() (*badger.DB, error) {
-	db, err := badger.Open(opts)
-	if err != nil {
-		return db, err
-	}
-
-	return db, nil
-}
-
-func (d *DB) Close() {
-
-}
-
 func SaveByKey(key string, value []byte) error {
 	db, err := badger.Open(opts)
 	if err != nil {
@@ -75,4 +58,23 @@ func LoadByKey(key string) ([]byte, error) {
 	}
 
 	return result, nil
+}
+
+func BatchUpsertTasks(tasks map[string][]byte) error {
+	db, err := badger.Open(opts)
+	if err != nil {
+		return errors.Wrap(err, "open connection")
+	}
+	defer db.Close()
+
+	err = db.Update(func(txn *badger.Txn) error {
+		for id, t := range tasks {
+			err := txn.Set([]byte(id), t)
+			return err
+		}
+
+		return nil
+	})
+
+	return nil
 }

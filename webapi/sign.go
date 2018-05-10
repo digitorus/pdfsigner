@@ -82,11 +82,9 @@ func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
 	jobID := qs.AddSignJob(f.signData)
 	priority := determinePriority(totalTasks)
 
-	for _, fileName := range fileNames {
-		_, err := qs.AddTask(f.signerName, jobID, fileName, fileName+"_signed.pdf", priority)
-		if err != nil {
-			return "", err
-		}
+	err := qs.AddBatchPersistentTasks(f.signerName, jobID, fileNames, priority)
+	if err != nil {
+		return "", err
 	}
 
 	return jobID, nil
