@@ -122,7 +122,7 @@ func setupSigner(signerName string) {
 	}
 
 	// add signer to signers map
-	signVerifyQueue.AddUnit(signerName, config.SignData)
+	signVerifyQueue.AddSignUnit(signerName, config.SignData)
 }
 
 // setupService depending on the type of the service setups service
@@ -147,7 +147,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		sessionID := signVerifyQueue.AddJob(signer.SignData{})
+		sessionID := signVerifyQueue.AddSignJob(signer.SignData{})
 
 		// push job
 		signVerifyQueue.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)

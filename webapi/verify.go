@@ -72,7 +72,7 @@ func addVerifyJob(qs *queue.Queue, fileNames []string) (string, error) {
 	totalTasks := len(fileNames)
 
 	// add job
-	jobID := qs.AddJob()
+	jobID := qs.AddVerifyJob()
 
 	// determine priority
 	priority := determinePriority(totalTasks)

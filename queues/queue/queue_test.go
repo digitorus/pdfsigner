@@ -32,11 +32,11 @@ func TestQSignersMap(t *testing.T) {
 	qs := NewQueue()
 
 	// add signer
-	qs.AddUnit("simple", d)
+	qs.AddSignUnit("simple", d)
 
 	// create session
 	var signData signer.SignData
-	jobID := qs.AddJob(signData)
+	jobID := qs.AddSignJob(signData)
 	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
@@ -65,5 +65,5 @@ func TestQSignersMap(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, 1, len(job.TasksMap))
-	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status)
+	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status, job.TasksMap[taskID].Error)
 }

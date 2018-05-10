@@ -78,7 +78,7 @@ var serveWithSingleSignerCmd = &cobra.Command{
 		}
 
 		// add signer to the queue signers pool
-		signVerifyQueue.AddUnit(signerNameFlag, config.SignData)
+		signVerifyQueue.AddSignUnit(signerNameFlag, config.SignData)
 
 		// start web api with runners
 		startWebAPIWithRunners()
@@ -112,7 +112,7 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 // startWebAPIWithRunnersUnnamedSigner start the web api
 func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
 	id := "unnamed-signer"
-	signVerifyQueue.AddUnit(id, signData)
+	signVerifyQueue.AddSignUnit(id, signData)
 	startWebAPIWithRunners()
 }
 

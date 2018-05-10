@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync/atomic"
+	"time"
 
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +30,7 @@ var (
 // Queue represents sign queue
 type Queue struct {
 	// units represent all the units by name of the signer
-	units map[string]unit
+	units map[string]*unit
 	// jobs represents jobs by id of the job
 	jobs map[string]*Job
 }
@@ -53,6 +55,12 @@ type Job struct {
 	TasksMap map[string]Task `json:"-"`
 	// signData represents additional sign data added by request to override signer initial sign data
 	signData signer.SignData `json:"-"`
+	// totalAddedTasks represents total added tasks to the job, incremented atomically
+	totalAddedTasks uint32
+	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
+	totalProcesedTasks uint32
+
+	lastTaskAddedTime time.Time
 }
 
 // Task represents a single unit of work(file)
@@ -100,16 +108,16 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 // NewQueue creates new sign queue
 func NewQueue() *Queue {
 	return &Queue{
-		units: make(map[string]unit, 1),
+		units: make(map[string]*unit, 1),
 		jobs:  make(map[string]*Job, 1),
 	}
 }
 
-// AddUnit adds signer to units map
-func (q *Queue) AddUnit(unitName string, signData ...signer.SignData) {
+// addUnit adds unit to units map
+func (q *Queue) addUnit(unitName string) *unit {
 	// skip if already setup
 	if _, exists := q.units[unitName]; exists {
-		return
+		return nil
 	}
 
 	// create signer
@@ -118,18 +126,27 @@ func (q *Queue) AddUnit(unitName string, signData ...signer.SignData) {
 		pq:   priority_queue.New(10),
 	}
 
-	// set sign data if provided
-	if len(signData) == 1 {
-		u.signData = signData[0]
-		u.isSigningUnit = true
-	}
-
 	// assign signer to units map
-	q.units[unitName] = u
+	q.units[unitName] = &u
+
+	return &u
 }
 
-// AddJob adds job to the jobs map
-func (q *Queue) AddJob(signData ...signer.SignData) string {
+// AddSignUnit adds signer unit to units map
+func (q *Queue) AddSignUnit(unitName string, signData signer.SignData) {
+	u := q.addUnit(unitName)
+	// set sign data if provided
+	u.signData = signData
+	u.isSigningUnit = true
+}
+
+// AddVerifyUnit adds verify unit to units map
+func (q *Queue) AddVerifyUnit(unitName string) {
+	q.addUnit(unitName)
+}
+
+// addJob adds job to the jobs map
+func (q *Queue) addJob() *Job {
 	// generate unique id
 	id := xid.New().String()
 
@@ -139,15 +156,23 @@ func (q *Queue) AddJob(signData ...signer.SignData) string {
 		TasksMap: make(map[string]Task, 1),
 	}
 
-	// set sign data if provided
-	if len(signData) == 1 {
-		j.signData = signData[0]
-	}
-
-	// assign job to sign map
+	// add job to the jobs map
 	q.jobs[id] = &j
 
-	return id
+	return &j
+}
+
+// AddSignJob adds sign job to the jobs map
+func (q *Queue) AddSignJob(signData signer.SignData) string {
+	j := q.addJob()
+	j.signData = signData
+	return j.ID
+}
+
+// AddVerifyJob adds sign job to the jobs map
+func (q *Queue) AddVerifyJob() string {
+	j := q.addJob()
+	return j.ID
 }
 
 // DeleteJob deletes job from the jobs map
@@ -190,6 +215,9 @@ func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, p
 	//add item to queue
 	q.units[unitName].pq.Push(i)
 
+	// increment total added tasks to job
+	atomic.AddUint32(&q.jobs[jobID].totalAddedTasks, 1)
+
 	return id, nil
 }
 
@@ -231,9 +259,24 @@ func (q *Queue) processNextTask(unitName string) error {
 	}
 
 	// update tasks map
-	q.jobs[task.JobID].TasksMap[task.ID] = task
+	job.TasksMap[task.ID] = task
+
+	// increment total processed tasks
+	atomic.AddUint32(&job.totalProcesedTasks, 1)
+
+	if len(job.TasksMap) == int(job.totalProcesedTasks) {
+		// save state to the db after one second or close db session
+	}
 
 	return nil
+}
+
+func (q *Queue) saveToDB() {
+
+}
+
+func (q *Queue) loadFromDB() {
+
 }
 
 func (q *Queue) GetJobByID(jobID string) (Job, error) {
@@ -344,4 +387,5 @@ func (q *Queue) Runner() {
 			}
 		}(s.name)
 	}
+
 }

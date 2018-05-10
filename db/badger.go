@@ -15,6 +15,23 @@ func init() {
 	opts.ValueDir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
 }
 
+type DB struct {
+	db *badger.DB
+}
+
+func NewDBConnection() (*badger.DB, error) {
+	db, err := badger.Open(opts)
+	if err != nil {
+		return db, err
+	}
+
+	return db, nil
+}
+
+func (d *DB) Close() {
+
+}
+
 func SaveByKey(key string, value []byte) error {
 	db, err := badger.Open(opts)
 	if err != nil {

@@ -79,7 +79,7 @@ func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
 
 	totalTasks := len(fileNames)
 
-	jobID := qs.AddJob(f.signData)
+	jobID := qs.AddSignJob(f.signData)
 	priority := determinePriority(totalTasks)
 
 	for _, fileName := range fileNames {
