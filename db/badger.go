@@ -80,7 +80,7 @@ func DeleteByKey(key string) error {
 	return nil
 }
 
-func BatchUpsert(tasks map[string][]byte) error {
+func BatchUpsert(objectsByID map[string][]byte) error {
 	db, err := badger.Open(opts)
 	if err != nil {
 		return errors.Wrap(err, "open connection")
@@ -88,8 +88,8 @@ func BatchUpsert(tasks map[string][]byte) error {
 	defer db.Close()
 
 	err = db.Update(func(txn *badger.Txn) error {
-		for id, t := range tasks {
-			err := txn.Set([]byte(id), t)
+		for id, object := range objectsByID {
+			err := txn.Set([]byte(id), object)
 			if err != nil {
 				return err
 			}
@@ -100,7 +100,7 @@ func BatchUpsert(tasks map[string][]byte) error {
 	return nil
 }
 
-func BatchDelete(tasks []string) error {
+func BatchDelete(objectIDs []string) error {
 	db, err := badger.Open(opts)
 	if err != nil {
 		return errors.Wrap(err, "open connection")
@@ -108,7 +108,7 @@ func BatchDelete(tasks []string) error {
 	defer db.Close()
 
 	err = db.Update(func(txn *badger.Txn) error {
-		for _, id := range tasks {
+		for _, id := range objectIDs {
 			err := txn.Delete([]byte(id))
 			if err != nil {
 				return err

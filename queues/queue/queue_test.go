@@ -65,4 +65,21 @@ func TestQSignersMap(t *testing.T) {
 	}
 	assert.Equal(t, 1, len(job.TasksMap))
 	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status, job.TasksMap[taskID].Error)
+
+	// test saving to db
+	assert.NoError(t, qs.SaveToDB(jobID))
+
+	// test load
+	qs = NewQueue()
+	assert.NoError(t, qs.LoadFromDB())
+	jobFromDB, err := qs.GetJobByID(jobID)
+	assert.NoError(t, err)
+	assert.Equal(t, job, jobFromDB)
+
+	// test delete
+	assert.NoError(t, qs.DeleteJob(jobID))
+	qs = NewQueue()
+	assert.NoError(t, qs.LoadFromDB())
+	jobFromDB, err = qs.GetJobByID(jobID)
+	assert.Error(t, err)
 }

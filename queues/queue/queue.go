@@ -1,12 +1,11 @@
 package queue
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"sync/atomic"
-
-	"encoding/json"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
 	errors2 "github.com/pkg/errors"
@@ -58,7 +57,7 @@ type Job struct {
 	// SignData represents additional sign data added by request to override signer initial sign data
 	SignData SignData `json:"sign_data"`
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
-	totalProcesedTasks uint32
+	TotalProcesedTasks uint32 `json:"total_procesed_tasks"`
 }
 
 type SignData struct {
@@ -309,9 +308,9 @@ func (q *Queue) processNextTask(unitName string) error {
 	job.TasksMap[task.ID] = task
 
 	// increment total processed tasks
-	atomic.AddUint32(&job.totalProcesedTasks, 1)
+	atomic.AddUint32(&job.TotalProcesedTasks, 1)
 
-	if len(job.TasksMap) == int(job.totalProcesedTasks) {
+	if len(job.TasksMap) == int(job.TotalProcesedTasks) {
 		err := q.SaveToDB(job.ID)
 		if err != nil {
 			return err
@@ -486,22 +485,23 @@ func (q *Queue) LoadFromDB() error {
 		}
 
 		q.jobs[job.ID] = &job
+		job.TasksMap = make(map[string]Task, 1)
+	}
 
-		// load tasks
-		dbTasks, err := db.BatchLoad(dbTaskPrefix)
+	// load tasks
+	dbTasks, err := db.BatchLoad(dbTaskPrefix)
+	if err != nil {
+		return err
+	}
+
+	for _, dbTask := range dbTasks {
+		var task Task
+		err := json.Unmarshal(dbTask, &task)
 		if err != nil {
 			return err
 		}
 
-		for _, dbTask := range dbTasks {
-			var task Task
-			err := json.Unmarshal(dbTask, &task)
-			if err != nil {
-				return err
-			}
-
-			job.TasksMap[task.ID] = task
-		}
+		q.jobs[task.JobID].TasksMap[task.ID] = task
 	}
 
 	return nil
@@ -526,7 +526,7 @@ func (q *Queue) DeleteFromDB(jobID string) error {
 	}
 
 	// delete job
-	err = db.DeleteByKey(jobID)
+	err = db.DeleteByKey(dbJobPrefix + jobID)
 	if err != nil {
 		return err
 	}
