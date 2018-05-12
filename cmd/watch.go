@@ -84,7 +84,7 @@ var watchBySignerNameCmd = &cobra.Command{
 func startWatch(signData signer.SignData) {
 	license.LD.AutoSave()
 
-	files.Watch(inputPathFlag, func(filePath string) {
+	files.Watch(inputPathFlag, func(filePath string, left int) {
 		signer.SignFile(filePath, outputPathFlag, signData)
 	})
 }

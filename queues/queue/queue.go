@@ -6,8 +6,9 @@ import (
 	"os"
 	"sync/atomic"
 
+	"encoding/json"
+
 	"bitbucket.org/digitorus/pdfsigner/db"
-	"github.com/gin-gonic/gin/json"
 	errors2 "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -54,10 +55,20 @@ type Job struct {
 	ID string `json:"id"`
 	// TasksMap represents tasks added to the job
 	TasksMap map[string]Task `json:"-"`
-	// signData represents additional sign data added by request to override signer initial sign data
-	signData signer.SignData `json:"-"`
+	// SignData represents additional sign data added by request to override signer initial sign data
+	SignData SignData `json:"sign_data"`
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
 	totalProcesedTasks uint32
+}
+
+type SignData struct {
+	Signer      string `json:"signer"`
+	Name        string `json:"name"`
+	Location    string `json:"location"`
+	Reason      string `json:"reason"`
+	ContactInfo string `json:"contact_info"`
+	CertType    uint32 `json:"cert_type"`
+	Approval    bool   `json:"approval"`
 }
 
 // Task represents a single unit of work(file)
@@ -160,9 +171,9 @@ func (q *Queue) addJob() *Job {
 }
 
 // AddSignJob adds sign job to the jobs map
-func (q *Queue) AddSignJob(signData signer.SignData) string {
+func (q *Queue) AddSignJob(signData SignData) string {
 	j := q.addJob()
-	j.signData = signData
+	j.SignData = signData
 	return j.ID
 }
 
@@ -173,8 +184,15 @@ func (q *Queue) AddVerifyJob() string {
 }
 
 // DeleteJob deletes job from the jobs map
-func (q *Queue) DeleteJob(jobID string) {
+func (q *Queue) DeleteJob(jobID string) error {
+	err := q.DeleteFromDB(jobID)
+	if err != nil {
+		return err
+	}
+
 	delete(q.jobs, jobID)
+
+	return nil
 }
 
 // AddTask adds task to the specific job by job id
@@ -230,7 +248,7 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames []stri
 		return errors.New("unit is not in map")
 	}
 	// check if the job is in the map
-	job, exists := q.jobs[jobID]
+	_, exists := q.jobs[jobID]
 	if !exists {
 		return errors.New("job is not in map")
 	}
@@ -242,7 +260,7 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames []stri
 		}
 	}
 
-	err := q.SaveToDB(job)
+	err := q.SaveToDB(jobID)
 	if err != nil {
 		return err
 	}
@@ -272,7 +290,7 @@ func (q *Queue) processNextTask(unitName string) error {
 	// verify or sign task
 	var err error
 	if unit.isSigningUnit {
-		err = signTask(task, job.signData, unit.signData)
+		err = signTask(task, job.SignData, unit.signData)
 	} else {
 		err = verifyTask(task)
 	}
@@ -294,7 +312,7 @@ func (q *Queue) processNextTask(unitName string) error {
 	atomic.AddUint32(&job.totalProcesedTasks, 1)
 
 	if len(job.TasksMap) == int(job.totalProcesedTasks) {
-		err := q.SaveToDB(job)
+		err := q.SaveToDB(job.ID)
 		if err != nil {
 			return err
 		}
@@ -349,24 +367,24 @@ func (q *Queue) GetQueueSizeByUnitName(signerName string) (priority_queue.LenAll
 }
 
 // signTask merges job and signer signdata
-func signTask(task Task, jobSignData signer.SignData, signerSignData signer.SignData) error {
+func signTask(task Task, jobSignData SignData, signerSignData signer.SignData) error {
 	// get signer sign data
 	signData := signer.SignData(signerSignData)
 
 	// merge request sign data and signer sign data
 	switch {
-	case jobSignData.Signature.Info.Name != "":
-		signData.Signature.Info.Name = jobSignData.Signature.Info.Name
-	case jobSignData.Signature.Info.Location != "":
-		signData.Signature.Info.Location = jobSignData.Signature.Info.Location
-	case jobSignData.Signature.Info.Reason != "":
-		signData.Signature.Info.Reason = jobSignData.Signature.Info.Reason
-	case jobSignData.Signature.Info.ContactInfo != "":
-		signData.Signature.Info.ContactInfo = jobSignData.Signature.Info.ContactInfo
-	case jobSignData.Signature.CertType != 0:
-		signData.Signature.CertType = jobSignData.Signature.CertType
-	case jobSignData.Signature.Approval != signData.Signature.Approval:
-		signData.Signature.Approval = jobSignData.Signature.Approval
+	case jobSignData.Name != "":
+		signData.Signature.Info.Name = jobSignData.Name
+	case jobSignData.Location != "":
+		signData.Signature.Info.Location = jobSignData.Location
+	case jobSignData.Reason != "":
+		signData.Signature.Info.Reason = jobSignData.Reason
+	case jobSignData.ContactInfo != "":
+		signData.Signature.Info.ContactInfo = jobSignData.ContactInfo
+	case jobSignData.CertType != 0:
+		signData.Signature.CertType = jobSignData.CertType
+	case jobSignData.Approval != signData.Signature.Approval:
+		signData.Signature.Approval = jobSignData.Approval
 	}
 
 	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData)
@@ -414,17 +432,37 @@ func (q *Queue) Runner() {
 
 }
 
-func (q *Queue) SaveToDB(job *Job) error {
-	var marshaledMap = map[string][]byte{}
+const dbTaskPrefix = "task_"
+const dbJobPrefix = "job_"
+
+func (q *Queue) SaveToDB(jobID string) error {
+	// check if the job is in the map
+	job, exists := q.jobs[jobID]
+	if !exists {
+		return errors.New("job is not in map")
+	}
+
+	// save job
+	marshaledJob, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+	err = db.SaveByKey(dbJobPrefix+jobID, marshaledJob)
+	if err != nil {
+		return err
+	}
+
+	// save tasks
+	var marshaledTaskMap = map[string][]byte{}
 	for _, t := range job.TasksMap {
 		marshaledTask, err := json.Marshal(t)
 		if err != nil {
 			return err
 		}
-		marshaledMap[t.ID] = marshaledTask
+		marshaledTaskMap[dbTaskPrefix+t.ID] = marshaledTask
 	}
 
-	err := db.BatchUpsertTasks(marshaledMap)
+	err = db.BatchUpsert(marshaledTaskMap)
 	if err != nil {
 		return err
 	}
@@ -433,5 +471,65 @@ func (q *Queue) SaveToDB(job *Job) error {
 }
 
 func (q *Queue) LoadFromDB() error {
+	dbJobs, err := db.BatchLoad(dbJobPrefix)
+	if err != nil {
+		return err
+	}
+
+	// load jobs and tasks
+	for _, dbJob := range dbJobs {
+		// load job
+		var job Job
+		err := json.Unmarshal(dbJob, &job)
+		if err != nil {
+			return err
+		}
+
+		q.jobs[job.ID] = &job
+
+		// load tasks
+		dbTasks, err := db.BatchLoad(dbTaskPrefix)
+		if err != nil {
+			return err
+		}
+
+		for _, dbTask := range dbTasks {
+			var task Task
+			err := json.Unmarshal(dbTask, &task)
+			if err != nil {
+				return err
+			}
+
+			job.TasksMap[task.ID] = task
+		}
+	}
+
+	return nil
+}
+
+func (q *Queue) DeleteFromDB(jobID string) error {
+	// check if the job is in the map
+	job, exists := q.jobs[jobID]
+	if !exists {
+		return errors.New("job is not in map")
+	}
+
+	// delete tasks
+	var taskIDs []string
+	for id, _ := range job.TasksMap {
+		taskIDs = append(taskIDs, dbTaskPrefix+id)
+	}
+
+	err := db.BatchDelete(taskIDs)
+	if err != nil {
+		return err
+	}
+
+	// delete job
+	err = db.DeleteByKey(jobID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

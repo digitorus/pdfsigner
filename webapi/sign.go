@@ -12,7 +12,6 @@ import (
 	"mime/multipart"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
-	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/gorilla/mux"
 	errors2 "github.com/pkg/errors"
 )
@@ -153,7 +152,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 
 type fields struct {
 	signerName string
-	signData   signer.SignData
+	signData   queue.SignData
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
@@ -172,25 +171,25 @@ func parseFields(p *multipart.Part, f *fields) error {
 		case "signer":
 			f.signerName = str
 		case "name":
-			f.signData.Signature.Info.Name = str
+			f.signData.Name = str
 		case "location":
-			f.signData.Signature.Info.Location = str
+			f.signData.Location = str
 		case "reason":
-			f.signData.Signature.Info.Reason = str
+			f.signData.Reason = str
 		case "contactInfo":
-			f.signData.Signature.Info.ContactInfo = str
+			f.signData.ContactInfo = str
 		case "certType":
 			i, err := strconv.Atoi(str)
 			if err != nil {
 				return err
 			}
-			f.signData.Signature.CertType = uint32(i)
+			f.signData.CertType = uint32(i)
 		case "approval":
 			b, err := strconv.ParseBool(str)
 			if err != nil {
 				return err
 			}
-			f.signData.Signature.Approval = b
+			f.signData.Approval = b
 		}
 	}
 
@@ -204,7 +203,10 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) error
 	jobID := vars["jobID"]
 
 	// delete job by id
-	wa.queue.DeleteJob(jobID)
+	err := wa.queue.DeleteJob(jobID)
+	if err != nil {
+		return httpError(w, errors2.Wrap(err, "couldn't delete job"), 500)
+	}
 
 	// respond with ok
 	w.WriteHeader(http.StatusOK)

@@ -9,7 +9,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-type callback func(filePath string)
+type callback func(filePath string, left int)
 
 // Watch watches inside the provided folder and runs callback when event happened
 func Watch(watchFolder string, cb callback) {
@@ -30,7 +30,7 @@ func Watch(watchFolder string, cb callback) {
 					inputFileExtension := strings.ToLower(path.Ext(inputFileName))
 
 					if inputFileExtension == ".pdf" {
-						cb(inputFileName)
+						cb(inputFileName, len(watcher.Events))
 					}
 				}
 

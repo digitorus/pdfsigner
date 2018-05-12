@@ -5,12 +5,12 @@ import (
 	"strings"
 	"sync"
 
+	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
-	"bitbucket.org/digitorus/pdfsigner/signer"
 	"bitbucket.org/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
 )
@@ -137,7 +137,7 @@ func setupService(service serviceConfig) {
 
 // setupWatch setups watcher which watches the input folder and adds the tasks to the queue.
 func setupWatch(watchFolder, outputFilePath string, signerName string) {
-	files.Watch(watchFolder, func(inputFilePath string) {
+	files.Watch(watchFolder, func(inputFilePath string, left int) {
 
 		// make signed file path
 		_, fileName := path.Split(inputFilePath)
@@ -147,11 +147,16 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		sessionID := signVerifyQueue.AddSignJob(signer.SignData{})
+		jobID := signVerifyQueue.AddSignJob(queue.SignData{})
 
 		// push job
-		signVerifyQueue.AddTask(signerName, sessionID, inputFilePath, signedFilePath, priority_queue.LowPriority)
+		signVerifyQueue.AddTask(signerName, jobID, inputFilePath, signedFilePath, priority_queue.LowPriority)
+		if left == 0 {
+			signVerifyQueue.SaveToDB(jobID)
+		}
 	})
+
+	// batch save to the db
 }
 
 // setupServe runs the web api according to the config settings
