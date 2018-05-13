@@ -132,7 +132,6 @@ func TestFlow(t *testing.T) {
 
 	//assert.Equal(t, true, job.IsCompleted)
 	assert.Equal(t, 3, len(jobStatus.Tasks))
-	log.Println(jobStatus)
 	for _, task := range jobStatus.Tasks {
 		assert.Equal(t, queue.StatusCompleted, task.Status)
 
