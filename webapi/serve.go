@@ -105,7 +105,7 @@ func (wa *WebAPI) Serve() {
 		"allowedSigners": wa.allowedSigners,
 	})
 
-	serveLoggerCtx.Info("Start Web API")
+	serveLoggerCtx.Info("Starting Web API...")
 
 	if err := s.ListenAndServe(); err != nil {
 		serveLoggerCtx.Fatal("Coudn't start Web API:", err)

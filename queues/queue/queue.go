@@ -34,6 +34,7 @@ type Queue struct {
 	units map[string]*unit
 	// jobs represents jobs by id of the job
 	jobs map[string]*Job
+	// db represents database container which used to save jobs
 }
 
 // unit represents queue unit which could be a signer or verifier
@@ -470,6 +471,8 @@ func (q *Queue) SaveToDB(jobID string) error {
 }
 
 func (q *Queue) LoadFromDB() error {
+	log.Info("Loading jobs from the db...")
+
 	dbJobs, err := db.BatchLoad(dbJobPrefix)
 	if err != nil {
 		return err

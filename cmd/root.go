@@ -23,10 +23,20 @@ var RootCmd = &cobra.Command{
 	Short: "A brief description of your application",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// load license from the db
-		err := license.Load()
-		if err != nil {
+		var licenseInitErr error
+		licenseLoadErr := license.Load()
+		if licenseLoadErr != nil {
 			// if the license couldn't be loaded try to initialize it
-			return initializeLicense()
+			licenseInitErr = initializeLicense()
+		}
+		if licenseInitErr != nil {
+			return licenseInitErr
+		}
+
+		// loading jobs from the db
+		err := signVerifyQueue.LoadFromDB()
+		if err != nil {
+			return err
 		}
 
 		return nil

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"log"
 	"strings"
 
 	"github.com/dgraph-io/badger"
@@ -9,22 +10,24 @@ import (
 
 var opts badger.Options
 
+var DB *badger.DB
+
 func init() {
 	// Open the Badger database located in the /tmp/badger directory.
 	// It will be created if it doesn't exist.
 	opts = badger.DefaultOptions
 	opts.Dir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
 	opts.ValueDir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
+
+	var err error
+	DB, err = badger.Open(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func SaveByKey(key string, value []byte) error {
-	db, err := badger.Open(opts)
-	if err != nil {
-		return errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.Update(func(txn *badger.Txn) error {
+	err := DB.Update(func(txn *badger.Txn) error {
 		err := txn.Set([]byte(key), value)
 		return err
 	})
@@ -37,13 +40,7 @@ func SaveByKey(key string, value []byte) error {
 
 func LoadByKey(key string) ([]byte, error) {
 	var result []byte
-	db, err := badger.Open(opts)
-	if err != nil {
-		return result, errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.View(func(txn *badger.Txn) error {
+	err := DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return err
@@ -63,31 +60,15 @@ func LoadByKey(key string) ([]byte, error) {
 }
 
 func DeleteByKey(key string) error {
-	db, err := badger.Open(opts)
-	if err != nil {
-		return errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.Update(func(txn *badger.Txn) error {
+	err := DB.Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(key))
 	})
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func BatchUpsert(objectsByID map[string][]byte) error {
-	db, err := badger.Open(opts)
-	if err != nil {
-		return errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.Update(func(txn *badger.Txn) error {
+	err := DB.Update(func(txn *badger.Txn) error {
 		for id, object := range objectsByID {
 			err := txn.Set([]byte(id), object)
 			if err != nil {
@@ -97,17 +78,11 @@ func BatchUpsert(objectsByID map[string][]byte) error {
 		return nil
 	})
 
-	return nil
+	return err
 }
 
 func BatchDelete(objectIDs []string) error {
-	db, err := badger.Open(opts)
-	if err != nil {
-		return errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.Update(func(txn *badger.Txn) error {
+	err := DB.Update(func(txn *badger.Txn) error {
 		for _, id := range objectIDs {
 			err := txn.Delete([]byte(id))
 			if err != nil {
@@ -117,19 +92,13 @@ func BatchDelete(objectIDs []string) error {
 		return nil
 	})
 
-	return nil
+	return err
 }
 
 func BatchLoad(prefix string) (map[string][]byte, error) {
 	var result = make(map[string][]byte)
 
-	db, err := badger.Open(opts)
-	if err != nil {
-		return result, errors.Wrap(err, "open connection")
-	}
-	defer db.Close()
-
-	err = db.View(func(txn *badger.Txn) error {
+	err := DB.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
 		it := txn.NewIterator(opts)
