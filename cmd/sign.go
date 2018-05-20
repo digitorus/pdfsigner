@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bitbucket.org/digitorus/pdfsigner/files"
+	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,10 @@ var signPEMCmd = &cobra.Command{
 	Short: "Sign PDF with PEM formatted certificate",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
+		// require file patterns
+		requireFilePatterns(filePatterns)
+
+		// initialize config
 		c := signerConfig{}
 
 		// bind signer flags to config
@@ -26,7 +31,7 @@ var signPEMCmd = &cobra.Command{
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -36,6 +41,10 @@ var signPKSC11Cmd = &cobra.Command{
 	Short: "Signs PDF with PSKC11",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
+		// require file patterns
+		requireFilePatterns(filePatterns)
+
+		// initialize config
 		c := signerConfig{}
 
 		// bind signer flags to config
@@ -45,7 +54,7 @@ var signPKSC11Cmd = &cobra.Command{
 		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -55,6 +64,10 @@ var signBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
+		// require file patterns
+		requireFilePatterns(filePatterns)
+
+		// initialize config
 		requireConfig(cmd)
 
 		// find signer config from config file by name
@@ -72,7 +85,7 @@ var signBySignerNameCmd = &cobra.Command{
 		}
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, outputPathFlag, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData)
 	},
 }
 
@@ -82,19 +95,26 @@ func init() {
 	// add PEM sign command and parse related flags
 	signCmd.AddCommand(signPEMCmd)
 	parseCommonFlags(signPEMCmd)
-	parseOutputPathFlag(signPEMCmd)
+	//parseOutputPathFlag(signPEMCmd)
 	parsePEMCertificateFlags(signPEMCmd)
 
 	// add PKSC11 sign command and parse related flags
 	signCmd.AddCommand(signPKSC11Cmd)
 	parseCommonFlags(signPKSC11Cmd)
-	parseOutputPathFlag(signPKSC11Cmd)
+	//parseOutputPathFlag(signPKSC11Cmd)
 	parsePKSC11CertificateFlags(signPKSC11Cmd)
 
 	// add sign with signer from config command and parse related flags
 	signCmd.AddCommand(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
-	parseOutputPathFlag(signBySignerNameCmd)
+	//parseOutputPathFlag(signBySignerNameCmd)
 	parsePEMCertificateFlags(signBySignerNameCmd)
 	parsePKSC11CertificateFlags(signBySignerNameCmd)
+}
+
+// requireFilePatterns checks if the filePatterns were provided
+func requireFilePatterns(filePatterns []string) {
+	if len(filePatterns) < 1 {
+		log.Fatal("no file patterns provided")
+	}
 }

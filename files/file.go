@@ -40,7 +40,7 @@ func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 }
 
 // SignFilesByPatterns signs files by matched patterns and stores it inside the same folder with _signed.pdf suffix
-func SignFilesByPatterns(filePatterns []string, outputPathFlag string, signData signer.SignData) {
+func SignFilesByPatterns(filePatterns []string, signData signer.SignData) {
 	// get files
 	files, err := findFilesByPatterns(filePatterns)
 	if err != nil {

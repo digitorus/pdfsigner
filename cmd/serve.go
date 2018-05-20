@@ -56,7 +56,7 @@ var servePKSC11Cmd = &cobra.Command{
 
 // serveWithSingleSignerCmd runs web api using single signer from the config with possibility to override it with flags
 var serveWithSingleSignerCmd = &cobra.Command{
-	Use:   "single-signer",
+	Use:   "signer",
 	Short: "Serve with single signer from the config. Overrides settings with CLI",
 	Long:  `It allows to run signer from the config and override it's settings'`,
 	Run: func(cmd *cobra.Command, attr []string) {
@@ -136,24 +136,18 @@ func init() {
 	// add PEM serve command and parse related flags
 	serveCmd.AddCommand(servePEMCmd)
 	parseCommonFlags(servePEMCmd)
-	parseInputPathFlag(servePEMCmd)
-	parseOutputPathFlag(servePEMCmd)
 	parsePEMCertificateFlags(servePEMCmd)
 	parseServeFlags(servePEMCmd)
 
 	// add PKSC11 serve command and parse related flags
 	serveCmd.AddCommand(servePKSC11Cmd)
 	parseCommonFlags(servePKSC11Cmd)
-	parseInputPathFlag(servePKSC11Cmd)
-	parseOutputPathFlag(servePKSC11Cmd)
 	parsePKSC11CertificateFlags(servePKSC11Cmd)
 	parseServeFlags(servePKSC11Cmd)
 
 	// add serve with config single signer and parse related flags
 	serveCmd.AddCommand(serveWithSingleSignerCmd)
 	parseSignerName(serveWithSingleSignerCmd)
-	parseInputPathFlag(serveWithSingleSignerCmd)
-	parseOutputPathFlag(serveWithSingleSignerCmd)
 	parsePEMCertificateFlags(serveWithSingleSignerCmd)
 	parsePKSC11CertificateFlags(serveWithSingleSignerCmd)
 	parseServeFlags(serveWithSingleSignerCmd)
