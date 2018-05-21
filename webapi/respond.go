@@ -3,6 +3,8 @@ package webapi
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // httpErr represents the error response to the user
@@ -15,7 +17,7 @@ type httpErr struct {
 
 // httpError writes to the response writer error and the code in json format
 func httpError(w http.ResponseWriter, err error, code int) error {
-	e := httpErr{Message: err.Error(), Code: code}
+	e := httpErr{Message: errors.Cause(err).Error(), Code: code}
 
 	// respond with json
 	respondJSON(w, e, code)

@@ -14,6 +14,9 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serve Web API",
 	Long:  `Long multiline description here`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return requrieLicense()
+	},
 }
 
 // servePEMCmd runs web api with PEM using only flags

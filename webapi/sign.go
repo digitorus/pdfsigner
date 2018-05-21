@@ -26,7 +26,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "read multipart"), 500)
+		return httpError(w, errors2.Wrap(err, "read multipart"), http.StatusInternalServerError)
 	}
 
 	var f fields
@@ -39,26 +39,31 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 			break
 		}
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "get multipart"), 500)
+			return httpError(w, errors2.Wrap(err, "get multipart"), http.StatusInternalServerError)
 		}
 
 		//parse fields
 		err = parseFields(p, &f)
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "parse fields"), 500)
+			return httpError(w, errors2.Wrap(err, "parse fields"), http.StatusInternalServerError)
 		}
 
 		//save pdf file to tmp
 		err = savePDFToTemp(p, &fileNames)
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
+			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), http.StatusInternalServerError)
 		}
+	}
+
+	// check if at least one file was provided
+	if len(fileNames) < 1 {
+		return httpError(w, errors2.Wrap(errors.New("No files provided"), "validation"), http.StatusBadRequest)
 	}
 
 	// add job to the queue
 	jobID, err := addSignJob(wa.queue, f, fileNames)
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "add tasks"), 500)
+		return httpError(w, errors2.Wrap(err, "add tasks"), http.StatusInternalServerError)
 	}
 
 	// create response
@@ -89,9 +94,17 @@ func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
 	return jobID, nil
 }
 
+type job struct {
+	ID string `json:"id"`
+}
+type task struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+}
+
 type JobStatus struct {
-	queue.Job
-	Tasks []queue.Task `json:"tasks"`
+	Job   job    `json:"job"`
+	Tasks []task `json:"tasks"`
 }
 
 func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error {
@@ -99,18 +112,24 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
 
-	job, err := wa.queue.GetJobByID(jobID)
+	j, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 
 	status := r.URL.Query().Get("status")
-	tasks, err := job.GetTasks(status)
+	tasks, err := j.GetTasks(status)
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 
-	jobStatus := JobStatus{job, tasks}
+	var responseTasks []task
+	for _, t := range tasks {
+		rt := task{ID: t.ID, Status: t.Status}
+		responseTasks = append(responseTasks, rt)
+	}
+
+	jobStatus := JobStatus{Job: job{j.ID}, Tasks: responseTasks}
 
 	return respondJSON(w, jobStatus, http.StatusOK)
 }
@@ -124,27 +143,27 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	// get file path
 	filePath, err := wa.queue.GetCompletedTaskFilePath(jobID, taskID)
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 
 	// get file
 	file, err := os.Open(filePath)
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 	defer file.Close()
 
 	// get file info
 	fileInfo, err := file.Stat()
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
 	_, err = io.Copy(w, file)
 	if err != nil {
-		return httpError(w, err, 500)
+		return httpError(w, err, http.StatusInternalServerError)
 	}
 
 	return nil
@@ -205,7 +224,7 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) error
 	// delete job by id
 	err := wa.queue.DeleteJob(jobID)
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "couldn't delete job"), 500)
+		return httpError(w, errors2.Wrap(err, "couldn't delete job"), http.StatusInternalServerError)
 	}
 
 	// respond with ok

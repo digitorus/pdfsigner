@@ -64,8 +64,6 @@ type serviceConfig struct {
 
 // initConfig reads in config inputFile and ENV variables if set.
 func initConfig() {
-	log.Info("Loading config...")
-
 	if configFilePathFlag != "" {
 		// Use config inputFile from the flag.
 		viper.SetConfigFile(configFilePathFlag)

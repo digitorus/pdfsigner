@@ -33,8 +33,6 @@ import (
 var licenseCmd = &cobra.Command{
 	Use:   "license",
 	Short: "Update license",
-	Run: func(cmd *cobra.Command, args []string) {
-	},
 }
 
 // licenseInfoCmd represents the license info command

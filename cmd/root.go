@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/version"
 	"github.com/spf13/cobra"
 )
@@ -21,27 +20,7 @@ var ver version.Version
 var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
 	Short: "A brief description of your application",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// load license from the db
-		var licenseInitErr error
-		licenseLoadErr := license.Load()
-		if licenseLoadErr != nil {
-			// if the license couldn't be loaded try to initialize it
-			licenseInitErr = initializeLicense()
-		}
-		if licenseInitErr != nil {
-			return licenseInitErr
-		}
-
-		// loading jobs from the db
-		err := signVerifyQueue.LoadFromDB()
-		if err != nil {
-			return err
-		}
-
-		return nil
-	},
-	Long: `Long multiline description`,
+	Long:  `Long multiline description`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

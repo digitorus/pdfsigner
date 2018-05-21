@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bitbucket.org/digitorus/pdfsigner/license"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
@@ -202,4 +203,25 @@ func requireConfig(cmd *cobra.Command) {
 	if err != nil || v == "" {
 		log.Fatal("config is not provided")
 	}
+}
+
+func requrieLicense() error {
+	// load license from the db
+	var licenseInitErr error
+	licenseLoadErr := license.Load()
+	if licenseLoadErr != nil {
+		// if the license couldn't be loaded try to initialize it
+		licenseInitErr = initializeLicense()
+	}
+	if licenseInitErr != nil {
+		return licenseInitErr
+	}
+
+	// loading jobs from the db
+	err := signVerifyQueue.LoadFromDB()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -12,6 +12,9 @@ var watchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Watch command",
 	Long:  `Long multiline description here`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return requrieLicense()
+	},
 }
 
 // watchPEMCmd watches folders and signs files with PEM using flags only

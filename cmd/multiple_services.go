@@ -17,9 +17,12 @@ import (
 
 // multiCmd represents the multi command
 var multiCmd = &cobra.Command{
-	Use:   "multiple-services",
+	Use:   "services",
 	Short: "Run multiple services using the config file",
 	Long:  `This command runs multiple services taken from the config file`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return requrieLicense()
+	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		// fail if no config flag path provided
 		requireConfig(cmd)

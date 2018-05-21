@@ -11,6 +11,9 @@ var signCmd = &cobra.Command{
 	Use:   "sign",
 	Short: "Sign command",
 	Long:  `Long multiline description here`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return requrieLicense()
+	},
 }
 
 // signPEMCmd signs files with PEM using flags only
