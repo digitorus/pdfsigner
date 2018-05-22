@@ -3,13 +3,11 @@ package webapi
 import (
 	"errors"
 	"io"
+	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"strconv"
-
-	"io/ioutil"
-
-	"mime/multipart"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
@@ -30,7 +28,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 	}
 
 	var f fields
-	var fileNames []string
+	fileNames := map[string]string{}
 
 	for {
 		// get part
@@ -49,7 +47,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 		}
 
 		//save pdf file to tmp
-		err = savePDFToTemp(p, &fileNames)
+		err = savePDFToTemp(p, fileNames)
 		if err != nil {
 			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), http.StatusInternalServerError)
 		}
@@ -76,7 +74,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 	return respondJSON(w, res, http.StatusCreated)
 }
 
-func addSignJob(qs *queue.Queue, f fields, fileNames []string) (string, error) {
+func addSignJob(qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
 	if f.signerName == "" {
 		return "", errors.New("signer name is required")
 	}
@@ -98,8 +96,9 @@ type job struct {
 	ID string `json:"id"`
 }
 type task struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	OriginalFileName string `json:"file_name"`
 }
 
 type JobStatus struct {
@@ -125,7 +124,7 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error
 
 	var responseTasks []task
 	for _, t := range tasks {
-		rt := task{ID: t.ID, Status: t.Status}
+		rt := task{ID: t.ID, Status: t.Status, OriginalFileName: t.OriginalFileName}
 		responseTasks = append(responseTasks, rt)
 	}
 

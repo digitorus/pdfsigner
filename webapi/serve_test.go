@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -42,6 +43,8 @@ func TestMain(m *testing.M) {
 
 // runTest initializes the environment
 func runTest(m *testing.M) int {
+	log.SetOutput(ioutil.Discard)
+
 	err := license.Load()
 	if err != nil {
 		log.Fatal(err)
@@ -119,7 +122,7 @@ func TestFlow(t *testing.T) {
 	// wait for signing files
 	time.Sleep(2 * time.Second)
 
-	// test check
+	// test status
 	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
@@ -130,10 +133,10 @@ func TestFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//assert.Equal(t, true, job.IsCompleted)
 	assert.Equal(t, 3, len(jobStatus.Tasks))
 	for _, task := range jobStatus.Tasks {
 		assert.Equal(t, queue.StatusCompleted, task.Status)
+		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
 
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)

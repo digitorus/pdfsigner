@@ -15,7 +15,7 @@ import (
 
 // savePDFToTemp saves pdf files to temporary folder
 // TODO: check if the encryption is needed
-func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
+func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 	// return error if the provided file has not supported extension
 	ext := path.Ext(p.FileName())
 	if ext != "" && ext != ".pdf" {
@@ -38,7 +38,7 @@ func savePDFToTemp(p *multipart.Part, fileNames *[]string) error {
 			return errors.New("written 0 bytes")
 		}
 
-		*fileNames = append(*fileNames, f.Name())
+		fileNames[f.Name()] = p.FileName()
 	}
 
 	return nil

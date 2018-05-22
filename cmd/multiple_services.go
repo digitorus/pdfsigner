@@ -153,7 +153,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		jobID := signVerifyQueue.AddSignJob(queue.SignData{})
 
 		// push job
-		signVerifyQueue.AddTask(signerName, jobID, inputFilePath, signedFilePath, priority_queue.LowPriority)
+		signVerifyQueue.AddTask(signerName, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
 		if left == 0 {
 			signVerifyQueue.SaveToDB(jobID)
 		}

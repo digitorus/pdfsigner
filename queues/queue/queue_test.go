@@ -1,16 +1,20 @@
 package queue
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestQSignersMap(t *testing.T) {
+	logrus.SetOutput(ioutil.Discard)
+
 	license.Load()
 
 	// create sign data
@@ -46,6 +50,7 @@ func TestQSignersMap(t *testing.T) {
 	taskID, err := qs.AddTask(
 		"simple",
 		jobID,
+		"testfile20.pdf",
 		"../../testfiles/testfile20.pdf",
 		"../../testfiles/testfile20_signed.pdf",
 		priority_queue.HighPriority,

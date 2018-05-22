@@ -18,7 +18,7 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) e
 		return httpError(w, errors2.Wrap(err, "read multipart"), 500)
 	}
 
-	var fileNames []string
+	fileNames := map[string]string{}
 
 	for {
 		// get part
@@ -31,7 +31,7 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) e
 		}
 
 		//save pdf file to tmp
-		err = savePDFToTemp(p, &fileNames)
+		err = savePDFToTemp(p, fileNames)
 		if err != nil {
 			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
 		}
@@ -68,7 +68,7 @@ func (wa *WebAPI) handleVerifyCheck(w http.ResponseWriter, r *http.Request) erro
 }
 
 // addVerifyJob adds verification job to the verification queue
-func addVerifyJob(qs *queue.Queue, fileNames []string) (string, error) {
+func addVerifyJob(qs *queue.Queue, fileNames map[string]string) (string, error) {
 	totalTasks := len(fileNames)
 
 	// add job
@@ -78,8 +78,8 @@ func addVerifyJob(qs *queue.Queue, fileNames []string) (string, error) {
 	priority := determinePriority(totalTasks)
 
 	// add tasks
-	for _, fileName := range fileNames {
-		_, err := qs.AddTask(queue.VerificationUnitName, jobID, fileName, "", priority)
+	for originalFileName, fileName := range fileNames {
+		_, err := qs.AddTask(queue.VerificationUnitName, jobID, originalFileName, fileName, "", priority)
 		if err != nil {
 			return "", err
 		}

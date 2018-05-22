@@ -77,6 +77,8 @@ type Task struct {
 	ID string `json:"id"`
 	// JobID represents id of the job task is assigned to
 	JobID string `json:"job_id"`
+	// OriginalFileName represents pdf file name
+	OriginalFileName string `json:"original_file_name"`
 	// InputFilePath represents path to the unprocessed file
 	InputFilePath string `json:"input_file_path"`
 	// OutputFilePath represents path to the processed file
@@ -196,7 +198,7 @@ func (q *Queue) DeleteJob(jobID string) error {
 }
 
 // AddTask adds task to the specific job by job id
-func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
+func (q *Queue) AddTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
 	// check if the unit is in the map
 	if _, exists := q.units[unitName]; !exists {
 		return "", errors.New("unit is not in map")
@@ -206,7 +208,7 @@ func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, p
 		return "", errors.New("job is not in map")
 	}
 
-	task, err := q.addTask(unitName, jobID, inputFilePath, outputFilePath, priority)
+	task, err := q.addTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath, priority)
 	if err != nil {
 		return "", err
 	}
@@ -214,17 +216,18 @@ func (q *Queue) AddTask(unitName, jobID, inputFilePath, outputFilePath string, p
 	return task.ID, nil
 }
 
-func (q *Queue) addTask(unitName, jobID, inputFilePath, outputFilePath string, priority priority_queue.Priority) (Task, error) {
+func (q *Queue) addTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (Task, error) {
 	// generate unique task id
 	id := xid.New().String()
 
 	//create task
 	t := Task{
-		ID:             id,
-		InputFilePath:  inputFilePath,
-		OutputFilePath: outputFilePath,
-		JobID:          jobID,
-		Status:         StatusPending,
+		ID:               id,
+		InputFilePath:    inputFilePath,
+		OutputFilePath:   outputFilePath,
+		JobID:            jobID,
+		Status:           StatusPending,
+		OriginalFileName: originalFileName,
 	}
 
 	//create queue item
@@ -242,7 +245,7 @@ func (q *Queue) addTask(unitName, jobID, inputFilePath, outputFilePath string, p
 	return t, nil
 }
 
-func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames []string, priority priority_queue.Priority) error {
+func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[string]string, priority priority_queue.Priority) error {
 	// check if the unit is in the map
 	if _, exists := q.units[unitName]; !exists {
 		return errors.New("unit is not in map")
@@ -253,8 +256,8 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames []stri
 		return errors.New("job is not in map")
 	}
 
-	for _, f := range fileNames {
-		_, err := q.addTask(unitName, jobID, f, f+"_signed", priority)
+	for tempFileName, originalFileName := range fileNames {
+		_, err := q.addTask(unitName, jobID, originalFileName, tempFileName, tempFileName+"_signed", priority)
 		if err != nil {
 			return err
 		}
