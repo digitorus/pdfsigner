@@ -2,9 +2,21 @@
 
 ## Usage
 
+### How it works
+
+To sign files using Web API the user would need to put a job that may contain one or more files  into the queue using `POST /sign` request. Then get the status of the job with `GET /sign/jobid` that contains information about successful or failed tasks(files). Filed could be then downloaded using `GET /sign/jobid/taskid/download`
+
+
+Available end points:
+
+`POST /sign` - place one or more files into the queue with specified signer
+`GET /sign/jobid` - get status of the placed files
+`GET /sign/jobid/taskid/download` - download single file by job id and task id
+
+
 ### Scheduling signing job
 
-Scheduling job is done with `POST /sign` [multipart/form-data](https://en.wikipedia.org/wiki/MIME) request with fields and files provided as parts.
+Scheduling job is done with `POST /sign` [multipart/form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects) request with fields and files provided as parts.
 
 The request should contain a `signer` field which defines which signer to use and one or more files.
 
@@ -14,21 +26,63 @@ The Web API is setup with default signature information which could be overwritt
 - `certType` - defines cert type???
 - `name` - name of the person creating signature
 - `location` - location of the person creating signature
-- `reason` - reason why the signature is created
+- `reason` - reason why the signature is created for
 - `contactInfo` - contact finformation
 
-The request returns JSON `{"job_id":"jobidstr"}` that contains job id which could be used to get information about the job and download signed files
+The successful request returns JSON `{"job_id":"jobidstr"}` that contains job id which could be then used to get information about the job and download signed files.
+
+It also may return JSON formatted error Ex.`{"error":"no files provided","code":400}`. 
+
+That error may only contain the error of putting a job to the queue, not the signing results. Results of signing could be obtained with `GET /sign/jobid` request.
 
 
 ### Getting the status of the job
 
-GET /sign/jobid
+Getting the status of the job is done using `GET /sign/jobid` request which returns the tasks associated with the job, every task contains it's id, original file name, and status that could be "Pending" - the task is not processed yet and Failed. When the task is going to fail it's going to contain the error.
 
-GET /sign/jobid/taskid/download
+The request may failed with JSON response. Ex: `{"error":"job doesn't exists","code":400}`
 
+Completed successfully:
 
+```json
+{
+	"job":{"id":"bc5g4tl2m9sn837gm00g"},
+	"tasks":[
+		{
+			"id":"bc5g4tl2m9sn837gm010",
+			"file_name":"testfile12.pdf",
+			"status":"Completed"
+		}
+	]
+}
+```
 
-more information about 
+Failed to complete:
+
+```json
+{
+	"job":{"id":"bc5g4tl2m9sn837gm00g"},
+	"tasks":[
+		{
+			"id":"bc5g4tl2m9sn837gm010",
+			"file_name":"testfile12.pdf",
+			"status":"Failed",
+			"error": "malformed pdf file"
+		}
+	]
+}
+```
+
+### Download signed files
+
+Signed files could be downloaded with `GET /sign/jobid/taskid/download` request. 
+
+The response would be the file.
+
+Note: postman offer to download file as download.pdf instead of the file name provided with content disposition, see issue: https://github.com/postmanlabs/postman-app-support/issues/2082
+
+The request may failed with JSON response. Ex: `{"error":"task is not found","code":400}`
+
 
 ## Commands
 
