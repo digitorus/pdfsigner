@@ -24,9 +24,6 @@ var multiCmd = &cobra.Command{
 		return requrieLicense()
 	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
-		// fail if no config flag path provided
-		requireConfig(cmd)
-
 		// check if the config contains services
 		if len(servicesConfig) < 1 {
 			log.Fatal("no services found inside the config")
@@ -176,4 +173,5 @@ func runQueues() {
 
 func init() {
 	RootCmd.AddCommand(multiCmd)
+	parseConfigFlag(multiCmd)
 }

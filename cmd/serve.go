@@ -63,9 +63,6 @@ var serveWithSingleSignerCmd = &cobra.Command{
 	Short: "Serve with single signer from the config. Overrides settings with CLI",
 	Long:  `It allows to run signer from the config and override it's settings'`,
 	Run: func(cmd *cobra.Command, attr []string) {
-		// check if the config flag is provided
-		requireConfig(cmd)
-
 		// get config signer by name
 		config := getSignerConfigByName(signerNameFlag)
 
@@ -94,9 +91,6 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 	Short: "Serve with multiple signers from the config",
 	Long:  `It runs multiple signers. Settings couldn't be overwritten'`,
 	Run: func(cmd *cobra.Command, signerNames []string) {
-		// check if the config flag is provided
-		requireConfig(cmd)
-
 		// check if the signer names provided
 		if len(signerNames) < 1 {
 			log.Fatal("signers are not provided")
@@ -150,6 +144,7 @@ func init() {
 
 	// add serve with config single signer and parse related flags
 	serveCmd.AddCommand(serveWithSingleSignerCmd)
+	parseConfigFlag(serveWithSingleSignerCmd)
 	parseSignerName(serveWithSingleSignerCmd)
 	parsePEMCertificateFlags(serveWithSingleSignerCmd)
 	parsePKSC11CertificateFlags(serveWithSingleSignerCmd)
@@ -157,5 +152,6 @@ func init() {
 
 	// add serve with multiple signers and parse related flags
 	serveCmd.AddCommand(serveWithMultipleSignersCmd)
+	parseConfigFlag(serveWithMultipleSignersCmd)
 	parseServeFlags(serveWithMultipleSignersCmd)
 }

@@ -70,9 +70,6 @@ var signBySignerNameCmd = &cobra.Command{
 		// require file patterns
 		requireFilePatterns(filePatterns)
 
-		// initialize config
-		requireConfig(cmd)
-
 		// find signer config from config file by name
 		c := getSignerConfigByName(signerNameFlag)
 
@@ -109,6 +106,7 @@ func init() {
 
 	// add sign with signer from config command and parse related flags
 	signCmd.AddCommand(signBySignerNameCmd)
+	parseConfigFlag(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
 	//parseOutputPathFlag(signBySignerNameCmd)
 	parsePEMCertificateFlags(signBySignerNameCmd)

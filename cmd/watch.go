@@ -61,9 +61,6 @@ var watchBySignerNameCmd = &cobra.Command{
 	Short: "Signs PDF with signer from the config",
 	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// check if the config flag is provided
-		requireConfig(cmd)
-
 		// get signer config from the config file by name
 		c := getSignerConfigByName(signerNameFlag)
 
@@ -111,6 +108,7 @@ func init() {
 
 	// add watch command with signer signer from config and parse related flags
 	watchCmd.AddCommand(watchBySignerNameCmd)
+	parseConfigFlag(watchBySignerNameCmd)
 	parseSignerName(watchBySignerNameCmd)
 	parseCommonFlags(watchBySignerNameCmd)
 	parseInputPathFlag(watchBySignerNameCmd)

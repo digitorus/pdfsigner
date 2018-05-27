@@ -61,6 +61,11 @@ func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain")
 }
 
+func parseConfigFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "")
+	cmd.MarkPersistentFlagRequired("config")
+}
+
 // parsePEMCertificateFlags binds PEM specific flags to variables
 func parsePEMCertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Certificate path")
@@ -195,14 +200,6 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 	log.Fatal("service not found")
 
 	return s
-}
-
-// requireConfig checks if the config flag is provided.
-func requireConfig(cmd *cobra.Command) {
-	v, err := cmd.Flags().GetString("config")
-	if err != nil || v == "" {
-		log.Fatal("config is not provided")
-	}
 }
 
 func requrieLicense() error {
