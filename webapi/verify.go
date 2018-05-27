@@ -7,7 +7,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 // handleVerifySchedule add a new verification job to the verification queue
@@ -15,7 +15,7 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) e
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "read multipart"), 500)
+		return httpError(w, errors.Wrap(err, "read multipart"), 500)
 	}
 
 	fileNames := map[string]string{}
@@ -27,19 +27,19 @@ func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) e
 			break
 		}
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "get multipart"), 500)
+			return httpError(w, errors.Wrap(err, "get multipart"), 500)
 		}
 
 		//save pdf file to tmp
 		err = savePDFToTemp(p, fileNames)
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), 500)
+			return httpError(w, errors.Wrap(err, "save pdf to tmp"), 500)
 		}
 	}
 
 	jobID, err := addVerifyJob(wa.queue, fileNames)
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "push tasks"), 500)
+		return httpError(w, errors.Wrap(err, "push tasks"), 500)
 
 	}
 

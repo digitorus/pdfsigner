@@ -2,7 +2,6 @@ package license
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/gtank/cryptopasta"
 	"github.com/hyperboloide/lk"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 // ErrOverLimit contains error for over limit
@@ -48,13 +47,13 @@ func Initialize(licenseBytes []byte) error {
 	// load license data
 	ld, err := newExtractLicense(licenseBytes)
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 
 	// save license to db
 	err = db.SaveByKey("license", licenseBytes)
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 
 	// initialize rate limiter
@@ -63,7 +62,7 @@ func Initialize(licenseBytes []byte) error {
 	// save limit state to the db
 	err = ld.SaveLimitState()
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 
 	// assign license data to LD variable
@@ -79,19 +78,19 @@ func Load() error {
 	// load license from the db
 	license, err := db.LoadByKey("license")
 	if err != nil {
-		return errors2.Wrap(err, "couldn't load license from the db")
+		return errors.Wrap(err, "couldn't load license from the db")
 	}
 
 	// load license data
 	ld, err := newExtractLicense(license)
 	if err != nil {
-		return errors2.Wrap(err, "couldn't extract license")
+		return errors.Wrap(err, "couldn't extract license")
 	}
 
 	// load limit state from the db
 	err = ld.loadLimitState()
 	if err != nil {
-		return errors2.Wrap(err, "couldn't load license limits")
+		return errors.Wrap(err, "couldn't load license limits")
 	}
 
 	// initialize rate limiter
@@ -110,43 +109,43 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	// Unmarshal the public key.
 	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase64)
 	if err != nil {
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	}
 
 	// Unmarshal the customer license.
 	license, err := lk.LicenseFromB64String(string(licenseB64))
 	if err != nil {
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	}
 
 	// validate the license signature.
 	if ok, err := license.Verify(publicKey); err != nil {
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	} else if !ok {
 		err = errors.New("Invalid license signature")
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	}
 
 	// unmarshal the document.
 	if err := json.Unmarshal(license.Data, &ld); err != nil {
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	}
 
 	// Now you just have to check that the end date is after time.Now() then you can continue!
 	if ld.End.Before(time.Now()) {
-		return ld, errors2.Wrap(errors.New(fmt.Sprintf("License expired on: %s", ld.End.Format("2006-01-02"))), "")
+		return ld, errors.Wrap(errors.New(fmt.Sprintf("License expired on: %s", ld.End.Format("2006-01-02"))), "")
 	}
 
 	// check limits
 	if len(ld.Limits) == 0 {
-		return ld, errors2.Wrap(errors.New("no limits provided for license"), "")
+		return ld, errors.Wrap(errors.New("no limits provided for license"), "")
 	}
 
 	// parse time limits
 	for _, l := range ld.Limits {
 		i, err := time.ParseDuration(l.IntervalStr)
 		if err != nil {
-			return ld, errors2.Wrap(errors.New("parse interval error"), "")
+			return ld, errors.Wrap(errors.New("parse interval error"), "")
 		}
 		l.Interval = i
 	}
@@ -154,7 +153,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	// set byte versions of the license
 	licenseBytes, err := license.ToBytes()
 	if err != nil {
-		return ld, errors2.Wrap(err, "")
+		return ld, errors.Wrap(err, "")
 	}
 	// set byte versions of the public key
 	publicKeyBytes := publicKey.ToBytes()
@@ -250,7 +249,7 @@ func (ld *LicenseData) AutoSave() {
 func (ld *LicenseData) Wait() error {
 	// validate license data
 	if time.Now().After(ld.End) {
-		return errors2.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", ld.End)), "")
+		return errors.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", ld.End)), "")
 	}
 
 	// check if the work is allowed by license limiters, if not wait
@@ -261,7 +260,7 @@ func (ld *LicenseData) Wait() error {
 		} else {
 			// check the total limit
 			if isTotalLimit(limit) {
-				return errors2.Wrap(errors.New("total license limits exceeded, please update the license"), "")
+				return errors.Wrap(errors.New("total license limits exceeded, please update the license"), "")
 			}
 
 			// log sleep time information

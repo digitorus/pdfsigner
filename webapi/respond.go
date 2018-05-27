@@ -9,15 +9,15 @@ import (
 
 // httpErr represents the error response to the user
 type httpErr struct {
-	// Message represents error message
-	Message string `json:"message"`
+	// Error represents error message
+	Error string `json:"error"`
 	// Code represents error code
 	Code int `json:"code"`
 }
 
 // httpError writes to the response writer error and the code in json format
 func httpError(w http.ResponseWriter, err error, code int) error {
-	e := httpErr{Message: errors.Cause(err).Error(), Code: code}
+	e := httpErr{Error: errors.Cause(err).Error(), Code: code}
 
 	// respond with json
 	respondJSON(w, e, code)

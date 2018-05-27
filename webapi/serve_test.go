@@ -85,7 +85,7 @@ func TestFlow(t *testing.T) {
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile20.pdf"},
 		{"testfile2", "../testfiles/testfile20.pdf"},
-		{"testfile2", "../testfiles/testfile20.pdf"},
+		{"testfile3-mal", "../testfiles/malformed.pdf"},
 	}
 	// create multipart request
 	r, err := newMultipleFilesUploadRequest(
@@ -134,17 +134,27 @@ func TestFlow(t *testing.T) {
 	}
 
 	assert.Equal(t, 3, len(jobStatus.Tasks))
+	var completedTasks int
 	for _, task := range jobStatus.Tasks {
-		assert.Equal(t, queue.StatusCompleted, task.Status)
-		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
+		// work with failed malformed task
+		if task.Status != queue.StatusCompleted {
+			assert.NotEmpty(t, task.Error)
+			continue
+		}
 
+		// happy path
+		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 		assert.Equal(t, 8994, len(w.Body.Bytes()))
+		completedTasks += 1
 	}
+
+	// check amount of success
+	assert.Equal(t, 2, completedTasks)
 
 	// test delete job
 	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.JobID, nil)

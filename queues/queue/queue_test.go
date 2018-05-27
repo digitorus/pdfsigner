@@ -71,6 +71,30 @@ func TestQSignersMap(t *testing.T) {
 	assert.Equal(t, 1, len(job.TasksMap))
 	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status, job.TasksMap[taskID].Error)
 
+	// test bad file
+	// add job
+	taskID, err = qs.AddTask(
+		"simple",
+		jobID,
+		"malformed.pdf",
+		"../../testfiles/malformed.pdf",
+		"../../testfiles/malformed_signed.pdf",
+		priority_queue.HighPriority,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 2, len(job.TasksMap))
+	// sign job
+	qs.processNextTask("simple")
+
+	job, err = qs.GetJobByID(jobID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 2, len(job.TasksMap))
+	assert.Equal(t, StatusFailed, job.TasksMap[taskID].Status)
+
 	// test saving to db
 	assert.NoError(t, qs.SaveToDB(jobID))
 
@@ -87,4 +111,5 @@ func TestQSignersMap(t *testing.T) {
 	assert.NoError(t, qs.LoadFromDB())
 	jobFromDB, err = qs.GetJobByID(jobID)
 	assert.Error(t, err)
+
 }

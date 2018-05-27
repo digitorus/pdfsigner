@@ -12,7 +12,7 @@ import (
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pkcs11"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 // SignData is a SignData of the sign package, but with additional methods added
@@ -129,7 +129,7 @@ func SignFile(input, output string, s SignData) error {
 	// check the license and wait if limits are reached
 	err := license.LD.Wait()
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 
 	// set date
@@ -138,7 +138,7 @@ func SignFile(input, output string, s SignData) error {
 	// sign file
 	err = sign.SignFile(input, output, sign.SignData(s))
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 
 	// log the result

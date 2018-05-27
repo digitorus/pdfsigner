@@ -1,7 +1,7 @@
 package webapi
 
 import (
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -11,7 +11,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 )
 
 // handleSignScheduleResponse represents response for handleSignSchedule
@@ -24,7 +24,7 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "read multipart"), http.StatusInternalServerError)
+		return httpError(w, errors.Wrap(err, "read multipart"), http.StatusInternalServerError)
 	}
 
 	var f fields
@@ -37,31 +37,31 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 			break
 		}
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "get multipart"), http.StatusInternalServerError)
+			return httpError(w, errors.Wrap(err, "get multipart"), http.StatusBadRequest)
 		}
 
 		//parse fields
 		err = parseFields(p, &f)
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "parse fields"), http.StatusInternalServerError)
+			return httpError(w, errors.Wrap(err, "parse fields"), http.StatusBadRequest)
 		}
 
 		//save pdf file to tmp
 		err = savePDFToTemp(p, fileNames)
 		if err != nil {
-			return httpError(w, errors2.Wrap(err, "save pdf to tmp"), http.StatusInternalServerError)
+			return httpError(w, errors.Wrap(err, "save pdf to tmp"), http.StatusBadRequest)
 		}
 	}
 
-	// check if at least one file was provided
-	if len(fileNames) < 1 {
-		return httpError(w, errors2.Wrap(errors.New("No files provided"), "validation"), http.StatusBadRequest)
+	err = validate(f, fileNames)
+	if err != nil {
+		return httpError(w, errors.Wrap(err, "validation"), http.StatusBadRequest)
 	}
 
 	// add job to the queue
 	jobID, err := addSignJob(wa.queue, f, fileNames)
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "add tasks"), http.StatusInternalServerError)
+		return httpError(w, errors.Wrap(err, "add tasks"), http.StatusBadRequest)
 	}
 
 	// create response
@@ -74,10 +74,20 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 	return respondJSON(w, res, http.StatusCreated)
 }
 
-func addSignJob(qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
-	if f.signerName == "" {
-		return "", errors.New("signer name is required")
+func validate(f fields, fileNames map[string]string) error {
+	// check if at least one file was provided
+	if len(fileNames) < 1 {
+		return errors.New("no files provided")
 	}
+
+	if f.signerName == "" {
+		return errors.New("signer name is not provided")
+	}
+
+	return nil
+}
+
+func addSignJob(qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
 
 	totalTasks := len(fileNames)
 
@@ -97,8 +107,9 @@ type job struct {
 }
 type task struct {
 	ID               string `json:"id"`
-	Status           string `json:"status"`
 	OriginalFileName string `json:"file_name"`
+	Status           string `json:"status"`
+	Error            string `json:"error,omitempty"`
 }
 
 type JobStatus struct {
@@ -113,18 +124,18 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error
 
 	j, err := wa.queue.GetJobByID(jobID)
 	if err != nil {
-		return httpError(w, err, http.StatusInternalServerError)
+		return httpError(w, err, http.StatusBadRequest)
 	}
 
 	status := r.URL.Query().Get("status")
 	tasks, err := j.GetTasks(status)
 	if err != nil {
-		return httpError(w, err, http.StatusInternalServerError)
+		return httpError(w, err, http.StatusBadRequest)
 	}
 
 	var responseTasks []task
 	for _, t := range tasks {
-		rt := task{ID: t.ID, Status: t.Status, OriginalFileName: t.OriginalFileName}
+		rt := task{ID: t.ID, Status: t.Status, OriginalFileName: t.OriginalFileName, Error: t.Error}
 		responseTasks = append(responseTasks, rt)
 	}
 
@@ -140,13 +151,13 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	taskID := vars["taskID"]
 
 	// get file path
-	filePath, err := wa.queue.GetCompletedTaskFilePath(jobID, taskID)
+	completedTask, err := wa.queue.GetCompletedTask(jobID, taskID)
 	if err != nil {
-		return httpError(w, err, http.StatusInternalServerError)
+		return httpError(w, err, http.StatusBadRequest)
 	}
 
 	// get file
-	file, err := os.Open(filePath)
+	file, err := os.Open(completedTask.OutputFilePath)
 	if err != nil {
 		return httpError(w, err, http.StatusInternalServerError)
 	}
@@ -159,6 +170,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, completedTask.OriginalFileName))
 	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
 	_, err = io.Copy(w, file)
 	if err != nil {
@@ -223,7 +235,7 @@ func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) error
 	// delete job by id
 	err := wa.queue.DeleteJob(jobID)
 	if err != nil {
-		return httpError(w, errors2.Wrap(err, "couldn't delete job"), http.StatusInternalServerError)
+		return httpError(w, errors.Wrap(err, "couldn't delete job"), http.StatusBadRequest)
 	}
 
 	// respond with ok

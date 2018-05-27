@@ -2,13 +2,12 @@ package queue
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"sync/atomic"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
-	errors2 "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/verify"
@@ -98,7 +97,6 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 	case StatusFailed:
 	case StatusPending:
 	case "":
-		status = StatusCompleted
 	default:
 		// fail if the status is not in the list
 		return []Task{}, errors.New("status is not correct")
@@ -107,7 +105,7 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 	// find tasks by status
 	var tasks []Task
 	for _, t := range j.TasksMap {
-		if t.Status == status {
+		if status == "" || t.Status == status {
 			tasks = append(tasks, t)
 		}
 	}
@@ -205,7 +203,7 @@ func (q *Queue) AddTask(unitName, jobID, originalFileName, inputFilePath, output
 	}
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
-		return "", errors.New("job is not in map")
+		return "", errors.New("job doesn't exists")
 	}
 
 	task, err := q.addTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath, priority)
@@ -253,7 +251,7 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[st
 	// check if the job is in the map
 	_, exists := q.jobs[jobID]
 	if !exists {
-		return errors.New("job is not in map")
+		return errors.New("job doesn't exists")
 	}
 
 	for tempFileName, originalFileName := range fileNames {
@@ -327,36 +325,38 @@ func (q *Queue) processNextTask(unitName string) error {
 func (q *Queue) GetJobByID(jobID string) (Job, error) {
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
-		return Job{}, errors.New("job is not in map")
+		return Job{}, errors.New("job doesn't exists")
 	}
 
 	return *q.jobs[jobID], nil
 }
 
-// GetCompletedTaskFilePath returns the file path if the task is completed
-func (q *Queue) GetCompletedTaskFilePath(jobID, taskID string) (string, error) {
+// GetCompletedTask returns the file path if the task is completed
+func (q *Queue) GetCompletedTask(jobID, taskID string) (Task, error) {
+	var task Task
+
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
-		return "", errors.New("job is not in map")
+		return task, errors.New("job doesn't exists")
 	}
 
 	// get task
 	task, ok := q.jobs[jobID].TasksMap[taskID]
 	if !ok {
-		return "", errors.New("task not found in map")
+		return task, errors.New("task is not found")
 	}
 
 	// check if task is not processed
 	if task.Status == StatusPending {
-		return "", errors.New("task is not processed yet")
+		return task, errors.New("task is not processed yet")
 	}
 
 	// check if the stask is failed
 	if task.Status == StatusFailed {
-		return "", errors.New(fmt.Sprintf("task failed with error: %v", task.Error))
+		return task, errors.New(fmt.Sprintf("task failed with error %v", task.Error))
 	}
 
-	return task.OutputFilePath, nil
+	return task, nil
 }
 
 // GetQueueSizeByUnitName returns lengths of the channels of all the priorities for the specific signer.
@@ -407,7 +407,7 @@ func signTask(task Task, jobSignData SignData, signerSignData signer.SignData) e
 func verifyTask(task Task) error {
 	inputFile, err := os.Open(task.InputFilePath)
 	if err != nil {
-		return errors2.Wrap(err, "")
+		return errors.Wrap(err, "")
 	}
 	defer inputFile.Close()
 
@@ -442,7 +442,7 @@ func (q *Queue) SaveToDB(jobID string) error {
 	// check if the job is in the map
 	job, exists := q.jobs[jobID]
 	if !exists {
-		return errors.New("job is not in map")
+		return errors.New("job doesn't exists")
 	}
 
 	// save job
@@ -517,7 +517,7 @@ func (q *Queue) DeleteFromDB(jobID string) error {
 	// check if the job is in the map
 	job, exists := q.jobs[jobID]
 	if !exists {
-		return errors.New("job is not in map")
+		return errors.New("job doesn't exists")
 	}
 
 	// delete tasks
