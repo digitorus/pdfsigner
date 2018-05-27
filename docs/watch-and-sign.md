@@ -1,6 +1,8 @@
 # Watch and sign
 
-`pdfsigner watch` command allows to watch folder for new documents, sign it using PEM or PKSC11 or preconfigured signer from the config file and put signed files into another folder.
+PDFSigner allows to watch folder for new PDF documents, sign it using PEM or PKSC11 or preconfigured signer from the config file and put signed files into specified folder.
+
+Command: `pdfsigner watch`
 
 specific flags: 
 
