@@ -9,12 +9,12 @@ To start to use the application first the license needs to be installed. More on
 
 ## Features provided by the application and it's complete documentation: 
 
-[Command line signer and verifier](./command-line.md)
-[Watch and sign](./watch-and-sign.md)
-[Web API](./web-api.md)
-[Multiple services at once](./services.md)
-[Configuration file](./web-api.md)
-[License](./license.md)
+- [Command line signer and verifier](./command-line.md)
+- [Watch and sign](./watch-and-sign.md)
+- [Web API](./web-api.md)
+- [Multiple services at once](./services.md)
+- [Configuration file](./web-api.md)
+- [License](./license.md)
 
 
 
