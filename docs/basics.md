@@ -14,7 +14,7 @@ To start to use the application first the license needs to be installed. More on
 - [Watch and sign](./watch-and-sign.md)
 - [Web API](./web-api.md)
 - [Multiple services at once](./services.md)
-- [DB synchronization](./db.md)
+- [Persistence](./db.md)
 - [Configuration file](./web-api.md)
 - [License](./license.md)
 
