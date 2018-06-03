@@ -69,6 +69,7 @@ func runTest(m *testing.M) int {
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 	q.AddSignUnit("simple", signData)
+	q.AddVerifyUnit()
 	q.Runner()
 
 	// create web api
@@ -79,7 +80,7 @@ func runTest(m *testing.M) int {
 	return m.Run()
 }
 
-func TestFlow(t *testing.T) {
+func TestSignFlow(t *testing.T) {
 	// test upload
 	//create file parts
 	fileParts := []filePart{
@@ -112,7 +113,7 @@ func TestFlow(t *testing.T) {
 	}
 
 	// get job id
-	var scheduleResponse handleSignScheduleResponse
+	var scheduleResponse hanldeScheduleResponse
 	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +129,7 @@ func TestFlow(t *testing.T) {
 	wa.r.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
-	var jobStatus JobStatus
+	var jobStatus jobStatusResponse
 	if err := json.NewDecoder(w.Body).Decode(&jobStatus); err != nil {
 		t.Fatal(err)
 	}
@@ -180,6 +181,73 @@ func TestFlow(t *testing.T) {
 	}
 
 	assert.Equal(t, ver.Version, "0.1")
+}
+
+func TestVerifyFlow(t *testing.T) {
+	//create file parts
+	fileParts := []filePart{
+		{"testfile1", "../testfiles/testfile20_signed.pdf"},
+	}
+	// create multipart request
+	r, err := newMultipleFilesUploadRequest(
+		baseURL+"/verify",
+		map[string]string{}, fileParts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create recorder
+	w := httptest.NewRecorder()
+	// make request
+	wa.r.ServeHTTP(w, r)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status not ok: %v", w.Body.String())
+	}
+
+	// get job id
+	var scheduleResponse hanldeScheduleResponse
+	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, scheduleResponse.JobID)
+	assert.Equal(t, "/verify/"+scheduleResponse.JobID, w.Header().Get("Location"), "location is not set")
+
+	// wait for signing files
+	time.Sleep(2 * time.Second)
+
+	// test status
+	r = httptest.NewRequest("GET", baseURL+"/verify/"+scheduleResponse.JobID, nil)
+	w = httptest.NewRecorder()
+	wa.r.ServeHTTP(w, r)
+	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
+	var jobStatus jobStatusResponse
+	if err := json.NewDecoder(w.Body).Decode(&jobStatus); err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, 1, len(jobStatus.Tasks))
+	var completedTasks int
+	for _, task := range jobStatus.Tasks {
+		// work with failed malformed task
+		if task.Status != queue.StatusCompleted {
+			assert.NotEmpty(t, task.Error)
+			continue
+		}
+
+		// happy path
+		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
+		// test get completed task
+		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
+		w = httptest.NewRecorder()
+		wa.r.ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+		assert.Equal(t, 8994, len(w.Body.Bytes()))
+		completedTasks += 1
+	}
+
+	// check amount of success
+	assert.Equal(t, 0, completedTasks)
 }
 
 // Creates a new multiple files upload http request with optional extra params

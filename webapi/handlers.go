@@ -14,13 +14,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-// handleSignScheduleResponse represents response for handleSignSchedule
-type handleSignScheduleResponse struct {
-	JobID string `json:"job_id"`
+// handleSignSchedule adds a job to the queue
+func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) error {
+	return wa.scheduleJob("sign", w, r)
 }
 
 // handleSignSchedule adds a job to the queue
-func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) error {
+func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) error {
+	return wa.scheduleJob("verify", w, r)
+}
+
+func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Request) error {
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
@@ -53,48 +57,91 @@ func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) err
 		}
 	}
 
-	err = validate(f, fileNames)
-	if err != nil {
-		return httpError(w, errors.Wrap(err, "validation"), http.StatusBadRequest)
-	}
-
 	// add job to the queue
-	jobID, err := addSignJob(wa.queue, f, fileNames)
+	jobID, err := addJob(jobType, wa.queue, f, fileNames)
 	if err != nil {
 		return httpError(w, errors.Wrap(err, "add tasks"), http.StatusBadRequest)
 	}
 
 	// create response
-	res := handleSignScheduleResponse{jobID}
+	res := hanldeScheduleResponse{jobID}
 
 	// set location
-	w.Header().Set("Location", "/sign/"+jobID)
+	w.Header().Set("Location", "/"+jobType+"/"+jobID)
 
 	// respond with json
 	return respondJSON(w, res, http.StatusCreated)
 }
 
-func validate(f fields, fileNames map[string]string) error {
-	// check if at least one file was provided
-	if len(fileNames) < 1 {
-		return errors.New("no files provided")
-	}
+type fields struct {
+	unitName string
+	signData queue.SignData
+}
 
-	if f.signerName == "" {
-		return errors.New("signer name is not provided")
+func parseFields(p *multipart.Part, f *fields) error {
+	switch p.FormName() {
+	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
+		//parse params
+		slurp, err := ioutil.ReadAll(p)
+		if err != nil {
+			return nil
+		}
+
+		// get field content
+		str := string(slurp)
+
+		switch p.FormName() {
+		case "signer":
+			f.unitName = str
+		case "name":
+			f.signData.Name = str
+		case "location":
+			f.signData.Location = str
+		case "reason":
+			f.signData.Reason = str
+		case "contactInfo":
+			f.signData.ContactInfo = str
+		case "certType":
+			i, err := strconv.Atoi(str)
+			if err != nil {
+				return err
+			}
+			f.signData.CertType = uint32(i)
+		case "approval":
+			b, err := strconv.ParseBool(str)
+			if err != nil {
+				return err
+			}
+			f.signData.Approval = b
+		}
 	}
 
 	return nil
 }
 
-func addSignJob(qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
+func addJob(jobType string, qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
+
+	// check if at least one file was provided
+	if len(fileNames) < 1 {
+		return "", errors.New("no files provided")
+	}
 
 	totalTasks := len(fileNames)
 
-	jobID := qs.AddSignJob(f.signData)
+	var jobID string
+	if jobType == "sign" {
+		if f.unitName == "" {
+			return "", errors.New("signer name was not provided")
+		}
+		jobID = qs.AddSignJob(f.signData)
+	} else {
+		f.unitName = queue.VerificationUnitName
+		jobID = qs.AddVerifyJob()
+	}
+
 	priority := determinePriority(totalTasks)
 
-	err := qs.AddBatchPersistentTasks(f.signerName, jobID, fileNames, priority)
+	err := qs.AddBatchPersistentTasks(f.unitName, jobID, fileNames, priority)
 	if err != nil {
 		return "", err
 	}
@@ -102,22 +149,7 @@ func addSignJob(qs *queue.Queue, f fields, fileNames map[string]string) (string,
 	return jobID, nil
 }
 
-type job struct {
-	ID string `json:"id"`
-}
-type task struct {
-	ID               string `json:"id"`
-	OriginalFileName string `json:"file_name"`
-	Status           string `json:"status"`
-	Error            string `json:"error,omitempty"`
-}
-
-type JobStatus struct {
-	Job   job    `json:"job"`
-	Tasks []task `json:"tasks"`
-}
-
-func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error {
+func (wa *WebAPI) handleStatus(w http.ResponseWriter, r *http.Request) error {
 	// get tasks for job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]
@@ -139,7 +171,7 @@ func (wa *WebAPI) handleSignStatus(w http.ResponseWriter, r *http.Request) error
 		responseTasks = append(responseTasks, rt)
 	}
 
-	jobStatus := JobStatus{Job: job{j.ID}, Tasks: responseTasks}
+	jobStatus := jobStatusResponse{Job: job{j.ID}, Tasks: responseTasks}
 
 	return respondJSON(w, jobStatus, http.StatusOK)
 }
@@ -180,54 +212,8 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
-type fields struct {
-	signerName string
-	signData   queue.SignData
-}
-
-func parseFields(p *multipart.Part, f *fields) error {
-	switch p.FormName() {
-	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
-		//parse params
-		slurp, err := ioutil.ReadAll(p)
-		if err != nil {
-			return nil
-		}
-
-		// get field content
-		str := string(slurp)
-
-		switch p.FormName() {
-		case "signer":
-			f.signerName = str
-		case "name":
-			f.signData.Name = str
-		case "location":
-			f.signData.Location = str
-		case "reason":
-			f.signData.Reason = str
-		case "contactInfo":
-			f.signData.ContactInfo = str
-		case "certType":
-			i, err := strconv.Atoi(str)
-			if err != nil {
-				return err
-			}
-			f.signData.CertType = uint32(i)
-		case "approval":
-			b, err := strconv.ParseBool(str)
-			if err != nil {
-				return err
-			}
-			f.signData.Approval = b
-		}
-	}
-
-	return nil
-}
-
 // handleSignDelete removes job from the queue
-func (wa *WebAPI) handleSignDelete(w http.ResponseWriter, r *http.Request) error {
+func (wa *WebAPI) handleDelete(w http.ResponseWriter, r *http.Request) error {
 	// get job
 	vars := mux.Vars(r)
 	jobID := vars["jobID"]

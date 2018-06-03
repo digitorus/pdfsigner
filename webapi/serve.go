@@ -25,8 +25,8 @@ type WebAPI struct {
 	addr string
 	// queue represents sign queue
 	queue *queue.Queue
-	// allowedSigners represents signers that allowed to be used by the web api
-	allowedSigners []string
+	// allowedUnits represents signers that allowed to be used by the web api
+	allowedUnits []string
 	// version represents git version of the application
 	version version.Version
 	// middlewares represents middlewares used for all handlers
@@ -34,16 +34,18 @@ type WebAPI struct {
 }
 
 // NewWebAPI initializes web api with routes
-func NewWebAPI(addr string, qs *queue.Queue, allowedSigners []string, version version.Version) *WebAPI {
+func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version version.Version) *WebAPI {
 	// initialize web api
 	wa := WebAPI{
-		addr:           addr,
-		queue:          qs,
-		allowedSigners: allowedSigners,
-		version:        version,
-		r:              mux.NewRouter(),
-		middlewares:    []middleware{},
+		addr:         addr,
+		queue:        qs,
+		allowedUnits: allowedUnits,
+		version:      version,
+		r:            mux.NewRouter(),
+		middlewares:  []middleware{},
 	}
+
+	wa.allowedUnits = append(allowedUnits, "verify")
 
 	// add middlewares
 	wa.addMiddleware(loggerMiddleware)
@@ -51,15 +53,15 @@ func NewWebAPI(addr string, qs *queue.Queue, allowedSigners []string, version ve
 
 	// initialize sign routes
 	wa.handle("POST", "/sign", wa.handleSignSchedule)
-	wa.handle("GET", "/sign/{jobID}", wa.handleSignStatus)
+	wa.handle("GET", "/sign/{jobID}", wa.handleStatus)
 	wa.handle("GET", "/sign/{jobID}/{taskID}/download", wa.handleSignGetFile)
-	wa.handle("DELETE", "/sign/{jobID}", wa.handleSignDelete)
-	wa.handle("GET", "/queue/{signerName}", wa.handleGetQueueSize)
+	wa.handle("DELETE", "/sign/{jobID}", wa.handleDelete)
+	wa.handle("GET", "/queue/{unitName}", wa.handleGetQueueSize)
 	wa.handle("GET", "/version", wa.handleGetVersion)
 
 	// initialize verify routes
-	wa.handle("POST", "/verify/schedule", wa.handleVerifySchedule)
-	wa.handle("POST", "/verify/check", wa.handleVerifyCheck)
+	wa.handle("POST", "/verify", wa.handleVerifySchedule)
+	wa.handle("GET", "/verify/{jobID}", wa.handleStatus)
 
 	return &wa
 }
@@ -101,8 +103,8 @@ func (wa *WebAPI) Serve() {
 	}
 
 	serveLoggerCtx := log.WithFields(log.Fields{
-		"addr":           wa.addr,
-		"allowedSigners": wa.allowedSigners,
+		"addr":         wa.addr,
+		"allowedUnits": wa.allowedUnits,
 	})
 
 	serveLoggerCtx.Info("Starting Web API...")

@@ -101,8 +101,9 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 			for _, sn := range configSignerNames {
 				setupSigner(sn)
 			}
-			return
 		}
+
+		setupVerifier()
 	default:
 		log.Fatal("service type is not set inside the config")
 	}
@@ -123,6 +124,10 @@ func setupSigner(signerName string) {
 
 	// add signer to signers map
 	signVerifyQueue.AddSignUnit(signerName, config.SignData)
+}
+
+func setupVerifier() {
+	signVerifyQueue.AddVerifyUnit()
 }
 
 // setupService depending on the type of the service setups service

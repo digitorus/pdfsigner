@@ -149,8 +149,8 @@ func (q *Queue) AddSignUnit(unitName string, signData signer.SignData) {
 }
 
 // AddVerifyUnit adds verify unit to units map
-func (q *Queue) AddVerifyUnit(unitName string) {
-	q.addUnit(unitName)
+func (q *Queue) AddVerifyUnit() {
+	q.addUnit(VerificationUnitName)
 }
 
 // addJob adds job to the jobs map
