@@ -84,25 +84,30 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 			log.Fatal("License: maximum directory watchers exceded, allowed:", license.LD.MaxDirectoryWatchers)
 		}
 
+		// check if array of signer names were provided watch service may only contain single signer
 		if len(configSignerNames) > 1 {
 			log.Fatal(`Use signer instead of signers config setting for watch`)
 		}
 
+		// setup signer
 		if configSignerName != "" {
 			setupSigner(configSignerName)
 			return
 		}
 	case "serve":
+		// serve service should contain array of signers instead of single signer
 		if configSignerName != "" {
 			log.Fatal(`Use signers instead of signer config setting for serve`)
 		}
 
+		// setup signers
 		if len(configSignerNames) > 1 {
 			for _, sn := range configSignerNames {
 				setupSigner(sn)
 			}
 		}
 
+		// setup verifier unit
 		setupVerifier()
 	default:
 		log.Fatal("service type is not set inside the config")
@@ -124,10 +129,6 @@ func setupSigner(signerName string) {
 
 	// add signer to signers map
 	signVerifyQueue.AddSignUnit(signerName, config.SignData)
-}
-
-func setupVerifier() {
-	signVerifyQueue.AddVerifyUnit()
 }
 
 // setupService depending on the type of the service setups service

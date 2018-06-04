@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -478,16 +479,17 @@ func (q *Queue) LoadFromDB() error {
 
 	dbJobs, err := db.BatchLoad(dbJobPrefix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "loading jobs from the db")
 	}
 
 	// load jobs and tasks
 	for _, dbJob := range dbJobs {
+
 		// load job
 		var job Job
 		err := json.Unmarshal(dbJob, &job)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unmarshal job")
 		}
 
 		q.jobs[job.ID] = &job
@@ -497,17 +499,22 @@ func (q *Queue) LoadFromDB() error {
 	// load tasks
 	dbTasks, err := db.BatchLoad(dbTaskPrefix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "load tasks from the job")
 	}
 
 	for _, dbTask := range dbTasks {
 		var task Task
 		err := json.Unmarshal(dbTask, &task)
 		if err != nil {
-			return err
+			spew.Dump(string(dbTask[:]))
+			return errors.Wrapf(err, "unmarshal task, %v", task)
 		}
 
-		q.jobs[task.JobID].TasksMap[task.ID] = task
+		job, ok := q.jobs[task.JobID]
+		if ok {
+			job.TasksMap[task.ID] = task
+		}
+
 	}
 
 	return nil

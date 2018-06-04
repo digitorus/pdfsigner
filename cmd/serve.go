@@ -101,6 +101,9 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 			setupSigner(sn)
 		}
 
+		// setup verifier
+		setupVerifier()
+
 		// start web api with runners
 		startWebAPIWithRunners()
 	},

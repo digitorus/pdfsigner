@@ -16,6 +16,10 @@ func init() {
 	signVerifyQueue = queue.NewQueue()
 }
 
+func setupVerifier() {
+	signVerifyQueue.AddVerifyUnit()
+}
+
 var (
 	// common flags
 	signerNameFlag           string

@@ -2,20 +2,6 @@
 
 `pdfsigner verify` command allows to verify PDF document.
 
-
-## Run with PEM
-
-`pdfsigner sign pem` 
-
-specific flags: 
-
-
-```
---key string             Private key path
---crt string             Certificate path
-
-```
-
 ### Example
 
 ```

@@ -4,16 +4,21 @@
 
 ### How it works
 
-To sign files using Web API first a job that contains one or more files needs to be put into the queue using `POST /sign` request. Then the job results should be obtained with `GET /sign/jobid` request that contains information about pending, successful or failed tasks(files). After the status is resolved completed tasks could be downloaded with `GET /sign/jobid/taskid/download` request.
+To process files using Web API first a job that contains one or more files needs to be put into the queue. After that the status of the job that contains pending, successful or failed tasks(files) should be requested. In case of signing job after files were processed successfully they could be downloaded.
 
 Available end points:
 
-`POST /sign` - place one or more files with specified signer into the queue 
-`GET /sign/jobid` - get status of the placed files
+`POST /sign` - put one or more files with specified signer into the signing queue 
+`GET /sign/jobid` - get status of the job with tasks
 `GET /sign/jobid/taskid/download` - download completed file
 
+`POST /verify` - put one or more files into the verification queue  
+`GET /verify/jobid` - get status of the job with tasks
 
-### Scheduling signing job
+
+### Signing
+
+#### Schedule signing job
 
 Scheduling job is done with `POST /sign` [multipart/form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects) request with fields and files provided as parts.
 
@@ -35,7 +40,7 @@ It also may return JSON formatted error Ex.`{"error":"no files provided","code":
 That error may only contain the error of putting a job to the queue, not the signing results. Signing results could be obtained with `GET /sign/jobid` request.
 
 
-### Getting the status of the job
+#### Get status of the signing job
 
 Getting the status of the job is done using `GET /sign/jobid` request which returns the tasks associated with the job, every task contains it's id, original file name, and status that could be "Pending" - the task is not processed yet and Failed. When the task is going to fail it's going to contain the error.
 
@@ -72,7 +77,7 @@ Job with failed to complete task:
 }
 ```
 
-### Download signed files
+#### Download signed files
 
 Signed files could be downloaded with `GET /sign/jobid/taskid/download` request. 
 
@@ -81,6 +86,58 @@ The response would be the file.
 Note: postman offers to download file as download.pdf instead of the file name provided with content disposition, see issue: https://github.com/postmanlabs/postman-app-support/issues/2082
 
 The request may fail with JSON response. Ex: `{"error":"task is not found","code":400}`
+
+__
+### Verifying
+
+#### Schedule verifying job
+
+Scheduling job is done with `POST /verify` [multipart/form-data](https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects) request with files provided as parts.
+
+The successful request returns JSON `{"job_id":"jobidstr"}` that contains job id which could be then used to get information about the tasks and to download signed files.
+
+It also may return JSON formatted error Ex.`{"error":"no files provided","code":400}`. 
+
+That error may only contain the error of putting a job to the queue, not the signing results. Signing results could be obtained with `GET /verify/jobid` request.
+
+
+#### Get status of the verifying job
+
+Getting the status of the job is done using `GET /sign/jobid` request which returns the tasks associated with the job, every task contains it's id, original file name, and status that could be "Pending" - the task is not processed yet and Failed. When the task is going to fail it's going to contain the error.
+
+The request may fail with JSON response. Ex: `{"error":"job doesn't exists","code":400}`
+
+Job with successfully completed task:
+
+```json
+{
+	"job":{"id":"bc5g4tl2m9sn837gm00g"},
+	"tasks":[
+		{
+			"id":"bc5g4tl2m9sn837gm010",
+			"file_name":"testfile12.pdf",
+			"status":"Completed"
+		}
+	]
+}
+```
+
+Job with failed to complete task:
+
+```json
+{
+	"job":{"id":"bc5g4tl2m9sn837gm00g"},
+	"tasks":[
+		{
+			"id":"bc5g4tl2m9sn837gm010",
+			"file_name":"testfile12.pdf",
+			"status":"Failed",
+			"error": "malformed pdf file"
+		}
+	]
+}
+```
+
 
 
 ## Commands
