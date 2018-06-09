@@ -111,5 +111,4 @@ func TestQSignersMap(t *testing.T) {
 	assert.NoError(t, qs.LoadFromDB())
 	jobFromDB, err = qs.GetJobByID(jobID)
 	assert.Error(t, err)
-
 }

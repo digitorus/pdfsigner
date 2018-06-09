@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -54,7 +53,7 @@ type Job struct {
 	// ID represents id of the job
 	ID string `json:"id"`
 	// TasksMap represents tasks added to the job
-	TasksMap map[string]Task `json:"-"`
+	TasksMap map[string]Task `json:"task_map"`
 	// SignData represents additional sign data added by request to override signer initial sign data
 	SignData SignData `json:"sign_data"`
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
@@ -451,22 +450,8 @@ func (q *Queue) SaveToDB(jobID string) error {
 	if err != nil {
 		return err
 	}
+
 	err = db.SaveByKey(dbJobPrefix+jobID, marshaledJob)
-	if err != nil {
-		return err
-	}
-
-	// save tasks
-	var marshaledTaskMap = map[string][]byte{}
-	for _, t := range job.TasksMap {
-		marshaledTask, err := json.Marshal(t)
-		if err != nil {
-			return err
-		}
-		marshaledTaskMap[dbTaskPrefix+t.ID] = marshaledTask
-	}
-
-	err = db.BatchUpsert(marshaledTaskMap)
 	if err != nil {
 		return err
 	}
@@ -493,28 +478,6 @@ func (q *Queue) LoadFromDB() error {
 		}
 
 		q.jobs[job.ID] = &job
-		job.TasksMap = make(map[string]Task, 1)
-	}
-
-	// load tasks
-	dbTasks, err := db.BatchLoad(dbTaskPrefix)
-	if err != nil {
-		return errors.Wrap(err, "load tasks from the job")
-	}
-
-	for _, dbTask := range dbTasks {
-		var task Task
-		err := json.Unmarshal(dbTask, &task)
-		if err != nil {
-			spew.Dump(string(dbTask[:]))
-			return errors.Wrapf(err, "unmarshal task, %v", task)
-		}
-
-		job, ok := q.jobs[task.JobID]
-		if ok {
-			job.TasksMap[task.ID] = task
-		}
-
 	}
 
 	return nil
@@ -522,24 +485,13 @@ func (q *Queue) LoadFromDB() error {
 
 func (q *Queue) DeleteFromDB(jobID string) error {
 	// check if the job is in the map
-	job, exists := q.jobs[jobID]
+	_, exists := q.jobs[jobID]
 	if !exists {
 		return errors.New("job doesn't exists")
 	}
 
-	// delete tasks
-	var taskIDs []string
-	for id, _ := range job.TasksMap {
-		taskIDs = append(taskIDs, dbTaskPrefix+id)
-	}
-
-	err := db.BatchDelete(taskIDs)
-	if err != nil {
-		return err
-	}
-
 	// delete job
-	err = db.DeleteByKey(dbJobPrefix + jobID)
+	err := db.DeleteByKey(dbJobPrefix + jobID)
 	if err != nil {
 		return err
 	}
