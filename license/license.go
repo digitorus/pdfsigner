@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/denisbrodbeck/machineid"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
@@ -33,12 +34,14 @@ type LicenseData struct {
 	MaxDirectoryWatchers int                  `json:"d"`
 
 	RL        *ratelimiter.RateLimiter `json:"-"`
+	machineID string                   `json:"-"`
 	cryptoKey [32]byte
 	lastState []ratelimiter.LimitState
 }
 
 // the public key b64 encoded from the private key using: lkgen pub my_private_key_file`.
 const PublicKeyBase64 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
+const appNameMachineID = "PDFSigner_unique_key_"
 
 // Initialize extracts license from the bytes provided to LD variable and stores it inside the db
 func Initialize(licenseBytes []byte) error {
@@ -65,6 +68,11 @@ func Initialize(licenseBytes []byte) error {
 		return errors.Wrap(err, "")
 	}
 
+	err = saveMachineID()
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+
 	// assign license data to LD variable
 	LD = ld
 
@@ -79,6 +87,11 @@ func Load() error {
 	license, err := db.LoadByKey("license")
 	if err != nil {
 		return errors.Wrap(err, "couldn't load license from the db")
+	}
+
+	err = checkMachineID()
+	if err != nil {
+		return errors.Wrap(err, "")
 	}
 
 	// load license data
@@ -305,6 +318,50 @@ func (ld *LicenseData) Info() string {
 
 	}
 	return res
+}
+
+func saveMachineID() error {
+	// load machine id
+	machineID, err := machineid.ProtectedID(appNameMachineID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// save machine id
+	err = db.SaveByKey("machineid", []byte(machineID))
+	if err != nil {
+		return errors.Wrap(err, "couldn't save host info")
+	}
+
+	return nil
+}
+
+// laod and check machine id
+func checkMachineID() error {
+	// load machine id from the db
+	savedMachineID, err := db.LoadByKey("machineid")
+	if err != nil {
+		return errors.Wrap(err, "couldn't load host info from the db")
+	}
+	savedMachineIDStr := string(savedMachineID[:])
+
+	// get current machine id
+	machineID, err := machineid.ProtectedID(appNameMachineID)
+	if err != nil {
+		return errors.Wrap(err, "couldn't get host info")
+	}
+
+	// check that ids are not nil
+	if savedMachineIDStr == "" || machineID == "" {
+		return errors.Wrap(errors.New("machine id check failed"), "host info is not working")
+	}
+
+	// compare saved and current machine ids
+	if savedMachineIDStr != machineID {
+		return errors.Wrap(errors.New("the license is bound to another computer"), "saved and current host info comparison failed")
+	}
+
+	return nil
 }
 
 // isTotalLimit checks if the provided limit is a total limit
