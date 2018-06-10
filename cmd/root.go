@@ -19,8 +19,8 @@ var ver version.Version
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
-	Short: "A brief description of your application",
-	Long:  `Long multiline description`,
+	Short: "PDFSigner is a multi purpose PDF signer and verifier",
+	Long:  `PDFSigner is a multi purpose PDF signer and verifier application it allows to use it as a command line tool and as a watch and sign tool, it also allows to use Web API to sign and verify files and to use multiple services in combination.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

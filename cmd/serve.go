@@ -12,8 +12,8 @@ import (
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Serve Web API",
-	Long:  `Long multiline description here`,
+	Short: "Run web server to sign and verify files using HTTP protocol",
+	Long:  `Web API allows to sign and verify files by communicating with the application using HTTP protocol`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return requrieLicense()
 	},
@@ -23,7 +23,6 @@ var serveCmd = &cobra.Command{
 var servePEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Serve using PEM signer",
-	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		config := signerConfig{}
 
@@ -42,7 +41,6 @@ var servePEMCmd = &cobra.Command{
 var servePKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Serve using PKSC11 signer",
-	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		config := signerConfig{}
 
@@ -60,7 +58,7 @@ var servePKSC11Cmd = &cobra.Command{
 // serveWithSingleSignerCmd runs web api using single signer from the config with possibility to override it with flags
 var serveWithSingleSignerCmd = &cobra.Command{
 	Use:   "signer",
-	Short: "Serve with single signer from the config. Overrides settings with CLI",
+	Short: "Serve with single signer from the config. Allows to override settings with CLI",
 	Long:  `It allows to run signer from the config and override it's settings'`,
 	Run: func(cmd *cobra.Command, attr []string) {
 		// get config signer by name

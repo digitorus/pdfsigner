@@ -53,27 +53,27 @@ var (
 
 // parseCommonFlags binds common flags to variables
 func parseCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVar(&signatureApprovalFlag, "approval", false, "Approval")
+	cmd.PersistentFlags().BoolVar(&signatureApprovalFlag, "approval", false, "Is the signature should be approval")
 	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
 	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "info-name", "", "Signature info name")
 	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "info-location", "", "Signature info location")
-	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "info-reason", "", "Signature info reason")
-	cmd.PersistentFlags().StringVar(&signatureInfoContactFlag, "info-contact", "", "Signature info contact")
+	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "info-reason", "", "Signature reason")
+	cmd.PersistentFlags().StringVar(&signatureInfoContactFlag, "info-contact", "", "Signature contact")
 	cmd.PersistentFlags().StringVar(&signatureTSAUrlFlag, "tsa-url", "", "TSA url")
 	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
 	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
-	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain")
+	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain path")
 }
 
 func parseConfigFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "")
+	cmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "Path to config file")
 	cmd.MarkPersistentFlagRequired("config")
 }
 
 // parsePEMCertificateFlags binds PEM specific flags to variables
 func parsePEMCertificateFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Certificate path")
-	cmd.PersistentFlags().StringVar(&privateKeyPathFlag, "key", "", "Private key path")
+	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Path to certificate file")
+	cmd.PersistentFlags().StringVar(&privateKeyPathFlag, "key", "", "Path to private key")
 }
 
 // parsePKSC11CertificateFlags binds PKSC11 specific flags to variables
@@ -102,9 +102,9 @@ func parseSignerName(cmd *cobra.Command) {
 
 // parseServeFlags binds serve address and port flags to variables
 func parseServeFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "serve address")
+	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "Address to serve Web API")
 	cmd.MarkPersistentFlagRequired("serve-address")
-	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "serve port")
+	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "Port to serve Web API")
 	cmd.MarkPersistentFlagRequired("serve-port")
 }
 

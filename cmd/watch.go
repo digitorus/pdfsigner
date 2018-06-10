@@ -10,8 +10,8 @@ import (
 // watchCmd represents the watch command
 var watchCmd = &cobra.Command{
 	Use:   "watch",
-	Short: "Watch command",
-	Long:  `Long multiline description here`,
+	Short: "Watch folder for new files, sign and put to another folder",
+	Long:  `Watch folder for new PDF documents, sign it using PEM or PKSC11 or preconfigured signer`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return requrieLicense()
 	},
@@ -20,8 +20,7 @@ var watchCmd = &cobra.Command{
 // watchPEMCmd watches folders and signs files with PEM using flags only
 var watchPEMCmd = &cobra.Command{
 	Use:   "pem",
-	Short: "Watch PDF with PEM formatted certificate",
-	Long:  `Long multiline description here`,
+	Short: "Watch and sign with PEM formatted certificate",
 	Run: func(cmd *cobra.Command, args []string) {
 		c := signerConfig{}
 
@@ -39,8 +38,7 @@ var watchPEMCmd = &cobra.Command{
 // watchPKSC11Cmd watches folders and signs files with PEM using flags only
 var watchPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
-	Short: "Watch PDF with PSKC11",
-	Long:  `Long multiline description here`,
+	Short: "Watch and sign with PSKC11",
 	Run: func(cmd *cobra.Command, args []string) {
 		c := signerConfig{}
 
@@ -58,8 +56,7 @@ var watchPKSC11Cmd = &cobra.Command{
 // watchBySignerNameCmd wathces folders and signs files using singer from the config with possibility to override it with flags
 var watchBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
-	Short: "Signs PDF with signer from the config",
-	Long:  `Long multiline description here`,
+	Short: "Watch and sign with preconfigured signer",
 	Run: func(cmd *cobra.Command, args []string) {
 		// get signer config from the config file by name
 		c := getSignerConfigByName(signerNameFlag)

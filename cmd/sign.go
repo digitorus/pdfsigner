@@ -9,8 +9,8 @@ import (
 // signCmd represents the sign command
 var signCmd = &cobra.Command{
 	Use:   "sign",
-	Short: "Sign command",
-	Long:  `Long multiline description here`,
+	Short: "Sign files using PEM or PKSC11",
+	Long:  `Command line signer allows to sign document using PEM or PKSC11 provided directly as well as using preconfigured signer from the config file.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return requrieLicense()
 	},
@@ -20,7 +20,6 @@ var signCmd = &cobra.Command{
 var signPEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Sign PDF with PEM formatted certificate",
-	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
 		// require file patterns
 		requireFilePatterns(filePatterns)
@@ -42,7 +41,6 @@ var signPEMCmd = &cobra.Command{
 var signPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Signs PDF with PSKC11",
-	Long:  `Long multiline description here`,
 	Run: func(cmd *cobra.Command, filePatterns []string) {
 		// require file patterns
 		requireFilePatterns(filePatterns)
@@ -64,8 +62,7 @@ var signPKSC11Cmd = &cobra.Command{
 // signBySignerNameCmd signs files using singer from the config with possibility to override it with flags
 var signBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
-	Short: "Signs PDF with signer from the config",
-	Long:  `Long multiline description here`,
+	Short: "Sign PDF with preconfigured signer",
 	Run: func(cmd *cobra.Command, filePatterns []string) {
 		// require file patterns
 		requireFilePatterns(filePatterns)

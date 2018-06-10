@@ -23,8 +23,7 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Get version",
-	Long:  ``,
+	Short: "Get PDFSigner version",
 	Run: func(cmd *cobra.Command, args []string) {
 		// print version
 		fmt.Println(
