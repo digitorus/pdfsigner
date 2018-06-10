@@ -1,6 +1,6 @@
 # Command line signer
 
-Command line signer allows to sign document using PEM or PKSC11 as well as using preconfigured signer from the config file.
+Command line signer allows to sign document using PEM or PKSC11 provided directly as well as using preconfigured signer from the config file.
 
 Command - `pdfsigner sign`  
 

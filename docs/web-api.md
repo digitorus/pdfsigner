@@ -1,5 +1,7 @@
 # Web API
 
+Web API allows to sign and verify files by communicating with the application using HTTP protocol
+
 ## Usage
 
 ### How it works
