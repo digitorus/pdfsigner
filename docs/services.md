@@ -1,6 +1,8 @@
 # Services
 
-`pdfsigner services` allows to run multiple watch and Web API services
+Services command allows to run multiple watch and Web API services
+
+Command - `pdfsigner services` 
 
 services specific flags:
 

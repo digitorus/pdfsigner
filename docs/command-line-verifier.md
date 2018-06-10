@@ -1,6 +1,8 @@
 # Command line verifier
 
-`pdfsigner verify` command allows to verify PDF document.
+Command line verifier allows to verify PDF document signature
+
+Command - `pdfsigner verify` 
 
 ### Example
 
