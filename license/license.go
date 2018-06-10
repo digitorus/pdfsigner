@@ -15,6 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// HMACKeyForLimitsEncryption
+const HMACKeyForLimitsEncryption = "HMACKeyForLimitsEncryption"
+
 // ErrOverLimit contains error for over limit
 var ErrOverLimit = errors.New("limit is over")
 
@@ -27,14 +30,22 @@ var LD LicenseData
 
 // LicenseData represents all the license related data
 type LicenseData struct {
-	Name                 string               `json:"n"`
-	Email                string               `json:"e"`
-	End                  time.Time            `json:"end"`
-	Limits               []*ratelimiter.Limit `json:"l"`
-	MaxDirectoryWatchers int                  `json:"d"`
+	// Name represents the name license assigned to
+	Name string `json:"n"`
+	// Email represents email address of the license owner
+	Email string `json:"e"`
+	// End represents the date when license ends
+	End time.Time `json:"end"`
+	// Limits represents limits assigned to the license
+	Limits []*ratelimiter.Limit `json:"l"`
+	// MaxDirectoryWatchers represents maximum allowed directories to watch with watch and sign service
+	MaxDirectoryWatchers int `json:"d"`
 
-	RL        *ratelimiter.RateLimiter `json:"-"`
+	// RL contains rate limiter
+	RL *ratelimiter.RateLimiter `json:"-"`
+	// cryptoKey stores the key to encrypt limits before storing it into db
 	cryptoKey [32]byte
+	// lastState is used to check save limits if state is changed
 	lastState []ratelimiter.LimitState
 }
 
@@ -67,6 +78,7 @@ func Initialize(licenseBytes []byte) error {
 		return errors.Wrap(err, "")
 	}
 
+	// save machine id
 	err = saveMachineID()
 	if err != nil {
 		return errors.Wrap(err, "")
@@ -88,6 +100,7 @@ func Load() error {
 		return errors.Wrap(err, "couldn't load license from the db")
 	}
 
+	// check machine id
 	err = checkMachineID()
 	if err != nil {
 		return errors.Wrap(err, "")
@@ -162,6 +175,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 		l.Interval = i
 	}
 
+	// create a key to encrypt the limits before storing into db
 	// set byte versions of the license
 	licenseBytes, err := license.ToBytes()
 	if err != nil {
@@ -170,7 +184,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	// set byte versions of the public key
 	publicKeyBytes := publicKey.ToBytes()
 	licenseBytes = append(licenseBytes, publicKeyBytes...)
-	hash := cryptopasta.Hash("hash for license", licenseBytes)
+	hash := cryptopasta.Hash(HMACKeyForLimitsEncryption, licenseBytes)
 	copy(ld.cryptoKey[:], hash[:32])
 
 	return ld, nil
@@ -182,13 +196,17 @@ func (ld *LicenseData) SaveLimitState() error {
 		return nil
 	}
 
+	// get limit states
 	limitStates := ld.RL.GetState()
+	// marshal limit states
 	limitStatesBytes, err := json.Marshal(limitStates)
+	// encrypt limit states
 	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &ld.cryptoKey)
 	if err != nil {
 		return err
 	}
 
+	// store limit states in the db
 	err = db.SaveByKey("limits", limitsStatesCiphered)
 	if err != nil {
 		return err
