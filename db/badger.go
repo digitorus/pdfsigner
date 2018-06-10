@@ -38,12 +38,14 @@ func init() {
 	opts.Dir = filepath.Join(currentFolder, badgerFolder)
 	opts.ValueDir = filepath.Join(currentFolder, badgerFolder)
 
+	// initialize badger
 	DB, err = badger.Open(opts)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
+// SaveByKey saves value into badger by key
 func SaveByKey(key string, value []byte) error {
 	err := DB.Update(func(txn *badger.Txn) error {
 		err := txn.Set([]byte(key), value)
@@ -56,6 +58,7 @@ func SaveByKey(key string, value []byte) error {
 	return nil
 }
 
+// LoadByKey loads from badger by key
 func LoadByKey(key string) ([]byte, error) {
 	var result []byte
 	err := DB.View(func(txn *badger.Txn) error {
@@ -63,11 +66,10 @@ func LoadByKey(key string) ([]byte, error) {
 		if err != nil {
 			return err
 		}
-		val, err := item.Value()
+		result, err = item.Value()
 		if err != nil {
 			return err
 		}
-		result = append(result, val...)
 		return nil
 	})
 	if err != nil {
@@ -77,6 +79,7 @@ func LoadByKey(key string) ([]byte, error) {
 	return result, nil
 }
 
+// DeleteByKey deletes value by key
 func DeleteByKey(key string) error {
 	err := DB.Update(func(txn *badger.Txn) error {
 		return txn.Delete([]byte(key))
@@ -85,6 +88,7 @@ func DeleteByKey(key string) error {
 	return err
 }
 
+// BatchUpsert inserts or updates multiple values in single transaction
 func BatchUpsert(objectsByID map[string][]byte) error {
 	err := DB.Update(func(txn *badger.Txn) error {
 		for id, object := range objectsByID {
@@ -99,6 +103,7 @@ func BatchUpsert(objectsByID map[string][]byte) error {
 	return err
 }
 
+// BatchDelete deletes multiple values with single transaction
 func BatchDelete(objectIDs []string) error {
 	err := DB.Update(func(txn *badger.Txn) error {
 		for _, id := range objectIDs {
@@ -113,6 +118,7 @@ func BatchDelete(objectIDs []string) error {
 	return err
 }
 
+// BatchLoad loads multiple values and returns map
 func BatchLoad(prefix string) (map[string][]byte, error) {
 	var result = make(map[string][]byte)
 
