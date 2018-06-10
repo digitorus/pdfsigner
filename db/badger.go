@@ -2,24 +2,42 @@ package db
 
 import (
 	"log"
+	"path"
+	"path/filepath"
 	"strings"
 
+	"bitbucket.org/digitorus/pdfsigner/utils"
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 )
 
-var opts badger.Options
+// badgerFolder represents the last relative part of the path to the badger
+const badgerFolder = "badger"
 
-var DB *badger.DB
+var (
+	opts badger.Options
+	DB   *badger.DB
+)
 
 func init() {
 	// Open the Badger database located in the /tmp/badger directory.
 	// It will be created if it doesn't exist.
 	opts = badger.DefaultOptions
-	opts.Dir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
-	opts.ValueDir = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/badger"
 
+	// set path for badger folder
 	var err error
+	var currentFolder string
+	if utils.IsTestEnvironment() {
+		currentFolder = path.Join(utils.GetGoPath(), "/src/bitbucket.org/digitorus/pdfsigner")
+	} else {
+		currentFolder, err = utils.GetRunFileFolder()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	opts.Dir = filepath.Join(currentFolder, badgerFolder)
+	opts.ValueDir = filepath.Join(currentFolder, badgerFolder)
+
 	DB, err = badger.Open(opts)
 	if err != nil {
 		log.Fatal(err)
