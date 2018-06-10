@@ -80,7 +80,7 @@ pdfsigner watch pksc11 \
 
 ## Run with preconfigured signer
 
-[More inrofmation about config file](./configuration-file.md)
+[More inrofmation about config file](configuration.md)
 
 `pdfsigner watch signer`
 

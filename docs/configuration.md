@@ -1,4 +1,4 @@
-# Configuration file
+# Configuration file 
 
 Configuration file allows to define the following settings:
 
@@ -118,4 +118,3 @@ addr = "127.0.0.1"
 port = 3000
 
 ```
-

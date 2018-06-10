@@ -224,7 +224,7 @@ pdfsigner serve pksc11 \
 
 ### Using preconfigured signer
 
-[More inrofmation about config file](./configuration-file.md)
+[More inrofmation about config file](configuration.md)
 
 `pdfsigner serve signer`
 

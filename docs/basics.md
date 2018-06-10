@@ -11,12 +11,12 @@ To start using the application first the license needs to be installed. More on 
 
 - [Command line signer](command-line-signer.md)
 - [Command line verifier](command-line-verifier.md)
-- [Watch and sign](./watch-and-sign.md)
-- [Web API](./web-api.md)
-- [Multiple services at once](./services.md)
-- [Persistence](./persistence.md)
-- [Configuration file](./web-api.md)
-- [License](./license.md)
+- [Watch and sign](watch-and-sign.md)
+- [Web API](web-api.md)
+- [Multiple services at once](services.md)
+- [Persistence](persistence.md)
+- [Configuration file](configuration.md)
+- [License](license.md)
 
 
 
