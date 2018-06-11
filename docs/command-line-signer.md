@@ -21,7 +21,7 @@ specific flags:
 ### Example
 
 ```
-go run main.go sign pem \
+pdfsigner sign pem \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
