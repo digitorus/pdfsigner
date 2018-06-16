@@ -13,7 +13,7 @@ var watchCmd = &cobra.Command{
 	Short: "Watch folder for new files, sign and put to another folder",
 	Long:  `Watch folder for new PDF documents, sign it using PEM or PKSC11 or preconfigured signer`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requrieLicense()
+		return requireLicense()
 	},
 }
 
@@ -82,7 +82,7 @@ func startWatch(signData signer.SignData) {
 	license.LD.AutoSave()
 
 	files.Watch(inputPathFlag, func(filePath string, left int) {
-		signer.SignFile(filePath, outputPathFlag, signData)
+		signer.SignFile(filePath, outputPathFlag, signData, validateSignature)
 	})
 }
 

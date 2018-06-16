@@ -21,7 +21,7 @@ var verifyCmd = &cobra.Command{
 			}
 			defer input_file.Close()
 
-			_, err = verify.Verify(input_file)
+			_, err = verify.File(input_file)
 			if err != nil {
 				log.Println("File", f, "Couldn't be verified", err)
 			} else {

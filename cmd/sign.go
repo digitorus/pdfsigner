@@ -12,7 +12,7 @@ var signCmd = &cobra.Command{
 	Short: "Sign files using PEM or PKSC11",
 	Long:  `Command line signer allows to sign document using PEM or PKSC11 provided directly as well as using preconfigured signer from the config file.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requrieLicense()
+		return requireLicense()
 	},
 }
 
@@ -33,7 +33,7 @@ var signPEMCmd = &cobra.Command{
 		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
 	},
 }
 
@@ -55,7 +55,7 @@ var signPKSC11Cmd = &cobra.Command{
 		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
 	},
 }
 
@@ -82,7 +82,7 @@ var signBySignerNameCmd = &cobra.Command{
 		}
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData)
+		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
 	},
 }
 

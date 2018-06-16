@@ -20,7 +20,7 @@ var multiCmd = &cobra.Command{
 	Use:   "services",
 	Short: "Run multiple services using the config file",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requrieLicense()
+		return requireLicense()
 	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		// check if the config contains services
@@ -152,7 +152,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		jobID := signVerifyQueue.AddSignJob(queue.SignData{})
+		jobID := signVerifyQueue.AddSignJob(queue.JobSignConfig{})
 
 		// push job
 		signVerifyQueue.AddTask(signerName, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)

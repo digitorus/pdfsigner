@@ -31,7 +31,7 @@ type signerConfig struct {
 	Pass string
 	// CrtChainPath is the path to chain of the certificates
 	CrtChainPath string
-	// SignData contains data needed for signing
+	// SignConfig contains data needed for signing
 	SignData signer.SignData
 }
 
@@ -44,6 +44,8 @@ type serviceConfig struct {
 	Name string
 	// Type is the type of the service. Watch, Serve.
 	Type string
+	// ValidateSignature allows to verify signature after sign used as default for serve services
+	ValidateSignature bool
 
 	// Watch config.
 	// Signer is the signer name to be used by watch.

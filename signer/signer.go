@@ -4,8 +4,11 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
+	"os"
 	"time"
 
+	"bitbucket.org/digitorus/pdf"
+	"bitbucket.org/digitorus/pdfsign/verify"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/revocation"
@@ -15,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SignData is a SignData of the sign package, but with additional methods added
+// SignConfig is a SignConfig of the sign package, but with additional methods added
 type SignData sign.SignData
 
 // SetPEM sets specific to PEM settings
@@ -125,7 +128,7 @@ func (s *SignData) SetRevocationSettings() {
 }
 
 // SignFile checks the license, waits if limits are reached, if allowed signs the file
-func SignFile(input, output string, s SignData) error {
+func SignFile(input, output string, s SignData, validateSignature bool) error {
 	// check the license and wait if limits are reached
 	err := license.LD.Wait()
 	if err != nil {
@@ -136,7 +139,7 @@ func SignFile(input, output string, s SignData) error {
 	s.Signature.Info.Date = time.Now().Local()
 
 	// sign file
-	err = sign.SignFile(input, output, sign.SignData(s))
+	err = signFile(input, output, s, validateSignature)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
@@ -145,4 +148,38 @@ func SignFile(input, output string, s SignData) error {
 	log.Println("File signed:", output)
 
 	return err
+}
+
+func signFile(input string, output string, sign_data SignData, validateSignature bool) error {
+	input_file, err := os.Open(input)
+	if err != nil {
+		return err
+	}
+	defer input_file.Close()
+
+	output_file, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer output_file.Close()
+
+	finfo, err := input_file.Stat()
+	if err != nil {
+		return err
+	}
+	size := finfo.Size()
+
+	rdr, err := pdf.NewReader(input_file, size)
+	if err != nil {
+		return err
+	}
+
+	if validateSignature {
+		_, err = verify.Reader(output_file, size)
+		if err != nil {
+			return err
+		}
+	}
+
+	return sign.Sign(input_file, output_file, rdr, size, sign.SignData(sign_data))
 }

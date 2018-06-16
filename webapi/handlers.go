@@ -73,9 +73,10 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 	return respondJSON(w, res, http.StatusCreated)
 }
 
+// fields represents data received with scheduling request
 type fields struct {
 	unitName string
-	signData queue.SignData
+	signData queue.JobSignConfig
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
@@ -113,6 +114,12 @@ func parseFields(p *multipart.Part, f *fields) error {
 				return err
 			}
 			f.signData.Approval = b
+		case "validateSignature":
+			b, err := strconv.ParseBool(str)
+			if err != nil {
+				return err
+			}
+			f.signData.ValidateSignature = b
 		}
 	}
 

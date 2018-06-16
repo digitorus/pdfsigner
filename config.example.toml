@@ -7,6 +7,7 @@ type = "watch"
 signer = "simple"
 in = "path/to/inputfolder"
 out = "path/to/outputfolder"
+validateSignature = true
 
 [[service]]
 name = "web1"
@@ -14,6 +15,7 @@ type = "serve"
 signers = [ "simple" ]
 addr = "127.0.0.1"
 port = 3000
+validateSignature = true
 
 # signers
 [[signer]]

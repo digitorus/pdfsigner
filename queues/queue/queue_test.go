@@ -39,7 +39,7 @@ func TestQSignersMap(t *testing.T) {
 	qs.AddSignUnit("simple", d)
 
 	// create session
-	jobID := qs.AddSignJob(SignData{})
+	jobID := qs.AddSignJob(JobSignConfig{})
 	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)

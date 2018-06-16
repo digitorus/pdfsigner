@@ -23,6 +23,7 @@ func setupVerifier() {
 var (
 	// common flags
 	signerNameFlag           string
+	validateSignature        bool
 	certificateChainPathFlag string
 	inputPathFlag            string
 	outputPathFlag           string
@@ -63,6 +64,7 @@ func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
 	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
 	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain path")
+	cmd.PersistentFlags().BoolVar(&validateSignature, "validate", true, "Certificate chain path")
 }
 
 func parseConfigFlag(cmd *cobra.Command) {
@@ -118,7 +120,7 @@ func getAddrPort() string {
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	log.Debug("bindSignerFlagsToConfig")
 
-	// SignData
+	// JobSignConfig
 	if cmd.PersistentFlags().Changed("approval") {
 		c.SignData.Signature.Approval = signatureApprovalFlag
 	}
@@ -206,7 +208,7 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 	return s
 }
 
-func requrieLicense() error {
+func requireLicense() error {
 	// load license from the db
 	var licenseInitErr error
 	licenseLoadErr := license.Load()

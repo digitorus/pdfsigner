@@ -40,12 +40,12 @@ type Queue struct {
 type unit struct {
 	// name represents the name of the signer
 	name string
-	// signData represents sign data of the signer
-	signData signer.SignData
 	// pq represents priority queue used by the signer
 	pq *priority_queue.PriorityQueue
 	// isSigningUnit should be set to true if the unit is used for signing or false for verification
 	isSigningUnit bool
+	// signData represents sign data and it's used for signing unit
+	signData signer.SignData
 }
 
 // Job represents a job for sign queue, stores tasks and sign data to override units initial sign data
@@ -54,13 +54,14 @@ type Job struct {
 	ID string `json:"id"`
 	// TasksMap represents tasks added to the job
 	TasksMap map[string]Task `json:"task_map"`
-	// SignData represents additional sign data added by request to override signer initial sign data
-	SignData SignData `json:"sign_data"`
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
 	TotalProcesedTasks uint32 `json:"total_procesed_tasks"`
+	// JobSignConfig represents additional sign data added by request to override signer initial sign data
+	SignConfig JobSignConfig `json:"sign_data"`
 }
 
-type SignData struct {
+type JobSignConfig struct {
+	// sign data
 	Signer      string `json:"signer"`
 	Name        string `json:"name"`
 	Location    string `json:"location"`
@@ -68,6 +69,8 @@ type SignData struct {
 	ContactInfo string `json:"contact_info"`
 	CertType    uint32 `json:"cert_type"`
 	Approval    bool   `json:"approval"`
+	// ValidateSignature allows to verify the job after it's being singed
+	ValidateSignature bool `json:"verify_after_sign"`
 }
 
 // Task represents a single unit of work(file)
@@ -171,9 +174,9 @@ func (q *Queue) addJob() *Job {
 }
 
 // AddSignJob adds sign job to the jobs map
-func (q *Queue) AddSignJob(signData SignData) string {
+func (q *Queue) AddSignJob(signData JobSignConfig) string {
 	j := q.addJob()
-	j.SignData = signData
+	j.SignConfig = signData
 	return j.ID
 }
 
@@ -183,7 +186,7 @@ func (q *Queue) AddVerifyJob() string {
 	return j.ID
 }
 
-// DeleteJob deletes job from the jobs map
+// DeleteJob deletes job from the jobs and database
 func (q *Queue) DeleteJob(jobID string) error {
 	err := q.DeleteFromDB(jobID)
 	if err != nil {
@@ -283,6 +286,7 @@ func (q *Queue) processNextTask(unitName string) error {
 	item := queue.pq.Pop()
 	task := item.Value.(Task)
 
+	// get job
 	job, exists := q.jobs[task.JobID]
 	if !exists {
 		return errors.New("signer is not in map")
@@ -291,8 +295,14 @@ func (q *Queue) processNextTask(unitName string) error {
 	// verify or sign task
 	var err error
 	if unit.isSigningUnit {
-		err = signTask(task, job.SignData, unit.signData)
+		// sign task
+		err = signTask(task, job.SignConfig, unit.signData)
+		// verify task if there is no error and it's requested
+		if err == nil && job.SignConfig.ValidateSignature {
+			err = verifyTask(task)
+		}
 	} else {
+		// verify task
 		err = verifyTask(task)
 	}
 
@@ -370,27 +380,27 @@ func (q *Queue) GetQueueSizeByUnitName(signerName string) (priority_queue.LenAll
 }
 
 // signTask merges job and signer signdata
-func signTask(task Task, jobSignData SignData, signerSignData signer.SignData) error {
+func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.SignData) error {
 	// get signer sign data
 	signData := signer.SignData(signerSignData)
 
 	// merge request sign data and signer sign data
 	switch {
-	case jobSignData.Name != "":
-		signData.Signature.Info.Name = jobSignData.Name
-	case jobSignData.Location != "":
-		signData.Signature.Info.Location = jobSignData.Location
-	case jobSignData.Reason != "":
-		signData.Signature.Info.Reason = jobSignData.Reason
-	case jobSignData.ContactInfo != "":
-		signData.Signature.Info.ContactInfo = jobSignData.ContactInfo
-	case jobSignData.CertType != 0:
-		signData.Signature.CertType = jobSignData.CertType
-	case jobSignData.Approval != signData.Signature.Approval:
-		signData.Signature.Approval = jobSignData.Approval
+	case jobSignConfig.Name != "":
+		signData.Signature.Info.Name = jobSignConfig.Name
+	case jobSignConfig.Location != "":
+		signData.Signature.Info.Location = jobSignConfig.Location
+	case jobSignConfig.Reason != "":
+		signData.Signature.Info.Reason = jobSignConfig.Reason
+	case jobSignConfig.ContactInfo != "":
+		signData.Signature.Info.ContactInfo = jobSignConfig.ContactInfo
+	case jobSignConfig.CertType != 0:
+		signData.Signature.CertType = jobSignConfig.CertType
+	case jobSignConfig.Approval != signData.Signature.Approval:
+		signData.Signature.Approval = jobSignConfig.Approval
 	}
 
-	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData)
+	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData, jobSignConfig.ValidateSignature)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"inputFile":  task.InputFilePath,
@@ -411,9 +421,9 @@ func verifyTask(task Task) error {
 	}
 	defer inputFile.Close()
 
-	_, err = verify.Verify(inputFile)
+	_, err = verify.File(inputFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "verify task")
 	}
 	return nil
 }

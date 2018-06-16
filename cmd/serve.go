@@ -15,7 +15,7 @@ var serveCmd = &cobra.Command{
 	Short: "Run web server to sign and verify files using HTTP protocol",
 	Long:  `Web API allows to sign and verify files by communicating with the application using HTTP protocol`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requrieLicense()
+		return requireLicense()
 	},
 }
 
