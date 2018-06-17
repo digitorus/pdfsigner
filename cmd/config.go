@@ -1,19 +1,21 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-// servicesConfig stores configs for signers for multiple-services command
+// servicesConfigArr stores configs for signers for multiple-services command
 // Since Viper is not supporting access to array, we need to make structures and unmarshal config manually
-var signerConfigs []signerConfig
+var signersConfigArr []signerConfig
 
 // serviceConfig is a config of the service
 type signerConfig struct {
@@ -35,8 +37,8 @@ type signerConfig struct {
 	SignData signer.SignData
 }
 
-// servicesConfig stores configs for services for multiple-services command
-var servicesConfig []serviceConfig
+// servicesConfigArr stores configs for services for multiple-services command
+var servicesConfigArr []serviceConfig
 
 // serviceConfig is a config of the service
 type serviceConfig struct {
@@ -84,6 +86,7 @@ func initConfig() {
 
 	viper.AutomaticEnv()      // read in environment variables that match
 	viper.SetEnvPrefix("PDF") // set env prefix
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	// If a config inputFile is found, read it in.
 	err := viper.ReadInConfig()
 	if err == nil {
@@ -93,15 +96,50 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
+	// validate config
+	if len(viper.AllSettings()) == 0 {
+		log.Fatal(errors.New("config is not properly formatted or empty"))
+	}
+
 	// unmarshal signers
-	if err := viper.UnmarshalKey("signer", &signerConfigs); err != nil {
+	if err := unmarshalSigners(); err != nil {
 		log.Fatal(err)
 	}
+
 	// unmarshal services for mixed command
-	if err := viper.UnmarshalKey("service", &servicesConfig); err != nil {
+	if err := unmarshalServices(); err != nil {
 		log.Fatal(err)
 	}
 
 	// assign licensePath config value to variable
 	licenseFilePathFlag = viper.GetString("licensePath")
+}
+
+func unmarshalSigners() error {
+	for key, _ := range viper.AllSettings() {
+		if strings.HasPrefix(key, "signer") {
+			var sc signerConfig
+			if err := viper.UnmarshalKey(key, &sc); err != nil {
+				return err
+			}
+			sc.Name = key
+			signersConfigArr = append(signersConfigArr, sc)
+		}
+	}
+
+	return nil
+}
+
+func unmarshalServices() error {
+	for key, _ := range viper.AllSettings() {
+		if strings.HasPrefix(key, "service") {
+			var sc serviceConfig
+			if err := viper.UnmarshalKey(key, &sc); err != nil {
+				return err
+			}
+			sc.Name = key
+			servicesConfigArr = append(servicesConfigArr, sc)
+		}
+	}
+	return nil
 }

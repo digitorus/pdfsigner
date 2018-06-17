@@ -176,7 +176,7 @@ func getSignerConfigByName(signerName string) signerConfig {
 
 	// find signer config
 	var s signerConfig
-	for _, s = range signerConfigs {
+	for _, s = range signersConfigArr {
 		if s.Name == signerName {
 			return s
 		}
@@ -196,7 +196,7 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 
 	// find service config
 	var s serviceConfig
-	for _, s = range servicesConfig {
+	for _, s = range servicesConfigArr {
 		if s.Name == serviceName {
 			return s
 		}

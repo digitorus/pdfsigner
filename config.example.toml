@@ -1,25 +1,22 @@
 licensePath = "./pdfsigner.lic"
 
 # mixed command
-[[service]]
-name = "watch1"
+[service1]
 type = "watch"
-signer = "simple"
+signer = "signer1"
 in = "path/to/inputfolder"
 out = "path/to/outputfolder"
 validateSignature = true
 
-[[service]]
-name = "web1"
+[serviceOther]
 type = "serve"
-signers = [ "simple" ]
+signers = [ "signer1" ]
 addr = "127.0.0.1"
 port = 3000
 validateSignature = true
 
 # signers
-[[signer]]
-name = "simple"
+[signer1]
 type = "pem"
 crtPath = "path/to/crt"
 keyPath = "path/to/private/key"
@@ -33,8 +30,7 @@ location = "location"
 reason = "reason"
 contactInfo = "contact"
 
-[[signer]]
-name = "simple2"
+[signerOther]
 type = "pksc11"
 libPath = "path/to/lib"
 pass = "path/to/lib"

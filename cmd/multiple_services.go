@@ -24,7 +24,7 @@ var multiCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
 		// check if the config contains services
-		if len(servicesConfig) < 1 {
+		if len(servicesConfigArr) < 1 {
 			log.Fatal("no services found inside the config")
 		}
 
@@ -43,8 +43,8 @@ var multiCmd = &cobra.Command{
 			}
 		} else {
 			// setup all services
-			wg.Add(len(servicesConfig))
-			for _, s := range servicesConfig {
+			wg.Add(len(servicesConfigArr))
+			for _, s := range servicesConfigArr {
 				// setup service with signers
 				setupServiceWithSigners(s, &wg)
 			}
