@@ -133,7 +133,7 @@ func setupSigner(signerName string) {
 // setupService depending on the type of the service setups service
 func setupService(service serviceConfig) {
 	if service.Type == "watch" {
-		setupWatch(service.In, service.Out, service.Signer)
+		setupWatch(service)
 	} else if service.Type == "serve" {
 		setupServe(service)
 		log.Println("watch service", service.Name, "started")
@@ -141,21 +141,23 @@ func setupService(service serviceConfig) {
 }
 
 // setupWatch setups watcher which watches the input folder and adds the tasks to the queue.
-func setupWatch(watchFolder, outputFilePath string, signerName string) {
-	files.Watch(watchFolder, func(inputFilePath string, left int) {
+func setupWatch(service serviceConfig) {
+	files.Watch(service.In, func(inputFilePath string, left int) {
 
 		// make signed file path
 		_, fileName := path.Split(inputFilePath)
 		fileNameArr := strings.Split(fileName, path.Ext(fileName))
 		fileNameArr = fileNameArr[:len(fileNameArr)-1]
 		fileNameNoExt := strings.Join(fileNameArr, "")
-		signedFilePath := path.Join(outputFilePath, fileNameNoExt+"_signed"+path.Ext(fileName))
+		signedFilePath := path.Join(service.Out, fileNameNoExt+"_signed"+path.Ext(fileName))
 
 		// create session
-		jobID := signVerifyQueue.AddSignJob(queue.JobSignConfig{})
+		jobID := signVerifyQueue.AddSignJob(queue.JobSignConfig{
+			ValidateSignature: service.ValidateSignature,
+		})
 
 		// push job
-		signVerifyQueue.AddTask(signerName, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
+		signVerifyQueue.AddTask(service.Signer, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
 		if left == 0 {
 			signVerifyQueue.SaveToDB(jobID)
 		}
@@ -167,7 +169,7 @@ func setupWatch(watchFolder, outputFilePath string, signerName string) {
 // setupServe runs the web api according to the config settings
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
-	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signVerifyQueue, service.Signers, ver)
+	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signVerifyQueue, service.Signers, ver, service.ValidateSignature)
 	wa.Serve()
 }
 

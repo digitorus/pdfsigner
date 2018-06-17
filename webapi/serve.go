@@ -31,18 +31,22 @@ type WebAPI struct {
 	version version.Version
 	// middlewares represents middlewares used for all handlers
 	middlewares []middleware
+	// defaultValidateSignature defines defaults for signature validation after signing
+	defaultValidateSignature bool
 }
 
 // NewWebAPI initializes web api with routes
-func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version version.Version) *WebAPI {
+func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version version.Version, defaultValidateSignature bool) *WebAPI {
+
 	// initialize web api
 	wa := WebAPI{
-		addr:         addr,
-		queue:        qs,
-		allowedUnits: allowedUnits,
-		version:      version,
-		r:            mux.NewRouter(),
-		middlewares:  []middleware{},
+		addr:                     addr,
+		queue:                    qs,
+		allowedUnits:             allowedUnits,
+		version:                  version,
+		r:                        mux.NewRouter(),
+		middlewares:              []middleware{},
+		defaultValidateSignature: defaultValidateSignature,
 	}
 
 	wa.allowedUnits = append(allowedUnits, "verify")

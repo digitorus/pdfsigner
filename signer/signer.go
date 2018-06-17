@@ -174,12 +174,17 @@ func signFile(input string, output string, sign_data SignData, validateSignature
 		return err
 	}
 
+	err = sign.Sign(input_file, output_file, rdr, size, sign.SignData(sign_data))
+	if err != nil {
+		return err
+	}
+
 	if validateSignature {
-		_, err = verify.Reader(output_file, size)
+		_, err = verify.File(output_file)
 		if err != nil {
 			return err
 		}
 	}
 
-	return sign.Sign(input_file, output_file, rdr, size, sign.SignData(sign_data))
+	return nil
 }

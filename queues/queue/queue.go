@@ -174,9 +174,9 @@ func (q *Queue) addJob() *Job {
 }
 
 // AddSignJob adds sign job to the jobs map
-func (q *Queue) AddSignJob(signData JobSignConfig) string {
+func (q *Queue) AddSignJob(signConfig JobSignConfig) string {
 	j := q.addJob()
-	j.SignConfig = signData
+	j.SignConfig = signConfig
 	return j.ID
 }
 
@@ -297,10 +297,6 @@ func (q *Queue) processNextTask(unitName string) error {
 	if unit.isSigningUnit {
 		// sign task
 		err = signTask(task, job.SignConfig, unit.signData)
-		// verify task if there is no error and it's requested
-		if err == nil && job.SignConfig.ValidateSignature {
-			err = verifyTask(task)
-		}
 	} else {
 		// verify task
 		err = verifyTask(task)

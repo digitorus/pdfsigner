@@ -34,6 +34,10 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 	var f fields
 	fileNames := map[string]string{}
 
+	// set default validate signature that could be then overwritten by request validateSignature if provided
+	f.signConfig.ValidateSignature = wa.defaultValidateSignature
+
+	// parse multipart
 	for {
 		// get part
 		p, err := mr.NextPart()
@@ -75,8 +79,8 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 
 // fields represents data received with scheduling request
 type fields struct {
-	unitName string
-	signData queue.JobSignConfig
+	unitName   string
+	signConfig queue.JobSignConfig
 }
 
 func parseFields(p *multipart.Part, f *fields) error {
@@ -95,31 +99,31 @@ func parseFields(p *multipart.Part, f *fields) error {
 		case "signer":
 			f.unitName = str
 		case "name":
-			f.signData.Name = str
+			f.signConfig.Name = str
 		case "location":
-			f.signData.Location = str
+			f.signConfig.Location = str
 		case "reason":
-			f.signData.Reason = str
+			f.signConfig.Reason = str
 		case "contactInfo":
-			f.signData.ContactInfo = str
+			f.signConfig.ContactInfo = str
 		case "certType":
 			i, err := strconv.Atoi(str)
 			if err != nil {
 				return err
 			}
-			f.signData.CertType = uint32(i)
+			f.signConfig.CertType = uint32(i)
 		case "approval":
 			b, err := strconv.ParseBool(str)
 			if err != nil {
 				return err
 			}
-			f.signData.Approval = b
+			f.signConfig.Approval = b
 		case "validateSignature":
 			b, err := strconv.ParseBool(str)
 			if err != nil {
 				return err
 			}
-			f.signData.ValidateSignature = b
+			f.signConfig.ValidateSignature = b
 		}
 	}
 
@@ -140,7 +144,7 @@ func addJob(jobType string, qs *queue.Queue, f fields, fileNames map[string]stri
 		if f.unitName == "" {
 			return "", errors.New("signer name was not provided")
 		}
-		jobID = qs.AddSignJob(f.signData)
+		jobID = qs.AddSignJob(f.signConfig)
 	} else {
 		f.unitName = queue.VerificationUnitName
 		jobID = qs.AddVerifyJob()

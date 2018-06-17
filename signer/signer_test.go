@@ -1,19 +1,22 @@
 package signer
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/sign"
 	"bitbucket.org/digitorus/pdfsigner/license"
 )
 
 func TestSigner(t *testing.T) {
+	logrus.SetOutput(ioutil.Discard)
+
 	err := license.Load()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	// create signer
 	signData := SignData{
@@ -32,7 +35,7 @@ func TestSigner(t *testing.T) {
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 
 	for i := 0; i < 1; i++ {
-		err = SignFile("../testfiles/testfile20.pdf", "../testfiles/testfile20_signed.pdf", signData, true)
+		err = SignFile("../testfiles/testfile12.pdf", "../testfiles/testfile12_signed.pdf", signData, true)
 		if err != nil {
 			t.Fatal(err)
 		}

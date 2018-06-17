@@ -116,7 +116,7 @@ func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
 
 // startWebAPIWithRunners
 func startWebAPIWithRunners() {
-	wa := webapi.NewWebAPI(getAddrPort(), signVerifyQueue, []string{}, ver)
+	wa := webapi.NewWebAPI(getAddrPort(), signVerifyQueue, []string{}, ver, validateSignature)
 
 	// run queue runners
 	signVerifyQueue.Runner()

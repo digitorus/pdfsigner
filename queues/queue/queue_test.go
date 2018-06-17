@@ -39,7 +39,7 @@ func TestQSignersMap(t *testing.T) {
 	qs.AddSignUnit("simple", d)
 
 	// create session
-	jobID := qs.AddSignJob(JobSignConfig{})
+	jobID := qs.AddSignJob(JobSignConfig{ValidateSignature: true})
 	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
@@ -50,9 +50,9 @@ func TestQSignersMap(t *testing.T) {
 	taskID, err := qs.AddTask(
 		"simple",
 		jobID,
-		"testfile20.pdf",
-		"../../testfiles/testfile20.pdf",
-		"../../testfiles/testfile20_signed.pdf",
+		"testfile12.pdf",
+		"../../testfiles/testfile12.pdf",
+		"../../testfiles/testfile12_signed.pdf",
 		priority_queue.HighPriority,
 	)
 	if err != nil {

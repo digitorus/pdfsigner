@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -42,7 +43,7 @@ func TestMain(m *testing.M) {
 
 // runTest initializes the environment
 func runTest(m *testing.M) int {
-	//log.SetOutput(ioutil.Discard)
+	log.SetOutput(ioutil.Discard)
 
 	err := license.Load()
 	if err != nil {
@@ -74,7 +75,9 @@ func runTest(m *testing.M) int {
 	// create web api
 	wa = NewWebAPI(addr, q, []string{
 		"simple",
-	}, version.Version{Version: "0.1"})
+	}, version.Version{Version: "0.1"},
+		true,
+	)
 
 	return m.Run()
 }
@@ -83,8 +86,8 @@ func TestSignFlow(t *testing.T) {
 	// test upload
 	//create file parts
 	fileParts := []filePart{
-		{"testfile1", "../testfiles/testfile20.pdf"},
-		{"testfile2", "../testfiles/testfile20.pdf"},
+		{"testfile1", "../testfiles/testfile12.pdf"},
+		{"testfile2", "../testfiles/testfile12.pdf"},
 		{"testfile3-mal", "../testfiles/malformed.pdf"},
 	}
 	// create multipart request
@@ -143,13 +146,13 @@ func TestSignFlow(t *testing.T) {
 		}
 
 		// happy path
-		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
+		assert.Equal(t, "testfile12.pdf", task.OriginalFileName)
 		// test get completed task
 		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Equal(t, 8994, len(w.Body.Bytes()))
+		assert.Equal(t, 20523, len(w.Body.Bytes()))
 		completedTasks += 1
 	}
 
