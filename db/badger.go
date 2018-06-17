@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -27,14 +28,20 @@ func init() {
 	// set path for badger folder
 	var err error
 	var currentFolder string
-	if utils.IsTestEnvironment() {
+
+	// get path to executable file
+	runFileFolder, err := utils.GetRunFileFolder()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// determine path to use for the db
+	if utils.IsTestEnvironment() || strings.Contains(runFileFolder, os.TempDir()) {
 		currentFolder = path.Join(utils.GetGoPath(), "/src/bitbucket.org/digitorus/pdfsigner")
 	} else {
-		currentFolder, err = utils.GetRunFileFolder()
-		if err != nil {
-			log.Fatal(err)
-		}
+		currentFolder = runFileFolder
 	}
+
 	opts.Dir = filepath.Join(currentFolder, badgerFolder)
 	opts.ValueDir = filepath.Join(currentFolder, badgerFolder)
 

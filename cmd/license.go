@@ -17,9 +17,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -73,31 +71,26 @@ func init() {
 	licenseCmd.AddCommand(licenseInfoCmd)
 }
 
-// initializeLicense loads the license file with provided path licenseFilePathFlag or stdin.
+// initializeLicense loads the license file with provided path licenseStrFlag or stdin.
 func initializeLicense() error {
 	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
-	var licenseFilePath string
-	if licenseFilePathFlag != "" {
+	var licenseStr string
+	if licenseStrFlag != "" {
 		// try to get license from the flag provided
-		licenseFilePath = licenseFilePathFlag
+		licenseStr = licenseStrFlag
 	} else {
 		// get license from the stdout
-		fmt.Fprint(os.Stdout, "Enter license file path:")
+		fmt.Fprint(os.Stdout, "Paste your license here:")
 		var err error
-		licenseFilePath, err = bufio.NewReader(os.Stdin).ReadString('\n')
+		licenseStr, err = bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			return errors.Wrap(err, "")
 		}
 	}
 
-	// get license bytes
-	licenseBytes, err := ioutil.ReadFile(path.Clean(strings.TrimSpace(licenseFilePath)))
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-
+	licenseBytes := []byte(strings.Replace(strings.TrimSpace(licenseStr), "\n", "", -1))
 	// initialize license
-	err = license.Initialize(licenseBytes)
+	err := license.Initialize(licenseBytes)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}

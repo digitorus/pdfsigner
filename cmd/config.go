@@ -91,14 +91,13 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err == nil {
 		fmt.Println("Using config inputFile:", viper.ConfigFileUsed())
+		// validate config
+		if len(viper.AllSettings()) == 0 {
+			log.Fatal(errors.New("config is not properly formatted or empty"))
+		}
 	}
 	if err != nil && RootCmd.Flags().Changed("config") {
 		log.Fatal(err)
-	}
-
-	// validate config
-	if len(viper.AllSettings()) == 0 {
-		log.Fatal(errors.New("config is not properly formatted or empty"))
 	}
 
 	// unmarshal signers
@@ -112,7 +111,7 @@ func initConfig() {
 	}
 
 	// assign licensePath config value to variable
-	licenseFilePathFlag = viper.GetString("licensePath")
+	licenseStrFlag = viper.GetString("license")
 }
 
 func unmarshalSigners() error {

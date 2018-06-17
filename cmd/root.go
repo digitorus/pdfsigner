@@ -11,8 +11,8 @@ import (
 // configFilePathFlag contains path to config file
 var configFilePathFlag string
 
-// licenseFilePathFlag contains path to license file
-var licenseFilePathFlag string
+// licenseStrFlag contains path to license file
+var licenseStrFlag string
 
 var ver version.Version
 
@@ -47,5 +47,5 @@ func init() {
 	// when this action is called directly.
 	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	RootCmd.PersistentFlags().StringVar(&licenseFilePathFlag, "license", "", "license file path")
+	RootCmd.PersistentFlags().StringVar(&licenseStrFlag, "license", "", "license string")
 }
