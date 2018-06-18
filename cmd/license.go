@@ -71,13 +71,13 @@ func init() {
 	licenseCmd.AddCommand(licenseInfoCmd)
 }
 
-// initializeLicense loads the license file with provided path licenseStrFlag or stdin.
+// initializeLicense loads the license file with provided path licenseStrConfOrFlag or stdin.
 func initializeLicense() error {
 	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
 	var licenseStr string
-	if licenseStrFlag != "" {
+	if licenseStrConfOrFlag != "" {
 		// try to get license from the flag provided
-		licenseStr = licenseStrFlag
+		licenseStr = licenseStrConfOrFlag
 	} else {
 		// get license from the stdout
 		fmt.Fprint(os.Stdout, "Paste your license here:")

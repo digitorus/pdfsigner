@@ -111,7 +111,7 @@ func initConfig() {
 	}
 
 	// assign licensePath config value to variable
-	licenseStrFlag = viper.GetString("license")
+	licenseStrConfOrFlag = viper.GetString("license")
 }
 
 func unmarshalSigners() error {
