@@ -88,7 +88,7 @@ type Task struct {
 	// Status represents the status of the task. Pending, Failed, Completed.
 	Status string `json:"status"`
 	// VerificationData represents data of the verification
-	VerificationData *verify.Response `json:"verification_data"`
+	VerificationData *verify.Response `json:"verification_data,omitempty"`
 	// Error represents error if the task failed
 	Error string `json:"error,omitempty"`
 }
