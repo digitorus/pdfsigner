@@ -36,7 +36,7 @@ func init() {
 	}
 
 	// determine path to use for the db
-	if utils.IsTestEnvironment() || strings.Contains(runFileFolder, os.TempDir()) {
+	if utils.IsTestEnvironment() || strings.Contains(runFileFolder+"/", os.TempDir()) {
 		currentFolder = path.Join(utils.GetGoPath(), "/src/bitbucket.org/digitorus/pdfsigner")
 	} else {
 		currentFolder = runFileFolder
