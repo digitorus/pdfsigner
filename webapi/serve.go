@@ -66,6 +66,7 @@ func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version vers
 	// initialize verify routes
 	wa.handle("POST", "/verify", wa.handleVerifySchedule)
 	wa.handle("GET", "/verify/{jobID}", wa.handleStatus)
+	wa.handle("GET", "/verify/{jobID}/info/{taskID}", wa.handleVerifyGetInfo)
 
 	return &wa
 }

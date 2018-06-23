@@ -87,6 +87,8 @@ type Task struct {
 	OutputFilePath string `json:"output_file_path"`
 	// Status represents the status of the task. Pending, Failed, Completed.
 	Status string `json:"status"`
+	// VerificationData represents data of the verification
+	VerificationData *verify.Response `json:"verification_data"`
 	// Error represents error if the task failed
 	Error string `json:"error,omitempty"`
 }
@@ -292,14 +294,16 @@ func (q *Queue) processNextTask(unitName string) error {
 		return errors.New("signer is not in map")
 	}
 
-	// verify or sign task
+	// process verify or sign task
 	var err error
+	var verifyResp *verify.Response
 	if unit.isSigningUnit {
 		// sign task
 		err = signTask(task, job.SignConfig, unit.signData)
 	} else {
 		// verify task
-		err = verifyTask(task)
+		verifyResp, err = verifyTask(task)
+		task.VerificationData = verifyResp
 	}
 
 	// process error
@@ -410,18 +414,18 @@ func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.Sign
 	return nil
 }
 
-func verifyTask(task Task) error {
+func verifyTask(task Task) (resp *verify.Response, err error) {
 	inputFile, err := os.Open(task.InputFilePath)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return resp, errors.Wrap(err, "")
 	}
 	defer inputFile.Close()
 
-	_, err = verify.File(inputFile)
+	resp, err = verify.File(inputFile)
 	if err != nil {
-		return errors.Wrap(err, "verify task")
+		return resp, errors.Wrap(err, "verify task")
 	}
-	return nil
+	return resp, nil
 }
 
 // Runner starts separate go routine for each signer which signs associated job tasks when they appear

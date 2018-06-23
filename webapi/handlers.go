@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 
+	"bitbucket.org/digitorus/pdfsign/verify"
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -221,6 +222,33 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	return nil
+}
+
+// handleVerifyGetInfo
+func (wa *WebAPI) handleVerifyGetInfo(w http.ResponseWriter, r *http.Request) error {
+	// get vars
+	vars := mux.Vars(r)
+	jobID := vars["jobID"]
+	taskID := vars["taskID"]
+
+	// get file path
+	completedTask, err := wa.queue.GetCompletedTask(jobID, taskID)
+	if err != nil {
+		return httpError(w, err, http.StatusBadRequest)
+	}
+
+	// respond with json
+	return respondJSON(w, handleVerifyGetInfoResponse{
+		DocumentInfo: completedTask.VerificationData.DocumentInfo,
+		Signers:      completedTask.VerificationData.Signers,
+	}, http.StatusOK)
+
+}
+
+// handleVerifyGetInfoResponse used for handleVerifyGetInfo response
+type handleVerifyGetInfoResponse struct {
+	DocumentInfo verify.DocumentInfo `json:"document_info"`
+	Signers      []verify.Signer     `json:"signers"`
 }
 
 // handleSignDelete removes job from the queue

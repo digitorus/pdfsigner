@@ -188,7 +188,7 @@ func TestSignFlow(t *testing.T) {
 func TestVerifyFlow(t *testing.T) {
 	//create file parts
 	fileParts := []filePart{
-		{"testfile1", "../testfiles/testfile20_signed.pdf"},
+		{"testfile1", "../testfiles/testfile12_signed.pdf"},
 	}
 	// create multipart request
 	r, err := newMultipleFilesUploadRequest(
@@ -238,18 +238,17 @@ func TestVerifyFlow(t *testing.T) {
 		}
 
 		// happy path
-		assert.Equal(t, "testfile20.pdf", task.OriginalFileName)
+		assert.Equal(t, "testfile12_signed.pdf", task.OriginalFileName)
 		// test get completed task
-		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
+		r = httptest.NewRequest("GET", baseURL+"/verify/"+scheduleResponse.JobID+"/info/"+task.ID, nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Equal(t, 8994, len(w.Body.Bytes()))
 		completedTasks += 1
 	}
 
 	// check amount of success
-	assert.Equal(t, 0, completedTasks)
+	assert.Equal(t, 1, completedTasks)
 }
 
 // Creates a new multiple files upload http request with optional extra params
