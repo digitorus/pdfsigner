@@ -68,6 +68,8 @@ type serviceConfig struct {
 
 // initConfig reads in config inputFile and ENV variables if set.
 func initConfig() {
+	preParseConfigFlag()
+
 	if configFilePathFlag != "" {
 		// Use config inputFile from the flag.
 		viper.SetConfigFile(configFilePathFlag)
@@ -90,13 +92,13 @@ func initConfig() {
 	// If a config inputFile is found, read it in.
 	err := viper.ReadInConfig()
 	if err == nil {
-		fmt.Println("Using config inputFile:", viper.ConfigFileUsed())
+		log.Println("Using config file:", viper.ConfigFileUsed())
 		// validate config
 		if len(viper.AllSettings()) == 0 {
 			log.Fatal(errors.New("config is not properly formatted or empty"))
 		}
 	}
-	if err != nil && RootCmd.Flags().Changed("config") {
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -110,8 +112,22 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
+	log.Println(servicesConfigArr)
 	// assign licensePath config value to variable
 	licenseStrConfOrFlag = viper.GetString("license")
+}
+
+func preParseConfigFlag() {
+	const configFlagName = "--config"
+	args := strings.Join(os.Args[1:], " ")
+	if strings.Contains(args, configFlagName) {
+		fields := strings.Fields(args)
+		for i, f := range fields {
+			if strings.Contains(f, configFlagName) && len(fields) > i+1 {
+				configFilePathFlag = fields[i+1]
+			}
+		}
+	}
 }
 
 func unmarshalSigners() error {
@@ -121,6 +137,7 @@ func unmarshalSigners() error {
 			if err := viper.UnmarshalKey(key, &sc); err != nil {
 				return err
 			}
+			//sc.Name = strings.Replace(key, "signer", "", 1)
 			sc.Name = key
 			signersConfigArr = append(signersConfigArr, sc)
 		}
@@ -136,6 +153,7 @@ func unmarshalServices() error {
 			if err := viper.UnmarshalKey(key, &sc); err != nil {
 				return err
 			}
+			//sc.Name = strings.Replace(key, "service", "", 1)
 			sc.Name = key
 			servicesConfigArr = append(servicesConfigArr, sc)
 		}

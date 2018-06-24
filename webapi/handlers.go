@@ -112,7 +112,7 @@ func parseFields(p *multipart.Part, f *fields) error {
 			if err != nil {
 				return err
 			}
-			f.signConfig.CertType = uint32(i)
+			f.signConfig.CertType = uint(i)
 		case "approval":
 			b, err := strconv.ParseBool(str)
 			if err != nil {

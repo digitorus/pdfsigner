@@ -110,6 +110,40 @@ func parseServeFlags(cmd *cobra.Command) {
 	cmd.MarkPersistentFlagRequired("serve-port")
 }
 
+func setupMultiSignerFlags(cmd *cobra.Command, s signerConfig) {
+	suffix := "_" + s.Name
+
+	cmd.PersistentFlags().BoolVar(&s.SignData.Signature.Approval, "approval"+suffix, false, "Is the signature should be approval")
+	cmd.PersistentFlags().UintVar(&s.SignData.Signature.CertType, "type"+suffix, 1, "Certificate type")
+	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Name, "info-name"+suffix, "", "Signature info name")
+	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Location, "info-location"+suffix, "", "Signature info location")
+	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Reason, "info-reason"+suffix, "", "Signature reason")
+	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.ContactInfo, "info-contact"+suffix, "", "Signature contact")
+	cmd.PersistentFlags().StringVar(&s.SignData.TSA.URL, "tsa-url"+suffix, "", "TSA url")
+	cmd.PersistentFlags().StringVar(&s.SignData.TSA.Username, "tsa-username"+suffix, "", "TSA username")
+	cmd.PersistentFlags().StringVar(&s.SignData.TSA.Password, "tsa-password"+suffix, "", "TSA password")
+	cmd.PersistentFlags().StringVar(&s.CrtChainPath, "chain"+suffix, "", "Certificate chain path")
+}
+
+func setupMultiServiceFlags(cmd *cobra.Command) {
+	log.Println(servicesConfigArr)
+	for _, s := range servicesConfigArr {
+		suffix := ""
+		if len(servicesConfigArr) > 0 {
+			suffix = "_" + s.Name
+		}
+
+		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path")
+
+		if len(s.Signers) > 0 {
+			for _, signerName := range s.Signers {
+				signer := getSignerConfigByName(signerName)
+				setupMultiSignerFlags(cmd, signer)
+			}
+		}
+	}
+}
+
 // getAddrPort returns server address and port formatted
 func getAddrPort() string {
 	return serveAddrFlag + ":" + servePortFlag
@@ -125,7 +159,7 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 		c.SignData.Signature.Approval = signatureApprovalFlag
 	}
 	if cmd.PersistentFlags().Changed("type") {
-		c.SignData.Signature.CertType = uint32(signatureTypeFlag)
+		c.SignData.Signature.CertType = signatureTypeFlag
 	}
 	if cmd.PersistentFlags().Changed("info-name") {
 		c.SignData.Signature.Info.Name = signatureInfoNameFlag

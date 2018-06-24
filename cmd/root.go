@@ -26,8 +26,13 @@ var RootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(v version.Version) {
+	// parse config flag to make it available before cobra
+	initConfig()
+
+	// set version
 	ver = v
-	//RootCmd.SetArgs(os.Args[1:2])
+
+	// execute root cmd
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -36,7 +41,7 @@ func Execute(v version.Version) {
 
 func init() {
 	// set the log flags
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize()
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,

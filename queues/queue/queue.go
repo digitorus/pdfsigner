@@ -67,7 +67,7 @@ type JobSignConfig struct {
 	Location    string `json:"location"`
 	Reason      string `json:"reason"`
 	ContactInfo string `json:"contact_info"`
-	CertType    uint32 `json:"cert_type"`
+	CertType    uint   `json:"cert_type"`
 	Approval    bool   `json:"approval"`
 	// ValidateSignature allows to verify the job after it's being singed
 	ValidateSignature bool `json:"verify_after_sign"`
