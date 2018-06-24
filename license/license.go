@@ -207,7 +207,7 @@ func (ld *LicenseData) SaveLimitState() error {
 	}
 
 	// store limit states in the db
-	err = db.SaveByKey("limits", limitsStatesCiphered)
+	err = db.SaveByKey("license_limits", limitsStatesCiphered)
 	if err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func (ld *LicenseData) isStateChanged() bool {
 // loadLimitState loads state from the db
 func (ld LicenseData) loadLimitState() error {
 	// load limit state from the db
-	limitStatesCiphered, err := db.LoadByKey("limits")
+	limitStatesCiphered, err := db.LoadByKey("license_limits")
 	if err != nil {
 		return err
 	}
@@ -345,7 +345,7 @@ func saveMachineID() error {
 	}
 
 	// save machine id
-	err = db.SaveByKey("machineid", []byte(machineID))
+	err = db.SaveByKey("license_machineid", []byte(machineID))
 	if err != nil {
 		return errors.Wrap(err, "couldn't save host info")
 	}
@@ -356,7 +356,7 @@ func saveMachineID() error {
 // laod and check machine id
 func checkMachineID() error {
 	// load machine id from the db
-	savedMachineID, err := db.LoadByKey("machineid")
+	savedMachineID, err := db.LoadByKey("license_machineid")
 	if err != nil {
 		return errors.Wrap(err, "couldn't load host info from the db")
 	}

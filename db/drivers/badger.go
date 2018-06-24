@@ -1,4 +1,4 @@
-package db
+package drivers
 
 import (
 	"log"
@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bitbucket.org/digitorus/pdfsigner/utils"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 )
@@ -55,6 +56,7 @@ func init() {
 // SaveByKey saves value into badger by key
 func SaveByKey(key string, value []byte) error {
 	err := DB.Update(func(txn *badger.Txn) error {
+		spew.Dump(key, string(value))
 		err := txn.Set([]byte(key), value)
 		return err
 	})
