@@ -8,4 +8,4 @@ lic.*
 badger/
 passwd
 .realize
-bolt.db
+pdfsigner.db

@@ -33,11 +33,10 @@ func init() {
 		currentFolder = runFileFolder
 	}
 
-	DB, err = bolt.Open(path.Join(currentFolder, "bolt.db"), 0600, nil)
+	DB, err = bolt.Open(path.Join(currentFolder, "pdfsigner.db"), 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func getBucketName(key string) string {
