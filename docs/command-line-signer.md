@@ -34,6 +34,7 @@ pdfsigner sign pem \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --validate-signature true \
   path/to/file.pdf 
 ```
 
@@ -68,6 +69,7 @@ pdfsigner sign pksc11 \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --validate-signature true \
   path/to/file.pdf 
 ```
 
@@ -110,6 +112,7 @@ pdfsigner sign signer --config path/to/config/file --signer-name "name-of-the-si
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --validate-signature true \
   path/to/file.pdf 
 ```
 

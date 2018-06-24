@@ -40,7 +40,8 @@ pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/fi
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1 
+  --type 1 \
+  --validate-signature true
 ```
 
 
@@ -75,12 +76,13 @@ pdfsigner watch pksc11 \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1
+  --type 1 \
+  --validate-signature true
 ```
 
 ## Run with preconfigured signer
 
-[More inrofmation about config file](configuration.md)
+[More information about config file](configuration.md)
 
 `pdfsigner watch signer`
 
@@ -121,7 +123,8 @@ pdfsigner watch signer \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1
+  --type 1\
+  --validate-signature true
 ```
 
 Depending on the type of the signer appropriate flags should be used:

@@ -16,6 +16,7 @@ Available end points:
 
 `POST /verify` - put one or more files into the verification queue  
 `GET /verify/jobid` - get status of the job with tasks
+`GET /verify/jobid/taskid/info` - get verification information
 
 
 ### Signing
@@ -184,6 +185,7 @@ pdfsigner serve pem \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --validate-signature true \
   path/to/file.pdf 
 ```
 
@@ -219,12 +221,13 @@ pdfsigner serve pksc11 \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1
+  --type 1 \
+  --validate-signature true
 ```
 
 ### Using preconfigured signer
 
-[More inrofmation about config file](configuration.md)
+[More information about config file](configuration.md)
 
 `pdfsigner serve signer`
 
@@ -266,7 +269,8 @@ pdfsigner serve signer --signer-name "name-of-the-signer" \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1 
+  --type 1 \
+  --validate-signature true
 ```
 
 Depending on the type of the signer appropriate flags should be used:

@@ -54,7 +54,9 @@ The config file should contain multiple services as an array.
 ### Service settings
 
 `name` - name of the service
-`type` - type of the service, allowed values are: `watch` or `serve`
+`validateSignature` - defines weather to validate or not signature after sign, allowed values are: `true` and `false`
+`type` - type of the service, allowed values are: `watch` and `serve`
+
 
 Watch specific setting:
 `signer` - signer name

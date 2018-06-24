@@ -64,7 +64,7 @@ func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
 	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
 	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain path")
-	cmd.PersistentFlags().BoolVar(&validateSignature, "validate", true, "Certificate chain path")
+	cmd.PersistentFlags().BoolVar(&validateSignature, "validate-signature", true, "Certificate chain path")
 }
 
 func parseConfigFlag(cmd *cobra.Command) {

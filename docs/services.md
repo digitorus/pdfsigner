@@ -18,7 +18,7 @@ pdfsigner services
 
 ### Run specific services from the config
 
-[More inrofmation about config file](configuration.md)
+[More information about config file](configuration.md)
 
 
 ```
