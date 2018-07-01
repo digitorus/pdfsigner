@@ -26,8 +26,8 @@ func TestQSignersMap(t *testing.T) {
 				Reason:      "Test",
 				ContactInfo: "None",
 			},
-			CertType: 2,
-			Approval: false,
+			CertType:   sign.CertificationSignature,
+			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
 		},
 	}
 	d.SetPEM("../../testfiles/test.crt", "../../testfiles/test.pem", "")

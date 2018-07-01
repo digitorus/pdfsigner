@@ -68,7 +68,7 @@ type JobSignConfig struct {
 	Reason      string `json:"reason"`
 	ContactInfo string `json:"contact_info"`
 	CertType    uint   `json:"cert_type"`
-	Approval    bool   `json:"approval"`
+	DocMDPPerms uint   `json:"doc_mdp_perms"`
 	// ValidateSignature allows to verify the job after it's being singed
 	ValidateSignature bool `json:"verify_after_sign"`
 }
@@ -396,8 +396,8 @@ func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.Sign
 		signData.Signature.Info.ContactInfo = jobSignConfig.ContactInfo
 	case jobSignConfig.CertType != 0:
 		signData.Signature.CertType = jobSignConfig.CertType
-	case jobSignConfig.Approval != signData.Signature.Approval:
-		signData.Signature.Approval = jobSignConfig.Approval
+	case jobSignConfig.DocMDPPerms != 0:
+		signData.Signature.DocMDPPerm = jobSignConfig.DocMDPPerms
 	}
 
 	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData, jobSignConfig.ValidateSignature)

@@ -29,8 +29,8 @@ var (
 	outputPathFlag           string
 
 	// Signature flags
-	signatureApprovalFlag     bool
 	signatureTypeFlag         uint
+	docMdpPermsFlag           uint
 	signatureInfoNameFlag     string
 	signatureInfoLocationFlag string
 	signatureInfoReasonFlag   string
@@ -54,8 +54,8 @@ var (
 
 // parseCommonFlags binds common flags to variables
 func parseCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVar(&signatureApprovalFlag, "approval", false, "Is the signature should be approval")
 	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
+	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", 1, "DocMDP permissions")
 	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "info-name", "", "Signature info name")
 	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "info-location", "", "Signature info location")
 	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "info-reason", "", "Signature reason")
@@ -113,7 +113,7 @@ func parseServeFlags(cmd *cobra.Command) {
 func setupMultiSignerFlags(cmd *cobra.Command, s signerConfig) {
 	suffix := "_" + s.Name
 
-	cmd.PersistentFlags().BoolVar(&s.SignData.Signature.Approval, "approval"+suffix, false, "Is the signature should be approval")
+	cmd.PersistentFlags().UintVar(&s.SignData.Signature.DocMDPPerm, "docmdp"+suffix, 1, "DocMDP permissions")
 	cmd.PersistentFlags().UintVar(&s.SignData.Signature.CertType, "type"+suffix, 1, "Certificate type")
 	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Name, "info-name"+suffix, "", "Signature info name")
 	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Location, "info-location"+suffix, "", "Signature info location")
@@ -126,7 +126,6 @@ func setupMultiSignerFlags(cmd *cobra.Command, s signerConfig) {
 }
 
 func setupMultiServiceFlags(cmd *cobra.Command) {
-	log.Println(servicesConfigArr)
 	for _, s := range servicesConfigArr {
 		suffix := ""
 		if len(servicesConfigArr) > 0 {
@@ -155,8 +154,8 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	log.Debug("bindSignerFlagsToConfig")
 
 	// JobSignConfig
-	if cmd.PersistentFlags().Changed("approval") {
-		c.SignData.Signature.Approval = signatureApprovalFlag
+	if cmd.PersistentFlags().Changed("docmdp") {
+		c.SignData.Signature.DocMDPPerm = docMdpPermsFlag
 	}
 	if cmd.PersistentFlags().Changed("type") {
 		c.SignData.Signature.CertType = signatureTypeFlag

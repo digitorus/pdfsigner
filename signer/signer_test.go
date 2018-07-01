@@ -28,8 +28,8 @@ func TestSigner(t *testing.T) {
 				ContactInfo: "None",
 				Date:        time.Now().Local(),
 			},
-			CertType: 2,
-			Approval: false,
+			CertType:   sign.CertificationSignature,
+			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
 		},
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")

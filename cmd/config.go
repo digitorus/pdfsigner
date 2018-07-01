@@ -112,7 +112,6 @@ func initConfig() {
 		log.Fatal(err)
 	}
 
-	log.Println(servicesConfigArr)
 	// assign licensePath config value to variable
 	licenseStrConfOrFlag = viper.GetString("license")
 }
