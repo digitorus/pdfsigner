@@ -10,6 +10,7 @@ import (
 
 	"bitbucket.org/digitorus/pdfsigner/signer"
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -67,7 +68,7 @@ type serviceConfig struct {
 }
 
 // initConfig reads in config inputFile and ENV variables if set.
-func initConfig() {
+func initConfig(cmd *cobra.Command) {
 	preParseConfigFlag()
 
 	if configFilePathFlag != "" {
@@ -114,6 +115,9 @@ func initConfig() {
 
 	// assign licensePath config value to variable
 	licenseStrConfOrFlag = viper.GetString("license")
+
+	//TODO: Identify services and signers used for better UX
+	setupMultiServiceFlags(cmd)
 }
 
 func preParseConfigFlag() {

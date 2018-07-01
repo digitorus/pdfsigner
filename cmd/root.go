@@ -27,7 +27,7 @@ var RootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(v version.Version) {
 	// parse config flag to make it available before cobra
-	initConfig()
+	initConfig(RootCmd)
 
 	// set version
 	ver = v

@@ -126,20 +126,29 @@ func setupMultiSignerFlags(cmd *cobra.Command, s signerConfig) {
 }
 
 func setupMultiServiceFlags(cmd *cobra.Command) {
+	signers := map[string]bool{}
+
 	for _, s := range servicesConfigArr {
 		suffix := ""
 		if len(servicesConfigArr) > 0 {
 			suffix = "_" + s.Name
 		}
 
-		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path")
-
+		// add signers to signers map
 		if len(s.Signers) > 0 {
 			for _, signerName := range s.Signers {
-				signer := getSignerConfigByName(signerName)
-				setupMultiSignerFlags(cmd, signer)
+				signers[signerName] = true
 			}
 		}
+
+		// create service related commands
+		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path ")
+	}
+
+	for signerName, _ := range signers {
+		log.Println(signerName)
+		signer := getSignerConfigByName(signerName)
+		setupMultiSignerFlags(cmd, signer)
 	}
 }
 
