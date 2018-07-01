@@ -20,7 +20,6 @@ var multiCmd = &cobra.Command{
 	Use:   "services",
 	Short: "Run multiple services using the config file",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		setupMultiServiceFlags(cmd)
 		return requireLicense()
 	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
