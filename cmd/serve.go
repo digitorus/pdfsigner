@@ -14,9 +14,6 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Run web server to sign and verify files using HTTP protocol",
 	Long:  `Web API allows to sign and verify files by communicating with the application using HTTP protocol`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requireLicense()
-	},
 }
 
 // servePEMCmd runs web api with PEM using only flags
@@ -24,6 +21,18 @@ var servePEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Serve using PEM signer",
 	Run: func(cmd *cobra.Command, attr []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// loading jobs from the db
+		err = signVerifyQueue.LoadFromDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		config := signerConfig{}
 
 		// bind signer flags to config
@@ -42,6 +51,19 @@ var servePKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Serve using PKSC11 signer",
 	Run: func(cmd *cobra.Command, attr []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// loading jobs from the db
+		err = signVerifyQueue.LoadFromDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// create signer config
 		config := signerConfig{}
 
 		// bind signer flags to config
@@ -55,40 +77,24 @@ var servePKSC11Cmd = &cobra.Command{
 	},
 }
 
-// serveWithSingleSignerCmd runs web api using single signer from the config with possibility to override it with flags
-var serveWithSingleSignerCmd = &cobra.Command{
-	Use:   "signer",
-	Short: "Serve with single signer from the config. Allows to override settings with CLI",
-	Long:  `It allows to run signer from the config and override it's settings'`,
-	Run: func(cmd *cobra.Command, attr []string) {
-		// get config signer by name
-		config := getSignerConfigByName(signerNameFlag)
-
-		// bind signer flags to config
-		bindSignerFlagsToConfig(cmd, &config)
-
-		// set sign data
-		switch config.Type {
-		case "pem":
-			config.SignData.SetPEM(config.CrtPath, config.KeyPath, config.CrtChainPath)
-		case "pksc11":
-			config.SignData.SetPKSC11(config.LibPath, config.Pass, config.CrtChainPath)
-		}
-
-		// add signer to the queue signers pool
-		signVerifyQueue.AddSignUnit(signerNameFlag, config.SignData)
-
-		// start web api with runners
-		startWebAPIWithRunners()
-	},
-}
-
 // serveWithMultipleSignersCmd runs web api using multiple signers, with NO possibility to override it with flags
 var serveWithMultipleSignersCmd = &cobra.Command{
-	Use:   "multiple-signers",
+	Use:   "signers",
 	Short: "Serve with multiple signers from the config",
 	Long:  `It runs multiple signers. Settings couldn't be overwritten'`,
 	Run: func(cmd *cobra.Command, signerNames []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// loading jobs from the db
+		err = signVerifyQueue.LoadFromDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// check if the signer names provided
 		if len(signerNames) < 1 {
 			log.Fatal("signers are not provided")
@@ -142,14 +148,6 @@ func init() {
 	parseCommonFlags(servePKSC11Cmd)
 	parsePKSC11CertificateFlags(servePKSC11Cmd)
 	parseServeFlags(servePKSC11Cmd)
-
-	// add serve with config single signer and parse related flags
-	serveCmd.AddCommand(serveWithSingleSignerCmd)
-	parseConfigFlag(serveWithSingleSignerCmd)
-	parseSignerName(serveWithSingleSignerCmd)
-	parsePEMCertificateFlags(serveWithSingleSignerCmd)
-	parsePKSC11CertificateFlags(serveWithSingleSignerCmd)
-	parseServeFlags(serveWithSingleSignerCmd)
 
 	// add serve with multiple signers and parse related flags
 	serveCmd.AddCommand(serveWithMultipleSignersCmd)

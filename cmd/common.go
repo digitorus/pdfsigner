@@ -110,45 +110,54 @@ func parseServeFlags(cmd *cobra.Command) {
 	cmd.MarkPersistentFlagRequired("serve-port")
 }
 
-func setupMultiSignerFlags(cmd *cobra.Command, s signerConfig) {
-	suffix := "_" + s.Name
+// setupMultiSignersFlags setups commands to override signers config settings
+func setupMultiSignersFlags(cmd *cobra.Command) {
+	for _, s := range signersConfigArr {
+		// set flagSuffix if multiple signers provided inside config
+		flagSuffix := ""
+		if len(servicesConfigArr) > 0 {
+			flagSuffix = "_" + s.Name
+		}
 
-	cmd.PersistentFlags().UintVar(&s.SignData.Signature.DocMDPPerm, "docmdp"+suffix, 1, "DocMDP permissions")
-	cmd.PersistentFlags().UintVar(&s.SignData.Signature.CertType, "type"+suffix, 1, "Certificate type")
-	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Name, "info-name"+suffix, "", "Signature info name")
-	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Location, "info-location"+suffix, "", "Signature info location")
-	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Reason, "info-reason"+suffix, "", "Signature reason")
-	cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.ContactInfo, "info-contact"+suffix, "", "Signature contact")
-	cmd.PersistentFlags().StringVar(&s.SignData.TSA.URL, "tsa-url"+suffix, "", "TSA url")
-	cmd.PersistentFlags().StringVar(&s.SignData.TSA.Username, "tsa-username"+suffix, "", "TSA username")
-	cmd.PersistentFlags().StringVar(&s.SignData.TSA.Password, "tsa-password"+suffix, "", "TSA password")
-	cmd.PersistentFlags().StringVar(&s.CrtChainPath, "chain"+suffix, "", "Certificate chain path")
+		// set usage suffix
+		var usageSuffix string
+		if len(servicesConfigArr) > 0 {
+			usageSuffix += " " + s.Name
+		}
+		usageSuffix += " config override flag"
+
+		// create commands
+		cmd.PersistentFlags().UintVar(&s.SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, 1, "DocMDP permissions"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&s.SignData.Signature.CertType, "type"+flagSuffix, 1, "Certificate type"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Name, "info-name"+flagSuffix, "", "Signature info name"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Location, "info-location"+flagSuffix, "", "Signature info location"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Reason, "info-reason"+flagSuffix, "", "Signature reason"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.ContactInfo, "info-contact"+flagSuffix, "", "Signature contact"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.TSA.URL, "tsa-url"+flagSuffix, "", "TSA url"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.TSA.Username, "tsa-username"+flagSuffix, "", "TSA username"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.SignData.TSA.Password, "tsa-password"+flagSuffix, "", "TSA password"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&s.CrtChainPath, "chain"+flagSuffix, "", "Certificate chain path"+usageSuffix)
+	}
 }
 
+// setupMultiServiceFlags setups commands to override services config settings
 func setupMultiServiceFlags(cmd *cobra.Command) {
-	signers := map[string]bool{}
-
 	for _, s := range servicesConfigArr {
+		// set suffix if multiple signers provided inside config
 		suffix := ""
 		if len(servicesConfigArr) > 0 {
 			suffix = "_" + s.Name
 		}
 
-		// add signers to signers map
-		if len(s.Signers) > 0 {
-			for _, signerName := range s.Signers {
-				signers[signerName] = true
-			}
+		// set usage suffix
+		var usageSuffix string
+		if len(servicesConfigArr) > 0 {
+			usageSuffix += " " + s.Name
 		}
+		usageSuffix += " config override flag"
 
-		// create service related commands
-		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path ")
-	}
-
-	for signerName, _ := range signers {
-		log.Println(signerName)
-		signer := getSignerConfigByName(signerName)
-		setupMultiSignerFlags(cmd, signer)
+		// create commands
+		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path"+usageSuffix)
 	}
 }
 
@@ -250,6 +259,7 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 	return s
 }
 
+// requireLicense loads license
 func requireLicense() error {
 	// load license from the db
 	var licenseInitErr error
@@ -260,12 +270,6 @@ func requireLicense() error {
 	}
 	if licenseInitErr != nil {
 		return licenseInitErr
-	}
-
-	// loading jobs from the db
-	err := signVerifyQueue.LoadFromDB()
-	if err != nil {
-		return err
 	}
 
 	return nil

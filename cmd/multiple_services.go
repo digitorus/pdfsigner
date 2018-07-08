@@ -19,10 +19,19 @@ import (
 var multiCmd = &cobra.Command{
 	Use:   "services",
 	Short: "Run multiple services using the config file",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requireLicense()
-	},
 	Run: func(cmd *cobra.Command, serviceNames []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// loading jobs from the db
+		err = signVerifyQueue.LoadFromDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// check if the config contains services
 		if len(servicesConfigArr) < 1 {
 			log.Fatal("no services found inside the config")
@@ -181,5 +190,4 @@ func runQueues() {
 func init() {
 	RootCmd.AddCommand(multiCmd)
 	parseConfigFlag(multiCmd)
-
 }

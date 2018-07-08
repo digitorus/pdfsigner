@@ -99,7 +99,7 @@ func initConfig(cmd *cobra.Command) {
 			log.Fatal(errors.New("config is not properly formatted or empty"))
 		}
 	}
-	if err != nil {
+	if err != nil && configFilePathFlag != "" {
 		log.Fatal(err)
 	}
 
@@ -116,10 +116,13 @@ func initConfig(cmd *cobra.Command) {
 	// assign licensePath config value to variable
 	licenseStrConfOrFlag = viper.GetString("license")
 
-	//TODO: Identify services and signers used for better UX
+	// setup CLI overrides for signers and services of the config
+	setupMultiSignersFlags(cmd)
 	setupMultiServiceFlags(cmd)
 }
 
+// preParseConfigFlag parses config flag before cobra initialized.
+// needed to override signers and services config settings
 func preParseConfigFlag() {
 	const configFlagName = "--config"
 	args := strings.Join(os.Args[1:], " ")
@@ -133,6 +136,7 @@ func preParseConfigFlag() {
 	}
 }
 
+// unmarshalSigners assigns signers from the config into the signersConfigArr variable
 func unmarshalSigners() error {
 	for key, _ := range viper.AllSettings() {
 		if strings.HasPrefix(key, "signer") {
@@ -149,6 +153,7 @@ func unmarshalSigners() error {
 	return nil
 }
 
+// unmarshalSigners assigns services from the config into the servicesConfigArr variable
 func unmarshalServices() error {
 	for key, _ := range viper.AllSettings() {
 		if strings.HasPrefix(key, "service") {

@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/digitorus/pdfsigner/files"
 	"bitbucket.org/digitorus/pdfsigner/license"
 	"bitbucket.org/digitorus/pdfsigner/signer"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -12,9 +13,6 @@ var watchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Watch folder for new files, sign and put to another folder",
 	Long:  `Watch folder for new PDF documents, sign it using PEM or PKSC11 or preconfigured signer`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return requireLicense()
-	},
 }
 
 // watchPEMCmd watches folders and signs files with PEM using flags only
@@ -22,6 +20,13 @@ var watchPEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Watch and sign with PEM formatted certificate",
 	Run: func(cmd *cobra.Command, args []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// create signer config
 		c := signerConfig{}
 
 		// bind signer flags to config
@@ -40,6 +45,13 @@ var watchPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Watch and sign with PSKC11",
 	Run: func(cmd *cobra.Command, args []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// create signer config
 		c := signerConfig{}
 
 		// bind signer flags to config
@@ -58,6 +70,12 @@ var watchBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
 	Short: "Watch and sign with preconfigured signer",
 	Run: func(cmd *cobra.Command, args []string) {
+		// require license
+		err := requireLicense()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// get signer config from the config file by name
 		c := getSignerConfigByName(signerNameFlag)
 
