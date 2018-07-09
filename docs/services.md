@@ -24,3 +24,7 @@ pdfsigner services
 ```
 pdfsigner services service1 service2
 ```
+
+#### Override config settings
+
+
