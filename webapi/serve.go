@@ -111,7 +111,6 @@ func (wa *WebAPI) Serve() {
 		"addr":         wa.addr,
 		"allowedUnits": wa.allowedUnits,
 	})
-
 	serveLoggerCtx.Info("Starting Web API...")
 
 	if err := s.ListenAndServe(); err != nil {
