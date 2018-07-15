@@ -112,7 +112,7 @@ func parseServeFlags(cmd *cobra.Command) {
 
 // setupMultiSignersFlags setups commands to override signers config settings
 func setupMultiSignersFlags(cmd *cobra.Command) {
-	for _, s := range signersConfigArr {
+	for i, s := range signersConfigArr {
 		// set flagSuffix if multiple signers provided inside config
 		flagSuffix := ""
 		if len(servicesConfigArr) > 0 {
@@ -127,22 +127,23 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 		usageSuffix += " config override flag"
 
 		// create commands
-		cmd.PersistentFlags().UintVar(&s.SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, 1, "DocMDP permissions"+usageSuffix)
-		cmd.PersistentFlags().UintVar(&s.SignData.Signature.CertType, "type"+flagSuffix, 1, "Certificate type"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Name, "info-name"+flagSuffix, "", "Signature info name"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Location, "info-location"+flagSuffix, "", "Signature info location"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.Reason, "info-reason"+flagSuffix, "", "Signature reason"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.Signature.Info.ContactInfo, "info-contact"+flagSuffix, "", "Signature contact"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.TSA.URL, "tsa-url"+flagSuffix, "", "TSA url"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.TSA.Username, "tsa-username"+flagSuffix, "", "TSA username"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.SignData.TSA.Password, "tsa-password"+flagSuffix, "", "TSA password"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&s.CrtChainPath, "chain"+flagSuffix, "", "Certificate chain path"+usageSuffix)
+
+		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, s.SignData.Signature.DocMDPPerm, "DocMDP permissions"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.CertType, "type"+flagSuffix, s.SignData.Signature.CertType, "Certificate type"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "info-name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "info-location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "info-reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.ContactInfo, "info-contact"+flagSuffix, s.SignData.Signature.Info.ContactInfo, "Signature contact"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.URL, "tsa-url"+flagSuffix, s.SignData.TSA.URL, "TSA url"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Username, "tsa-username"+flagSuffix, s.SignData.TSA.Username, "TSA username"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Password, "tsa-password"+flagSuffix, s.SignData.TSA.Password, "TSA password"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].CrtChainPath, "chain"+flagSuffix, s.CrtChainPath, "Certificate chain path"+usageSuffix)
 	}
 }
 
 // setupMultiServiceFlags setups commands to override services config settings
 func setupMultiServiceFlags(cmd *cobra.Command) {
-	for _, s := range servicesConfigArr {
+	for i, s := range servicesConfigArr {
 		// set suffix if multiple signers provided inside config
 		suffix := ""
 		if len(servicesConfigArr) > 0 {
@@ -157,7 +158,7 @@ func setupMultiServiceFlags(cmd *cobra.Command) {
 		usageSuffix += " config override flag"
 
 		// create commands
-		cmd.PersistentFlags().BoolVar(&s.ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path"+usageSuffix)
+		cmd.PersistentFlags().BoolVar(&servicesConfigArr[i].ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path"+usageSuffix)
 	}
 }
 
