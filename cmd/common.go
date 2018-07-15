@@ -127,9 +127,8 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 		usageSuffix += " config override flag"
 
 		// create commands
-
-		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, s.SignData.Signature.DocMDPPerm, "DocMDP permissions"+usageSuffix)
 		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.CertType, "type"+flagSuffix, s.SignData.Signature.CertType, "Certificate type"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, s.SignData.Signature.DocMDPPerm, "DocMDP permissions"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "info-name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "info-location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "info-reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
