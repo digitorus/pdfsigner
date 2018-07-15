@@ -63,7 +63,3 @@ func SignFilesByPatterns(filePatterns []string, signData signer.SignData, valida
 
 	license.LD.SaveLimitState()
 }
-
-func VerifyFileByPath(filePath string) {
-
-}
