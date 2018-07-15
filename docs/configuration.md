@@ -35,11 +35,17 @@ PKSC11 specifc settings:
 `libPath` - path to library
 `pass` - password
 
-signature settings are provided inside `signature` section
-`approval` - defines if the signature is approval or not, allowed values `true` and `false`
-`certType` - defines cert type???
+signature settings are provided inside `signData.signature` section
+`certType` - defines certificate type. Allowed values are: 
+  - `1` - Approval signature
+  - `2` - Certification signature. Certification signature required to provide the `docmdp` setting as well.  
+  - `3` - UsageRightsSignature.
+`docmdp` - defines the certification signature type. Allowd values are:
+  - `1` - Do not allow any changes
+  - `2` - Allow filling in existing form fields and signatures
+  - `3` - Allow filling in existing form fields and signatures and annotation creation, deletion, and modification. 
 
-signature information settings are provided inside `signature.info` section
+signature information settings are provided inside `signData.signature.info` section
 `name` - name of the person creating signature
 `location` - location of the person creating signature
 `reason` - reason why the signature is created
@@ -81,10 +87,10 @@ name = "simple"
 type = "pem"
 crtPath = "testfiles/test.crt"
 keyPath = "testfiles/test.pem"
-[signer.signature]
+[signer.signData.signature]
 approval = false
 certType = 2
-[signer.signature.info]
+[signer.signData.signature.info]
 name = "Tim"
 location = "Spain"
 reason = "Test"
@@ -96,10 +102,10 @@ type = "pksc11"
 libPath = "path/to/lib"
 pass = "path/to/lib"
 crtChainPath = "path/to/certificate/chain"
-[signer.signature]
+[signer.signData.signature]
 approval = true
 certType = 1
-[signer.signature.info]
+[signer.signData.signature.info]
 name = "name"
 location = "location"
 reason = "reason"

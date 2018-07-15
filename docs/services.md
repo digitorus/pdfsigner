@@ -25,6 +25,8 @@ pdfsigner services
 pdfsigner services service1 service2
 ```
 
-#### Override config settings
+#### Override config settings with CLI
+
+It's possible to override signers and services settings provided with the config using CLI. 
 
 
