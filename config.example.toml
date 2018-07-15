@@ -21,10 +21,10 @@ type = "pem"
 crtPath = "path/to/crt"
 keyPath = "path/to/private/key"
 crtChainPath = "path/to/certificate/chain"
-[signer.signature]
+[signer.signData.signature]
 approval = true
 certType = 1
-[signer.signature.info]
+[signer.signData.signature.info]
 name = "name"
 location = "location"
 reason = "reason"
@@ -35,10 +35,10 @@ type = "pksc11"
 libPath = "path/to/lib"
 pass = "path/to/lib"
 crtChainPath = "path/to/certificate/chain"
-[signer.signature]
+[signer.signData.signature]
 approval = true
 certType = 1
-[signer.signature.info]
+[signer.signData.signature.info]
 name = "name"
 location = "location"
 reason = "reason"
