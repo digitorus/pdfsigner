@@ -30,7 +30,7 @@ import (
 // licenseCmd represents the license command
 var licenseCmd = &cobra.Command{
 	Use:   "license",
-	Short: "Update license",
+	Short: "Check and update license",
 }
 
 // licenseInfoCmd represents the license info command

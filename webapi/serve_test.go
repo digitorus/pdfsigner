@@ -70,7 +70,7 @@ func runTest(m *testing.M) int {
 	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 	q.AddSignUnit("simple", signData)
 	q.AddVerifyUnit()
-	q.Runner()
+	q.StartProcessor()
 
 	// create web api
 	wa = NewWebAPI(addr, q, []string{

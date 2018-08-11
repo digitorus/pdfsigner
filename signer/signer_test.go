@@ -32,7 +32,7 @@ func TestSigner(t *testing.T) {
 			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
 		},
 	}
-	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
+	signData.SetPEM("../testfiles/test.crt", "../testfiles/test.pem", "")
 
 	for i := 0; i < 1; i++ {
 		err = SignFile("../testfiles/testfile12.pdf", "../testfiles/testfile12_signed.pdf", signData, true)

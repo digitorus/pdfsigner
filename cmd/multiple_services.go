@@ -184,7 +184,7 @@ func setupServe(service serviceConfig) {
 
 // runQueues starts the mechanism to sign the files whenever they are getting into the queue.
 func runQueues() {
-	signVerifyQueue.Runner()
+	signVerifyQueue.StartProcessor()
 }
 
 func init() {

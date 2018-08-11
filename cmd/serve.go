@@ -109,23 +109,24 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 		setupVerifier()
 
 		// start web api with runners
-		startWebAPIWithRunners()
+		startWebAPIWithProcessor(signerNames)
 	},
 }
 
 // startWebAPIWithRunnersUnnamedSigner start the web api
 func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
-	id := "unnamed-signer"
+	id := "signer"
 	signVerifyQueue.AddSignUnit(id, signData)
-	startWebAPIWithRunners()
+	log.Println(signVerifyQueue)
+	startWebAPIWithProcessor([]string{id})
 }
 
-// startWebAPIWithRunners
-func startWebAPIWithRunners() {
-	wa := webapi.NewWebAPI(getAddrPort(), signVerifyQueue, []string{}, ver, validateSignature)
+// startWebAPIWithProcessor
+func startWebAPIWithProcessor(allowedSigners []string) {
+	wa := webapi.NewWebAPI(getAddrPort(), signVerifyQueue, allowedSigners, ver, validateSignature)
 
-	// run queue runners
-	signVerifyQueue.Runner()
+	// run queue processors
+	signVerifyQueue.StartProcessor()
 
 	// run license auto save
 	license.LD.AutoSave()

@@ -428,8 +428,8 @@ func verifyTask(task Task) (resp *verify.Response, err error) {
 	return resp, nil
 }
 
-// Runner starts separate go routine for each signer which signs associated job tasks when they appear
-func (q *Queue) Runner() {
+// StartProcessor starts separate go routine for each signer which signs associated job tasks when they appear
+func (q *Queue) StartProcessor() {
 	// run separate go routine for each signer
 	for _, s := range q.units {
 		go func(name string) {
