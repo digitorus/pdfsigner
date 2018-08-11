@@ -73,16 +73,15 @@ func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version vers
 
 // handle adds middlewares and runs mux handler
 func (wa *WebAPI) handle(verb string, path string, handler handler) {
+	// add middlewares
+	for i := len(wa.middlewares) - 1; i >= 0; i-- {
+		if wa.middlewares[i] != nil {
+			handler = wa.middlewares[i](handler)
+		}
+	}
+
 	// create handler function
 	h := func(w http.ResponseWriter, r *http.Request) {
-
-		// add middlewares
-		for i := len(wa.middlewares) - 1; i >= 0; i-- {
-			if wa.middlewares[i] != nil {
-				handler = wa.middlewares[i](handler)
-			}
-		}
-
 		// add handler
 		handler(w, r)
 	}
