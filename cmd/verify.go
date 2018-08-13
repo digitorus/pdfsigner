@@ -14,6 +14,10 @@ var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Verify PDF signature",
 	Run: func(cmd *cobra.Command, inputFileNames []string) {
+		if len(inputFileNames) < 1 {
+			log.Fatal("no files provided")
+		}
+
 		for _, f := range inputFileNames {
 			input_file, err := os.Open(f)
 			if err != nil {
