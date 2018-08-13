@@ -88,8 +88,8 @@ type = "pem"
 crtPath = "testfiles/test.crt"
 keyPath = "testfiles/test.pem"
 [signer.signData.signature]
-approval = false
 certType = 2
+docmdp = 1
 [signer.signData.signature.info]
 name = "Tim"
 location = "Spain"

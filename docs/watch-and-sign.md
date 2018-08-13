@@ -32,7 +32,6 @@ pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/fi
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -41,6 +40,7 @@ pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/fi
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --docmdp 1 \
   --validate-signature true
 ```
 
@@ -68,7 +68,6 @@ pdfsigner watch pksc11 \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -77,6 +76,7 @@ pdfsigner watch pksc11 \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --docmdp 1 \
   --validate-signature true
 ```
 
@@ -115,7 +115,6 @@ pdfsigner watch signer \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -124,6 +123,7 @@ pdfsigner watch signer \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1\
+  --docmdp 1 \
   --validate-signature true
 ```
 

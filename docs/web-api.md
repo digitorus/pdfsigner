@@ -176,7 +176,6 @@ pdfsigner serve pem \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -185,6 +184,7 @@ pdfsigner serve pem \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --docmdp 1 \
   --validate-signature true \
   path/to/file.pdf 
 ```
@@ -213,7 +213,6 @@ pdfsigner serve pksc11 \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -222,6 +221,7 @@ pdfsigner serve pksc11 \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --docmdp 1 \
   --validate-signature true
 ```
 
@@ -261,7 +261,6 @@ pdfsigner serve signer --signer-name "name-of-the-signer" \
   --crt path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
-  --approval true \
   --contact "Contact information" \
   --location "Location" \
   --name "Name" \
@@ -270,6 +269,7 @@ pdfsigner serve signer --signer-name "name-of-the-signer" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
   --type 1 \
+  --docmdp 1 \
   --validate-signature true
 ```
 

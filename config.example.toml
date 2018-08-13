@@ -22,7 +22,7 @@ crtPath = "path/to/crt"
 keyPath = "path/to/private/key"
 crtChainPath = "path/to/certificate/chain"
 [signer.signData.signature]
-approval = true
+docMDP = 1
 certType = 1
 [signer.signData.signature.info]
 name = "name"
@@ -36,8 +36,8 @@ libPath = "path/to/lib"
 pass = "path/to/lib"
 crtChainPath = "path/to/certificate/chain"
 [signer.signData.signature]
-approval = true
 certType = 1
+docMDP = 1
 [signer.signData.signature.info]
 name = "name"
 location = "location"

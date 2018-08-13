@@ -100,7 +100,7 @@ func TestSignFlow(t *testing.T) {
 			"reason":      "My Reason",
 			"contactInfo": "My ContactInfo",
 			"certType":    "1",
-			"approval":    "true",
+			"docMDP":      "1",
 		}, fileParts)
 	if err != nil {
 		t.Fatal(err)
