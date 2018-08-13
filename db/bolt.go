@@ -33,8 +33,16 @@ func init() {
 		currentFolder = runFileFolder
 	}
 
-	DB, err = bolt.Open(path.Join(currentFolder, "pdfsigner.db"), 0600, nil)
+	opts := bolt.DefaultOptions
+	opts.Timeout = 5
+
+	DB, err = bolt.Open(path.Join(currentFolder, "pdfsigner.db"), 0600, opts)
 	if err != nil {
+		if err.Error() == "timeout" {
+			log.Fatal(errors.New("Another PDFSigner process is running..."))
+			return
+		}
+
 		log.Fatal(err)
 	}
 }
