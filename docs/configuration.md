@@ -88,7 +88,7 @@ type = "pem"
 crtPath = "testfiles/test.crt"
 keyPath = "testfiles/test.pem"
 [signer.signData.signature]
-certType = 2
+certType = 1
 docmdp = 1
 [signer.signData.signature.info]
 name = "Tim"
@@ -103,8 +103,8 @@ libPath = "path/to/lib"
 pass = "path/to/lib"
 crtChainPath = "path/to/certificate/chain"
 [signer.signData.signature]
-approval = true
 certType = 1
+docmdp = 1
 [signer.signData.signature.info]
 name = "name"
 location = "location"
