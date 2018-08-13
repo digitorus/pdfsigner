@@ -3,7 +3,6 @@ package signer
 import (
 	"io/ioutil"
 	"testing"
-	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -26,7 +25,6 @@ func TestSigner(t *testing.T) {
 				Location:    "Spain",
 				Reason:      "Test",
 				ContactInfo: "None",
-				Date:        time.Now().Local(),
 			},
 			CertType:   sign.CertificationSignature,
 			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,

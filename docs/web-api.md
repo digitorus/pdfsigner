@@ -177,10 +177,10 @@ pdfsigner serve pem \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --approval true \
-  --info-contact "Contact information" \
-  --info-location "Location" \
-  --info-name "Name" \
-  --info-reason "Reason" \
+  --contact "Contact information" \
+  --location "Location" \
+  --name "Name" \
+  --reason "Reason" \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
@@ -214,10 +214,10 @@ pdfsigner serve pksc11 \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --approval true \
-  --info-contact "Contact information" \
-  --info-location "Location" \
-  --info-name "Name" \
-  --info-reason "Reason" \
+  --contact "Contact information" \
+  --location "Location" \
+  --name "Name" \
+  --reason "Reason" \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
@@ -262,10 +262,10 @@ pdfsigner serve signer --signer-name "name-of-the-signer" \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --approval true \
-  --info-contact "Contact information" \
-  --info-location "Location" \
-  --info-name "Name" \
-  --info-reason "Reason" \
+  --contact "Contact information" \
+  --location "Location" \
+  --name "Name" \
+  --reason "Reason" \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \

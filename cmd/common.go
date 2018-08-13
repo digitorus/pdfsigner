@@ -56,10 +56,10 @@ var (
 func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
 	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", 1, "DocMDP permissions")
-	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "info-name", "", "Signature info name")
-	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "info-location", "", "Signature info location")
-	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "info-reason", "", "Signature reason")
-	cmd.PersistentFlags().StringVar(&signatureInfoContactFlag, "info-contact", "", "Signature contact")
+	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "name", "", "Signature info name")
+	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "location", "", "Signature info location")
+	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "reason", "", "Signature reason")
+	cmd.PersistentFlags().StringVar(&signatureInfoContactFlag, "contact", "", "Signature contact")
 	cmd.PersistentFlags().StringVar(&signatureTSAUrlFlag, "tsa-url", "", "TSA url")
 	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
 	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
@@ -129,10 +129,10 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 		// create commands
 		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.CertType, "type"+flagSuffix, s.SignData.Signature.CertType, "Certificate type"+usageSuffix)
 		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, s.SignData.Signature.DocMDPPerm, "DocMDP permissions"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "info-name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "info-location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "info-reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.ContactInfo, "info-contact"+flagSuffix, s.SignData.Signature.Info.ContactInfo, "Signature contact"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.ContactInfo, "contact"+flagSuffix, s.SignData.Signature.Info.ContactInfo, "Signature contact"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.URL, "tsa-url"+flagSuffix, s.SignData.TSA.URL, "TSA url"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Username, "tsa-username"+flagSuffix, s.SignData.TSA.Username, "TSA username"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Password, "tsa-password"+flagSuffix, s.SignData.TSA.Password, "TSA password"+usageSuffix)
@@ -178,16 +178,16 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	if cmd.PersistentFlags().Changed("type") {
 		c.SignData.Signature.CertType = signatureTypeFlag
 	}
-	if cmd.PersistentFlags().Changed("info-name") {
+	if cmd.PersistentFlags().Changed("name") {
 		c.SignData.Signature.Info.Name = signatureInfoNameFlag
 	}
-	if cmd.PersistentFlags().Changed("info-location") {
+	if cmd.PersistentFlags().Changed("location") {
 		c.SignData.Signature.Info.Location = signatureInfoLocationFlag
 	}
-	if cmd.PersistentFlags().Changed("info-reason") {
+	if cmd.PersistentFlags().Changed("reason") {
 		c.SignData.Signature.Info.Reason = signatureInfoReasonFlag
 	}
-	if cmd.PersistentFlags().Changed("info-contact") {
+	if cmd.PersistentFlags().Changed("contact") {
 		c.SignData.Signature.Info.ContactInfo = signatureInfoContactFlag
 	}
 	if cmd.PersistentFlags().Changed("tsa-password") {
