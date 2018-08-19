@@ -29,7 +29,7 @@ var verifyCmd = &cobra.Command{
 			if err != nil {
 				log.Println("File", f, "Couldn't be verified", err)
 			} else {
-				log.Println("File", f, "verified")
+				log.Println("File", f, "verified successfully")
 			}
 
 		}
