@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"bitbucket.org/digitorus/pdfsigner/db"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"bitbucket.org/digitorus/pdfsign/verify"
 	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
 	"bitbucket.org/digitorus/pdfsigner/signer"
-	"github.com/rs/xid"
 )
 
 var (
@@ -161,7 +162,7 @@ func (q *Queue) AddVerifyUnit() {
 // addJob adds job to the jobs map
 func (q *Queue) addJob() *Job {
 	// generate unique id
-	id := xid.New().String()
+	id := generateID()
 
 	// create job
 	j := Job{
@@ -221,7 +222,7 @@ func (q *Queue) AddTask(unitName, jobID, originalFileName, inputFilePath, output
 
 func (q *Queue) addTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (Task, error) {
 	// generate unique task id
-	id := xid.New().String()
+	id := generateID()
 
 	//create task
 	t := Task{
@@ -507,4 +508,8 @@ func (q *Queue) DeleteFromDB(jobID string) error {
 	}
 
 	return nil
+}
+
+func generateID() string {
+	return strings.Replace(uuid.New().String(), "-", "", -1)
 }
