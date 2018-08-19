@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"os"
+
 	"bitbucket.org/digitorus/pdfsigner/license"
 	log "github.com/sirupsen/logrus"
 
@@ -110,8 +112,23 @@ func parseServeFlags(cmd *cobra.Command) {
 	cmd.MarkPersistentFlagRequired("serve-port")
 }
 
+func isMultiSignerCmd() bool {
+	if len(os.Args) < 3 {
+		return false
+	}
+
+	var cmd = os.Args[1]
+	var subCmd = os.Args[2]
+
+	return (cmd == "sign" && subCmd == "signer") || (cmd == "serve" && subCmd == "signers") || cmd == "services"
+}
+
 // setupMultiSignersFlags setups commands to override signers config settings
 func setupMultiSignersFlags(cmd *cobra.Command) {
+	if !isMultiSignerCmd() {
+		return
+	}
+
 	for i, s := range signersConfigArr {
 		// set flagSuffix if multiple signers provided inside config
 		flagSuffix := ""
@@ -140,8 +157,20 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 	}
 }
 
+func isMultiServiceCmd() bool {
+	if len(os.Args) < 2 {
+		return false
+	}
+
+	return os.Args[1] == "services"
+}
+
 // setupMultiServiceFlags setups commands to override services config settings
 func setupMultiServiceFlags(cmd *cobra.Command) {
+	if !isMultiServiceCmd() {
+		return
+	}
+
 	for i, s := range servicesConfigArr {
 		// set suffix if multiple signers provided inside config
 		suffix := ""

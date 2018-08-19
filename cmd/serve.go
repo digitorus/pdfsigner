@@ -81,7 +81,7 @@ var servePKSC11Cmd = &cobra.Command{
 var serveWithMultipleSignersCmd = &cobra.Command{
 	Use:   "signers",
 	Short: "Serve with multiple signers from the config",
-	Long:  `It runs multiple signers. Settings couldn't be overwritten'`,
+	Long:  `Runs multiple signers. Settings couldn't be overwritten`,
 	Run: func(cmd *cobra.Command, signerNames []string) {
 		// require license
 		err := requireLicense()

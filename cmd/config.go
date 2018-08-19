@@ -116,8 +116,7 @@ func initConfig(cmd *cobra.Command) {
 	// assign licensePath config value to variable
 	licenseStrConfOrFlag = viper.GetString("license")
 
-	// setup CLI overrides for signers and services of the config
-	// TODO: still probably should only show this for specific commands.
+	// setup CLI overrides for signers and services of the config if it's multi command
 	setupMultiSignersFlags(cmd)
 	setupMultiServiceFlags(cmd)
 }
