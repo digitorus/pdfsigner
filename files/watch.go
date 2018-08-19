@@ -25,7 +25,7 @@ func Watch(watchFolder string, cb callback) {
 		for {
 			select {
 			case event := <-watcher.Events:
-				if event.Op&fsnotify.Create == fsnotify.Create {
+				if event.Op&fsnotify.Write == fsnotify.Write {
 					inputFileName := event.Name
 					inputFileExtension := strings.ToLower(path.Ext(inputFileName))
 

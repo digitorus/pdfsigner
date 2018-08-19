@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"path"
-	"strings"
 	"sync"
 
 	"bitbucket.org/digitorus/pdfsigner/queues/queue"
@@ -154,11 +152,7 @@ func setupWatch(service serviceConfig) {
 	files.Watch(service.In, func(inputFilePath string, left int) {
 
 		// make signed file path
-		_, fileName := path.Split(inputFilePath)
-		fileNameArr := strings.Split(fileName, path.Ext(fileName))
-		fileNameArr = fileNameArr[:len(fileNameArr)-1]
-		fileNameNoExt := strings.Join(fileNameArr, "")
-		signedFilePath := path.Join(service.Out, fileNameNoExt+"_signed"+path.Ext(fileName))
+		signedFilePath := getOutputFilePathByInputFilePath(inputFilePath, service.Out)
 
 		// create session
 		jobID := signVerifyQueue.AddSignJob(queue.JobSignConfig{

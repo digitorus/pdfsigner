@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 
 	"bitbucket.org/digitorus/pdfsigner/license"
 	log "github.com/sirupsen/logrus"
@@ -302,4 +304,10 @@ func requireLicense() error {
 	}
 
 	return nil
+}
+
+func getOutputFilePathByInputFilePath(inputFilePath, outputFolderPath string) string {
+	_, fileName := filepath.Split(inputFilePath)
+	fileNameNoExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+	return filepath.Join(outputFolderPath, fileNameNoExt+"_signed"+filepath.Ext(fileName))
 }
