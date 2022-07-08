@@ -99,7 +99,7 @@ func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
 
 // SetCertificateChains sets certificate chain settings
 func (s *SignData) SetCertificateChains(crtChainPath string) {
-	certificate_chains := make([][]*x509.Certificate, 0)
+	var certificate_chains [][]*x509.Certificate
 	if crtChainPath == "" {
 		return
 	}
