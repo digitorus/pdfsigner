@@ -83,7 +83,7 @@ func (wa *WebAPI) handle(verb string, path string, handler handler) {
 	// create handler function
 	h := func(w http.ResponseWriter, r *http.Request) {
 		// add handler
-		handler(w, r)
+		_ = handler(w, r)
 	}
 
 	// run result handler function
