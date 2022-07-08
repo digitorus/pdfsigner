@@ -45,7 +45,7 @@ var licenseSetupCmd = &cobra.Command{
 		}
 
 		// print license info
-		fmt.Printf(license.LD.Info())
+		fmt.Print(license.LD.Info())
 	},
 }
 
@@ -61,7 +61,7 @@ var licenseInfoCmd = &cobra.Command{
 		}
 
 		// print license info
-		fmt.Printf(license.LD.Info())
+		fmt.Print(license.LD.Info())
 	},
 }
 
