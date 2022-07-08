@@ -65,7 +65,7 @@ func TestQSignersMap(t *testing.T) {
 	assert.Equal(t, 1, len(job.TasksMap))
 
 	// sign job
-	qs.processNextTask("simple")
+	assert.NoError(t, qs.processNextTask("simple"))
 
 	job, err = qs.GetJobByID(jobID)
 	if err != nil {
@@ -89,7 +89,7 @@ func TestQSignersMap(t *testing.T) {
 	}
 	assert.Equal(t, 2, len(job.TasksMap))
 	// sign job
-	qs.processNextTask("simple")
+	assert.NoError(t, qs.processNextTask("simple"))
 
 	job, err = qs.GetJobByID(jobID)
 	if err != nil {
@@ -114,4 +114,5 @@ func TestQSignersMap(t *testing.T) {
 	assert.NoError(t, qs.LoadFromDB())
 	jobFromDB, err = qs.GetJobByID(jobID)
 	assert.Error(t, err)
+	assert.Nil(t, jobFromDB.TasksMap)
 }
