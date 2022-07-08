@@ -320,7 +320,7 @@ func (ld *LicenseData) Info() string {
 	for _, l := range ld.Limits {
 		// get interval
 		if isTotalLimit(l) {
-			res += fmt.Sprintf("Interval: Total ")
+			res += "Interval: Total "
 		} else {
 			res += fmt.Sprintf("Interval: %v, ", l.Interval)
 		}
