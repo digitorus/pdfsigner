@@ -160,9 +160,10 @@ func setupWatch(service serviceConfig) {
 		})
 
 		// push job
-		signVerifyQueue.AddTask(service.Signer, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
+		// TODO: should we write any errors to the debug log?
+		_, _ = signVerifyQueue.AddTask(service.Signer, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
 		if left == 0 {
-			signVerifyQueue.SaveToDB(jobID)
+			_ = signVerifyQueue.SaveToDB(jobID)
 		}
 	})
 
