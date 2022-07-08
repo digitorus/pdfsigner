@@ -20,7 +20,7 @@ func httpError(w http.ResponseWriter, err error, code int) error {
 	e := httpErr{Error: errors.Cause(err).Error(), Code: code}
 
 	// respond with json
-	respondJSON(w, e, code)
+	_ = respondJSON(w, e, code)
 
 	return err
 }
@@ -40,7 +40,7 @@ func respondJSON(w http.ResponseWriter, data interface{}, code int) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	// respond with json
-	w.Write(j)
+	_, err = w.Write(j)
 
-	return nil
+	return err
 }
