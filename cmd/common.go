@@ -73,7 +73,7 @@ func parseCommonFlags(cmd *cobra.Command) {
 
 func parseConfigFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "Path to config file")
-	cmd.MarkPersistentFlagRequired("config")
+	_ = cmd.MarkPersistentFlagRequired("config")
 }
 
 // parsePEMCertificateFlags binds PEM specific flags to variables
@@ -91,27 +91,27 @@ func parsePKSC11CertificateFlags(cmd *cobra.Command) {
 // parseInputPathFlag binds input folder flag to variable
 func parseInputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&inputPathFlag, "in", "", "Input path")
-	cmd.MarkPersistentFlagRequired("in")
+	_ = cmd.MarkPersistentFlagRequired("in")
 }
 
 // parseOutputPathFlag binds output folder flag to variable
 func parseOutputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&outputPathFlag, "out", "", "Output path")
-	cmd.MarkPersistentFlagRequired("out")
+	_ = cmd.MarkPersistentFlagRequired("out")
 }
 
 // parseSignerName binds signer name flag to variable
 func parseSignerName(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
-	cmd.MarkPersistentFlagRequired("signer-name")
+	_ = cmd.MarkPersistentFlagRequired("signer-name")
 }
 
 // parseServeFlags binds serve address and port flags to variables
 func parseServeFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "Address to serve Web API")
-	cmd.MarkPersistentFlagRequired("serve-address")
+	_ = cmd.MarkPersistentFlagRequired("serve-address")
 	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "Port to serve Web API")
-	cmd.MarkPersistentFlagRequired("serve-port")
+	_ = cmd.MarkPersistentFlagRequired("serve-port")
 }
 
 func isMultiSignerCmd() bool {
