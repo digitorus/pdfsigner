@@ -4,6 +4,7 @@ config.toml
 .realize
 temp
 testfiles/testfile20_signed.pdf
+testfiles/testfile12_signed.pdf
 lic.*
 badger/
 passwd
