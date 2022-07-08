@@ -8,7 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsigner/signer"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

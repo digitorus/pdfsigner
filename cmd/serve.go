@@ -3,9 +3,9 @@ package cmd
 import (
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/signer"
-	"bitbucket.org/digitorus/pdfsigner/webapi"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
 )
 

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"bitbucket.org/digitorus/pdfsigner/files"
+	"github.com/digitorus/pdfsigner/files"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 )

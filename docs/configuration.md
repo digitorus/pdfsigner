@@ -115,8 +115,8 @@ contactInfo = "contact"
 name = "watch1"
 type = "watch"
 signer = "simple"
-in = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/temp/in/"
-out = "/Users/tim/go/src/bitbucket.org/digitorus/pdfsigner/temp/out/"
+in = "/home/example/pdf/in/"
+out = "/home/example/pdf/out/"
 
 [[service]]
 name = "web1"

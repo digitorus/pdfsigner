@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bitbucket.org/digitorus/pdfsigner/cmd"
-	"bitbucket.org/digitorus/pdfsigner/version"
+	"github.com/digitorus/pdfsigner/cmd"
+	"github.com/digitorus/pdfsigner/version"
 )
 
 var (

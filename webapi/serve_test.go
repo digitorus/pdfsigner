@@ -15,11 +15,11 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsign/sign"
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/queues/queue"
-	"bitbucket.org/digitorus/pdfsigner/signer"
-	"bitbucket.org/digitorus/pdfsigner/version"
+	"github.com/digitorus/pdfsign/sign"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsigner/version"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 func runTest(m *testing.M) int {
 	log.SetOutput(ioutil.Discard)
 
-	err := license.Load()
+	err := license.Initialize([]byte(license.TestLicense))
 	if err != nil {
 		log.Fatal(err)
 	}

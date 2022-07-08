@@ -4,12 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
+	"github.com/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 )
-
-const LicenseB64 = "LP+HAwEBB0xpY2Vuc2UB/4gAAQMBBERhdGEBCgABAVIB/4QAAQFTAf+EAAAACv+DBQEC/4YAAAD+AV//iAH/83sibiI6Ik5hbWUiLCJlIjoidGVzdEBleGFtcGxlLmNvbSIsImVuZCI6IjIwMTktMDQtMTRUMjI6Mzk6MTkuOTg0MjE4NTU1KzAyOjAwIiwibCI6W3sibSI6MiwiaSI6IjFzIn0seyJtIjoxMCwiaSI6IjEwcyJ9LHsibSI6MTAwLCJpIjoiMW0ifSx7Im0iOjIwMDAsImkiOiIxaCJ9LHsibSI6MjAwMDAwLCJpIjoiMjRoIn0seyJtIjoyMDAwMDAwLCJpIjoiNzIwaCJ9LHsibSI6MjAwMDAwMDAsImkiOiI4NjQwMDBoIn1dLCJkIjoyfQExAuyC8BfWBjtTuZ+tDcY/FwlW/rrPXXNKORz9zKxj0NWZWvLhQIGZE7DtPfw69DY60gExAivdt7v7G35eeZ2BAukus3qpxfXTAl0gaIuU5XAFXaWu+Wv7GAQ2BOw6dbqs+5lUdAA="
 
 var licData = LicenseData{
 	Name:  "Name",
@@ -27,10 +25,10 @@ var licData = LicenseData{
 }
 
 func TestFlow(t *testing.T) {
-	// test initialize
-	licenseBytes := []byte(LicenseB64)
-	err := Initialize(licenseBytes)
-	assert.NoError(t, err)
+	err := Initialize([]byte(TestLicense))
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.Equal(t, len(licData.Limits), len(LD.Limits))
 	assert.Equal(t, 0, len(deep.Equal(licData.Limits, LD.Limits)))
 	assert.Equal(t, licData.Limits[0].MaxCount, LD.Limits[0].MaxCount)

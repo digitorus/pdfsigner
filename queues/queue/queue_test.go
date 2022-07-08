@@ -4,10 +4,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"bitbucket.org/digitorus/pdfsign/sign"
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
-	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsign/sign"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/signer"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,10 @@ import (
 func TestQSignersMap(t *testing.T) {
 	logrus.SetOutput(ioutil.Discard)
 
-	license.Load()
+	err := license.Initialize([]byte(license.TestLicense))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// create sign data
 	d := signer.SignData{

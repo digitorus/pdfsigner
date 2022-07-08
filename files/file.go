@@ -9,8 +9,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/signer"
 )
 
 func storeTempFile(file io.Reader) (string, error) {

@@ -7,8 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/hyperboloide/lk"
 )
 
@@ -35,7 +35,7 @@ func main() {
 	doc := license.LicenseData{
 		Name:  "Name",
 		Email: "test@example.com",
-		End:   time.Now().Add(time.Hour * 24 * 365), // 1 year
+		End:   time.Now().Add(time.Hour * 24 * 365 * 100), // +/- 100 year
 		Limits: []*ratelimiter.Limit{
 			&ratelimiter.Limit{MaxCount: 2, IntervalStr: "1s"},
 			&ratelimiter.Limit{MaxCount: 10, IntervalStr: "10s"},
@@ -88,7 +88,7 @@ func main() {
 	if err := json.Unmarshal(lic.Data, &res); err != nil {
 		log.Fatal(err)
 	} else if res.End.Before(time.Now()) {
-		log.Fatal("LicenseData expired on: %s", res.End.String())
+		log.Fatalf("LicenseData expired on: %s", res.End.String())
 	} else {
 		fmt.Printf(`Licensed to %s until %s \n, with limits: %v`, res.Email, res.End.Format("2006-01-02"), res.Limits)
 	}

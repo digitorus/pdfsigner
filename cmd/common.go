@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/license"
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/spf13/cobra"
 )
 

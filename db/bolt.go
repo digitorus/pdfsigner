@@ -1,14 +1,16 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path"
 	"strings"
+	"time"
 
-	"bitbucket.org/digitorus/pdfsigner/utils"
-	"github.com/coreos/bbolt"
+	"github.com/digitorus/pdfsigner/utils"
 	"github.com/pkg/errors"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
@@ -16,10 +18,6 @@ var (
 )
 
 func init() {
-	// set path for bolt folder
-	var err error
-	var currentFolder string
-
 	// get path to executable file
 	runFileFolder, err := utils.GetRunFileFolder()
 	if err != nil {
@@ -27,16 +25,17 @@ func init() {
 	}
 
 	// determine path to use for the db
+	dbFileName := "pdfsigner.db"
 	if utils.IsTestEnvironment() || strings.Contains(runFileFolder+"/", os.TempDir()) {
-		currentFolder = path.Join(utils.GetGoPath(), "/src/bitbucket.org/digitorus/pdfsigner")
+		dbFileName = path.Join(runFileFolder, fmt.Sprintf("tmp-%d-%s", time.Now().UnixNano(), dbFileName))
 	} else {
-		currentFolder = runFileFolder
+		dbFileName = path.Join(runFileFolder, dbFileName)
 	}
 
 	opts := bolt.DefaultOptions
 	opts.Timeout = 5
 
-	DB, err = bolt.Open(path.Join(currentFolder, "pdfsigner.db"), 0600, opts)
+	DB, err = bolt.Open(dbFileName, 0600, opts)
 	if err != nil {
 		if err.Error() == "timeout" {
 			log.Fatal(errors.New("Another PDFSigner process is running..."))

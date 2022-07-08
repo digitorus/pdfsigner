@@ -6,8 +6,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/queues/queue"
-	"bitbucket.org/digitorus/pdfsigner/version"
+	"github.com/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsigner/version"
 	"github.com/gorilla/mux"
 )
 

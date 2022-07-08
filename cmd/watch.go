@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"bitbucket.org/digitorus/pdfsigner/files"
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsigner/files"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/signer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

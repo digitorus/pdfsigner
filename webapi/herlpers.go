@@ -10,7 +10,7 @@ import (
 	"net/http/httputil"
 	"path"
 
-	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/queues/priority_queue"
 )
 
 // savePDFToTemp saves pdf files to temporary folder

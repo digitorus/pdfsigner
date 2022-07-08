@@ -19,8 +19,3 @@ func GetRunFileFolder() (string, error) {
 func IsTestEnvironment() bool {
 	return strings.HasSuffix(os.Args[0], ".test")
 }
-
-// GetGoPath returns GOPATH environment variable
-func GetGoPath() string {
-	return os.Getenv("GOPATH")
-}

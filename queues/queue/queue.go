@@ -7,14 +7,14 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"bitbucket.org/digitorus/pdfsigner/db"
+	"github.com/digitorus/pdfsigner/db"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsign/verify"
-	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
-	"bitbucket.org/digitorus/pdfsigner/signer"
+	"github.com/digitorus/pdfsign/verify"
+	"github.com/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/signer"
 )
 
 var (

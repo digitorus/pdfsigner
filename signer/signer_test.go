@@ -6,17 +6,19 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsign/sign"
-	"bitbucket.org/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsign/sign"
+	"github.com/digitorus/pdfsigner/license"
 )
 
 func TestSigner(t *testing.T) {
 	logrus.SetOutput(ioutil.Discard)
 
-	err := license.Load()
+	// test initialize
+	err := license.Initialize([]byte(license.TestLicense))
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// create signer
 	signData := SignData{
 		Signature: sign.SignDataSignature{

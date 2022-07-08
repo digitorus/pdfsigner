@@ -3,13 +3,13 @@ package cmd
 import (
 	"sync"
 
-	"bitbucket.org/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsigner/queues/queue"
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/files"
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pdfsigner/queues/priority_queue"
-	"bitbucket.org/digitorus/pdfsigner/webapi"
+	"github.com/digitorus/pdfsigner/files"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/webapi"
 	"github.com/spf13/cobra"
 )
 

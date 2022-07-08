@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"bitbucket.org/digitorus/pdfsigner/version"
+	"github.com/digitorus/pdfsigner/version"
 	"github.com/spf13/cobra"
 )
 

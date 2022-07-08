@@ -8,12 +8,15 @@ import (
 	"github.com/denisbrodbeck/machineid"
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/db"
-	"bitbucket.org/digitorus/pdfsigner/license/ratelimiter"
+	"github.com/digitorus/pdfsigner/db"
+	"github.com/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/gtank/cryptopasta"
 	"github.com/hyperboloide/lk"
 	"github.com/pkg/errors"
 )
+
+// TestLicense used in unit tests
+const TestLicense = "LP+HAwEBB0xpY2Vuc2UB/4gAAQMBBERhdGEBCgABAVIB/4QAAQFTAf+EAAAACv+DBQEC/4YAAAD+AV3/iAH/8XsibiI6Ik5hbWUiLCJlIjoidGVzdEBleGFtcGxlLmNvbSIsImVuZCI6IjIxMjItMDYtMTFUMTM6Mzc6MDUuODg0OTIxMyswMjowMCIsImwiOlt7Im0iOjIsImkiOiIxcyJ9LHsibSI6MTAsImkiOiIxMHMifSx7Im0iOjEwMCwiaSI6IjFtIn0seyJtIjoyMDAwLCJpIjoiMWgifSx7Im0iOjIwMDAwMCwiaSI6IjI0aCJ9LHsibSI6MjAwMDAwMCwiaSI6IjcyMGgifSx7Im0iOjIwMDAwMDAwLCJpIjoiODY0MDAwaCJ9XSwiZCI6Mn0BMQIOpEnubsOkG6SGq8IjqBAtv7uFwY0aZJDLd4+JMA3DZWxQyg5OAavJ8AFQ3nPyORMBMQKsLzLxRDHhFf2wQG5gyaBpuSkIV1okdw06pg3cAAD0pcjaDQNj/+E9VQGc5I3QNckA"
 
 // HMACKeyForLimitsEncryption
 const HMACKeyForLimitsEncryption = "HMACKeyForLimitsEncryption"
@@ -200,6 +203,9 @@ func (ld *LicenseData) SaveLimitState() error {
 	limitStates := ld.RL.GetState()
 	// marshal limit states
 	limitStatesBytes, err := json.Marshal(limitStates)
+	if err != nil {
+		return err
+	}
 	// encrypt limit states
 	limitsStatesCiphered, err := cryptopasta.Encrypt(limitStatesBytes, &ld.cryptoKey)
 	if err != nil {
@@ -279,7 +285,7 @@ func (ld *LicenseData) AutoSave() {
 func (ld *LicenseData) Wait() error {
 	// validate license data
 	if time.Now().After(ld.End) {
-		return errors.Wrap(errors.New(fmt.Sprintf("license is valid until:%v, please update the license", ld.End)), "")
+		return errors.Wrap(errors.New(fmt.Sprintf("license is valid until: %v, please update the license", ld.End)), "")
 	}
 
 	// check if the work is allowed by license limiters, if not wait

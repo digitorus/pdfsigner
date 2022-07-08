@@ -7,14 +7,14 @@ import (
 	"os"
 	"time"
 
-	"bitbucket.org/digitorus/pdf"
-	"bitbucket.org/digitorus/pdfsign/verify"
+	"github.com/digitorus/pdf"
+	"github.com/digitorus/pdfsign/verify"
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsign/revocation"
-	"bitbucket.org/digitorus/pdfsign/sign"
-	"bitbucket.org/digitorus/pdfsigner/license"
-	"bitbucket.org/digitorus/pkcs11"
+	"github.com/digitorus/pdfsign/revocation"
+	"github.com/digitorus/pdfsign/sign"
+	"github.com/digitorus/pdfsigner/license"
+	"github.com/digitorus/pkcs11"
 	"github.com/pkg/errors"
 )
 

@@ -22,7 +22,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"bitbucket.org/digitorus/pdfsigner/license"
+	"github.com/digitorus/pdfsigner/license"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )

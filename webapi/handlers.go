@@ -9,8 +9,8 @@ import (
 	"os"
 	"strconv"
 
-	"bitbucket.org/digitorus/pdfsign/verify"
-	"bitbucket.org/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsign/verify"
+	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
