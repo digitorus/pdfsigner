@@ -1,4 +1,4 @@
-# PDFSigner is a multi purpose PDF signer and verifier application
+# PDFSigner is a multipurpose PDF signer and verifier application
 
 [![Build & Test](https://github.com/digitorus/pdfsigner/workflows/Build%20&%20Test/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/go.yml)
 [![golangci-lint](https://github.com/digitorus/pdfsigner/workflows/golangci-lint/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml)
@@ -11,7 +11,7 @@ The application is in development, things might not work as expected and functio
 
 ### General
 
-PDFSigner is a multi purpose PDF signer and verifier application written in [Go](https://go.dev) it allows to use it as a command line tool and as a watch and sign tool, it also provides a simple Web API to sign and verify files.
+PDFSigner is a multipurpose PDF signer and verifier application written in [Go](https://go.dev) it allows to use it as a command line tool and as a watch and sign tool, it also provides a simple Web API to sign and verify files.
 
 ### Documentation
 

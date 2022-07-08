@@ -1,6 +1,6 @@
 # Description
 
-PDFSigner is a multi purpose PDF signer and verifier application it allows to use it as a command line tool and as a watch and sign tool, it also allows to use Web API to sign and verify files and to use multiple services in combination.
+PDFSigner is a multipurpose PDF signer and verifier application it allows to use it as a command line tool and as a watch and sign tool, it also allows to use Web API to sign and verify files and to use multiple services in combination.
 
 ## Before starting
 
