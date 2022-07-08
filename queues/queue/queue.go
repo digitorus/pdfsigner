@@ -446,7 +446,6 @@ func (q *Queue) StartProcessor() {
 
 }
 
-const dbTaskPrefix = "task_"
 const dbJobPrefix = "job_"
 
 func (q *Queue) SaveToDB(jobID string) error {
