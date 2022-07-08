@@ -138,7 +138,7 @@ func preParseConfigFlag() {
 
 // unmarshalSigners assigns signers from the config into the signersConfigArr variable
 func unmarshalSigners() error {
-	for key, _ := range viper.AllSettings() {
+	for key := range viper.AllSettings() {
 		if strings.HasPrefix(key, "signer") {
 			var sc signerConfig
 			if err := viper.UnmarshalKey(key, &sc); err != nil {
@@ -155,7 +155,7 @@ func unmarshalSigners() error {
 
 // unmarshalSigners assigns services from the config into the servicesConfigArr variable
 func unmarshalServices() error {
-	for key, _ := range viper.AllSettings() {
+	for key := range viper.AllSettings() {
 		if strings.HasPrefix(key, "service") {
 			var sc serviceConfig
 			if err := viper.UnmarshalKey(key, &sc); err != nil {
