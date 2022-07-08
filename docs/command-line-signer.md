@@ -57,8 +57,6 @@ specific flags:
 pdfsigner sign pksc11 \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
-  --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
   --location "Location" \
@@ -90,8 +88,6 @@ pdfsigner sign pksc11 \
 
 specific flags:
 
-
-
 Preconfigured signer settings could be overwritten with flags:
 
 ```
@@ -121,8 +117,8 @@ Depending on the type of the signer appropriate flags should be used:
 PEM:
 
 ```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+--key string             Private key path
+--crt string             Certificate path
 
 ```
 
