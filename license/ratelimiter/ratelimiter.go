@@ -47,7 +47,7 @@ func (l *Limit) allow() bool {
 	}
 
 	// check if the work is allowed
-	if time.Now().Sub(l.LastTime) < l.Interval {
+	if time.Since(l.LastTime) < l.Interval {
 		if l.CurCount > 0 {
 			l.CurCount--
 			return true
@@ -69,8 +69,7 @@ func (l *Limit) IsUnlimited() bool {
 
 // Left returns how much time needed to wait until the limiter would allow to run work again
 func (l *Limit) Left() time.Duration {
-	waited := time.Now().Sub(l.LastTime)
-	return l.Interval - waited
+	return l.Interval - time.Since(l.LastTime)
 }
 
 // RateLimiter was inspired by https://github.com/golang/go/wiki/RateLimiting.
