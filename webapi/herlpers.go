@@ -6,8 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"mime/multipart"
-	"net/http"
-	"net/http/httputil"
 	"path"
 
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
@@ -57,10 +55,10 @@ func determinePriority(totalTasks int) priority_queue.Priority {
 }
 
 // dumpRequest dumps request, only for debugging
-func dumpRequest(r *http.Request) {
-	dump, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Printf("%q", dump)
-}
+// func dumpRequest(r *http.Request) {
+// 	dump, err := httputil.DumpRequest(r, true)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	fmt.Printf("%q", dump)
+// }
