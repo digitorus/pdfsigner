@@ -276,7 +276,7 @@ func (ld LicenseData) loadLimitState() error {
 func (ld *LicenseData) AutoSave() {
 	go func(ld *LicenseData) {
 		time.Sleep(1 * time.Second)
-		ld.SaveLimitState()
+		_ = ld.SaveLimitState()
 	}(ld)
 }
 
