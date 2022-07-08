@@ -17,3 +17,8 @@ PDFSigner is a multipurpose PDF signer and verifier application written in [Go](
 
 Complete documentation is inside the [docs](./dcos/) folder.
 
+### License
+
+This application is dual licensed as [GNU](LICENSE.md) / Commercial software.
+
+For commercial licensing, contact us at https://digitorus.com.
