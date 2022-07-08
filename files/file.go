@@ -1,8 +1,6 @@
 package files
 
 import (
-	"io"
-	"io/ioutil"
 	"path"
 	"path/filepath"
 	"strings"
@@ -13,19 +11,19 @@ import (
 	"github.com/digitorus/pdfsigner/signer"
 )
 
-func storeTempFile(file io.Reader) (string, error) {
-	// TODO: Should we encrypt temporary files?
-	tmpFile, err := ioutil.TempFile("", "pdf")
-	if err != nil {
-		return "", err
-	}
+// func storeTempFile(file io.Reader) (string, error) {
+// 	// TODO: Should we encrypt temporary files?
+// 	tmpFile, err := ioutil.TempFile("", "pdf")
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	_, err = io.Copy(tmpFile, file)
-	if err != nil {
-		return "", err
-	}
-	return tmpFile.Name(), nil
-}
+// 	_, err = io.Copy(tmpFile, file)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return tmpFile.Name(), nil
+// }
 
 // findFilesByPatterns finds all files matched the patterns
 func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
@@ -61,5 +59,8 @@ func SignFilesByPatterns(filePatterns []string, signData signer.SignData, valida
 		}
 	}
 
-	license.LD.SaveLimitState()
+	err = license.LD.SaveLimitState()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
