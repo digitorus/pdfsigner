@@ -18,9 +18,7 @@ func loggerMiddleware(next handler) handler {
 		}).Info()
 
 		// run next handler
-		next(w, r)
-
-		return nil
+		return next(w, r)
 	}
 }
 
@@ -30,7 +28,7 @@ func errorHandler(next handler) handler {
 		// log error if panic
 		defer func() {
 			if r := recover(); r != nil {
-				httpError(w, errors.New("unhandled"), http.StatusInternalServerError)
+				_ = httpError(w, errors.New("unhandled"), http.StatusInternalServerError)
 				log.Print(debug.Stack())
 			}
 		}()
