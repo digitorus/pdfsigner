@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/digitorus/pdfsigner/db"
@@ -30,11 +31,9 @@ var (
 
 // Queue represents sign queue
 type Queue struct {
-	// units represent all the units by name of the signer
-	units map[string]*unit
-	// jobs represents jobs by id of the job
-	jobs map[string]*Job
-	// db represents database container which used to save jobs
+	units map[string]*unit // units represent all the units by name of the signer
+	jobs  map[string]*Job  // jobs represents jobs by id of the job
+	mu    sync.RWMutex
 }
 
 // unit represents queue unit which could be a signer or verifier
@@ -130,9 +129,12 @@ func NewQueue() *Queue {
 // addUnit adds unit to units map
 func (q *Queue) addUnit(unitName string) *unit {
 	// skip if already setup
+	q.mu.RLock()
 	if _, exists := q.units[unitName]; exists {
+		q.mu.RUnlock()
 		return nil
 	}
+	q.mu.RUnlock()
 
 	// create signer
 	u := unit{
@@ -141,7 +143,9 @@ func (q *Queue) addUnit(unitName string) *unit {
 	}
 
 	// assign signer to units map
+	q.mu.Lock()
 	q.units[unitName] = &u
+	q.mu.Unlock()
 
 	return &u
 }
@@ -171,7 +175,9 @@ func (q *Queue) addJob() *Job {
 	}
 
 	// add job to the jobs map
+	q.mu.Lock()
 	q.jobs[id] = &j
+	q.mu.Unlock()
 
 	return &j
 }
@@ -196,21 +202,28 @@ func (q *Queue) DeleteJob(jobID string) error {
 		return err
 	}
 
+	q.mu.Lock()
 	delete(q.jobs, jobID)
+	q.mu.Unlock()
 
 	return nil
 }
 
 // AddTask adds task to the specific job by job id
 func (q *Queue) AddTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
+	q.mu.RLock()
+
 	// check if the unit is in the map
 	if _, exists := q.units[unitName]; !exists {
+		q.mu.RUnlock()
 		return "", errors.New("unit is not in map")
 	}
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
+		q.mu.RUnlock()
 		return "", errors.New("job doesn't exists")
 	}
+	q.mu.RUnlock()
 
 	task, err := q.addTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath, priority)
 	if err != nil {
@@ -241,24 +254,30 @@ func (q *Queue) addTask(unitName, jobID, originalFileName, inputFilePath, output
 	}
 
 	//add task to tasks map
+	q.mu.Lock()
 	q.jobs[jobID].TasksMap[t.ID] = t
 
 	//add item to queue
 	q.units[unitName].pq.Push(i)
+	q.mu.Unlock()
 
 	return t, nil
 }
 
 func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[string]string, priority priority_queue.Priority) error {
 	// check if the unit is in the map
+	q.mu.RLock()
 	if _, exists := q.units[unitName]; !exists {
+		q.mu.RUnlock()
 		return errors.New("unit is not in map")
 	}
 	// check if the job is in the map
 	_, exists := q.jobs[jobID]
 	if !exists {
+		q.mu.RUnlock()
 		return errors.New("job doesn't exists")
 	}
+	q.mu.RUnlock()
 
 	for tempFileName, originalFileName := range fileNames {
 		_, err := q.addTask(unitName, jobID, originalFileName, tempFileName, tempFileName+"_signed", priority)
@@ -278,22 +297,29 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[st
 // processNextTask signs task available for signing
 func (q *Queue) processNextTask(unitName string) error {
 	// check if the unit exists
+	q.mu.RLock()
 	unit, exists := q.units[unitName]
 	if !exists {
+		q.mu.RUnlock()
 		return errors.New("signer is not in map")
 	}
 
 	// get queue
 	queue := q.units[unitName]
+	q.mu.RUnlock()
+
 	// get item
 	item := queue.pq.Pop()
 	task := item.Value.(Task)
 
 	// get job
+	q.mu.RLock()
 	job, exists := q.jobs[task.JobID]
 	if !exists {
+		q.mu.RUnlock()
 		return errors.New("signer is not in map")
 	}
+	q.mu.RUnlock()
 
 	// process verify or sign task
 	var err error
@@ -318,10 +344,12 @@ func (q *Queue) processNextTask(unitName string) error {
 	}
 
 	// update tasks map
+	q.mu.Lock()
 	job.TasksMap[task.ID] = task
 
 	// increment total processed tasks
 	atomic.AddUint32(&job.TotalProcesedTasks, 1)
+	q.mu.Unlock()
 
 	if len(job.TasksMap) == int(job.TotalProcesedTasks) {
 		err := q.SaveToDB(job.ID)
@@ -334,6 +362,9 @@ func (q *Queue) processNextTask(unitName string) error {
 }
 
 func (q *Queue) GetJobByID(jobID string) (Job, error) {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
 		return Job{}, errors.New("job doesn't exists")
@@ -344,6 +375,9 @@ func (q *Queue) GetJobByID(jobID string) (Job, error) {
 
 // GetCompletedTask returns the file path if the task is completed
 func (q *Queue) GetCompletedTask(jobID, taskID string) (Task, error) {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	var task Task
 
 	// check if the job is in the map
@@ -372,6 +406,9 @@ func (q *Queue) GetCompletedTask(jobID, taskID string) (Task, error) {
 
 // GetQueueSizeByUnitName returns lengths of the channels of all the priorities for the specific signer.
 func (q *Queue) GetQueueSizeByUnitName(signerName string) (priority_queue.LenAll, error) {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	// check if the signer is in the map
 	if _, exists := q.units[signerName]; !exists {
 		return priority_queue.LenAll{}, errors.New("signer is not in map")
@@ -449,6 +486,9 @@ func (q *Queue) StartProcessor() {
 const dbJobPrefix = "job_"
 
 func (q *Queue) SaveToDB(jobID string) error {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	// check if the job is in the map
 	job, exists := q.jobs[jobID]
 	if !exists {
@@ -487,13 +527,18 @@ func (q *Queue) LoadFromDB() error {
 			return errors.Wrap(err, "unmarshal job")
 		}
 
+		q.mu.Lock()
 		q.jobs[job.ID] = &job
+		q.mu.Unlock()
 	}
 
 	return nil
 }
 
 func (q *Queue) DeleteFromDB(jobID string) error {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+
 	// check if the job is in the map
 	_, exists := q.jobs[jobID]
 	if !exists {
