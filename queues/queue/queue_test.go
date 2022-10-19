@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/digitorus/pdfsign/sign"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestQSignersMap(t *testing.T) {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	err := license.Initialize([]byte(license.TestLicense))
 	if err != nil {

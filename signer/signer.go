@@ -3,7 +3,6 @@ package signer
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -24,7 +23,7 @@ type SignData sign.SignData
 // SetPEM sets specific to PEM settings
 func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	// Set certificate
-	certificate_data, err := ioutil.ReadFile(crtPath)
+	certificate_data, err := os.ReadFile(crtPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +38,7 @@ func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	s.Certificate = cert
 
 	// Set key
-	key_data, err := ioutil.ReadFile(keyPath)
+	key_data, err := os.ReadFile(keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -104,7 +103,7 @@ func (s *SignData) SetCertificateChains(crtChainPath string) {
 		return
 	}
 
-	chain_data, err := ioutil.ReadFile(crtChainPath)
+	chain_data, err := os.ReadFile(crtChainPath)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,7 +3,6 @@ package webapi
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -88,7 +87,7 @@ func parseFields(p *multipart.Part, f *fields) error {
 	switch p.FormName() {
 	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
 		//parse params
-		slurp, err := ioutil.ReadAll(p)
+		slurp, err := io.ReadAll(p)
 		if err != nil {
 			return nil
 		}

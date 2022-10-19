@@ -13,7 +13,7 @@ import (
 
 // func storeTempFile(file io.Reader) (string, error) {
 // 	// TODO: Should we encrypt temporary files?
-// 	tmpFile, err := ioutil.TempFile("", "pdf")
+// 	tmpFile, err := os.CreateTemp("", "pdf")
 // 	if err != nil {
 // 		return "", err
 // 	}

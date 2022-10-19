@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
+	"os"
 	"path"
 
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
@@ -22,7 +22,7 @@ func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 
 	// parse pdf
 	if ext == ".pdf" {
-		f, err := ioutil.TempFile("", "pdfsigner_cache")
+		f, err := os.CreateTemp("", "pdfsigner_cache")
 		if err != nil {
 			return err
 		}

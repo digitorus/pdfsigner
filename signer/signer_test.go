@@ -1,7 +1,7 @@
 package signer
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -11,7 +11,7 @@ import (
 )
 
 func TestSigner(t *testing.T) {
-	logrus.SetOutput(ioutil.Discard)
+	logrus.SetOutput(io.Discard)
 
 	// test initialize
 	err := license.Initialize([]byte(license.TestLicense))

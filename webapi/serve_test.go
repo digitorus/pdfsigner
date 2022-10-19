@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -43,7 +42,7 @@ func TestMain(m *testing.M) {
 
 // runTest initializes the environment
 func runTest(m *testing.M) int {
-	log.SetOutput(ioutil.Discard)
+	log.SetOutput(io.Discard)
 
 	err := license.Initialize([]byte(license.TestLicense))
 	if err != nil {
