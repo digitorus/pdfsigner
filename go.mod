@@ -8,7 +8,7 @@ require (
 	github.com/digitorus/pdfsign v0.0.0-20220715153233-d3f4c7735954
 	github.com/digitorus/pkcs11 v0.0.0-20220708123826-82d5d203495a
 	github.com/fsnotify/fsnotify v1.6.0
-	github.com/go-test/deep v1.0.8
+	github.com/go-test/deep v1.1.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69
