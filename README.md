@@ -15,7 +15,7 @@ PDFSigner is a multipurpose PDF signer and verifier application written in [Go](
 
 ### Documentation
 
-Complete documentation is inside the [docs](./dcos/) folder.
+Complete documentation is inside the [docs](./docs/) folder.
 
 ### License
 
