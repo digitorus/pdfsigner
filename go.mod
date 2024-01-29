@@ -9,7 +9,7 @@ require (
 	github.com/digitorus/pkcs11 v0.0.0-20220708123826-82d5d203495a
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-test/deep v1.1.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gtank/cryptopasta v0.0.0-20170601214702-1f550f6f2f69
 	github.com/hyperboloide/lk v0.0.0-20221004131154-cb9733bc66d0
