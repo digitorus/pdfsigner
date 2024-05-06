@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.1
 	github.com/stretchr/testify v1.8.4
-	go.etcd.io/bbolt v1.3.9
+	go.etcd.io/bbolt v1.3.10
 )
 
 require (
