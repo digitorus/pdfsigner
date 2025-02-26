@@ -155,7 +155,7 @@ func TestSignFlow(t *testing.T) {
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Len(t, w.Body.Bytes(), 20651)
+		assert.Len(t, w.Body.Bytes(), 20405)
 
 		completedTasks += 1
 	}
