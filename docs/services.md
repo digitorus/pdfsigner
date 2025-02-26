@@ -1,32 +1,40 @@
-# Services
+# (Multiple) Services Mode
 
-Services command allows to run multiple watch and Web API services
+The services mode allows running multiple PDFSigner operations concurrently, combining watch folders and API endpoints in a single process.
 
-Command - `pdfsigner services` 
+## Usage
 
-services specific flags:
+Basic command: `pdfsigner services`
 
+Required configuration:
+
+```sh
+--config path/to/config/file
 ```
---config path/to/config/file 
-```
 
-### Run all the services from the config file
+### Examples
 
-```
+Run all configured services:
+
+```sh
 pdfsigner services
 ```
 
-### Run specific services from the config
+Run specific services:
 
-[More information about config file](configuration.md)
-
-
-```
+```sh
 pdfsigner services service1 service2
 ```
 
-#### Override config settings with CLI
+## Configuration
 
-It's possible to override signers and services settings provided with the config using CLI. 
+Services are defined in the configuration file. 
+
+Each service can be:
+- Watch folder monitor
+- Web API endpoint
+- Combination of both
+
+[See configuration documentation](configuration.md) for detailed setup instructions.
 
 

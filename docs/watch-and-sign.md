@@ -6,9 +6,9 @@ Command: `pdfsigner watch`
 
 specific flags: 
 
-```
---in string              Input path
---out string             Output path
+```sh
+--in string              # Input path
+--out string             # Output path
 ```
 
 
@@ -19,15 +19,15 @@ specific flags:
 PEM specific flags: 
 
 
-```
---key string             Private key path
---crt string             Certificate path
+```sh
+--key string             # Private key path
+--crt string             # Certificate path
 
 ```
 
 ### Example
 
-```
+```sh
 pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/files pem \
   --crt path/to/certificate \
   --key path/to/private/key \
@@ -51,15 +51,15 @@ pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/fi
 
 PKSC11 specific flags:
 
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 
 ```
 
 ### Example
 
-```
+```sh
 pdfsigner watch pksc11 \
   --in path/to/folder/to/watch \
   --out path/to/folder/with/signed/files \
@@ -88,15 +88,15 @@ pdfsigner watch pksc11 \
 
 specific flags:
 
-```
---config string          Path to config file
---signer-name string     Signer name
+```sh
+--config string          # Path to config file
+--signer-name string     # Signer name
 ```
 
 
 ### Example
 
-```
+```sh
 pdfsigner watch signer \
 --config path/to/config/file \
 --signer-name signerNameFromTheConfig \
@@ -104,7 +104,7 @@ pdfsigner watch signer \
 
 Preconfigured signer settings could be overwritten with flags:
 
-```
+```sh
 pdfsigner watch signer \
   --config path/to/config/file \
   --signer-name "name-of-the-signer" \
@@ -122,26 +122,26 @@ pdfsigner watch signer \
   --tsa-url "http://timestamp-authority.org" \
   --tsa-username "timestamp-authority-username" \
   --tsa-password "timestamp-authority-password" \
-  --type 1\
+  --type 1 \
   --docmdp 1 \
   --validate-signature true
 ```
 
 Depending on the type of the signer appropriate flags should be used:
 
-PEM:
+**PEM:**
+
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 
 ```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
 
-```
+**PKSC11**
 
-PKSC11
-
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 ```
 
 

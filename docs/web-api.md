@@ -30,7 +30,11 @@ The request should contain a `signer` field which defines which signer to use an
 The Web API is setup with default signature information which could be overwritten using folowing fields: 
 
 - `approval` - defines if the signature is approval or not, allowed values `true` and `false`
-- `certType` - defines cert type???
+- `certType` - defines certificate type. Allowed values are:
+  - `1` - Approval signature
+  - `2` - Certification signature (requires docmdp setting)
+  - `3` - Usage Rights signature
+  - `4` - TimeStamp signature
 - `name` - name of the person creating signature
 - `location` - location of the person creating signature
 - `reason` - reason why the signature is created for
@@ -169,7 +173,7 @@ PEM specific flags:
 
 #### Example
 
-```
+```sh
 pdfsigner serve pem \
   --serve-address "127.0.0.1"\
   --serve-port "8080"\
@@ -204,7 +208,7 @@ PKSC11 specific flags:
 
 #### Example
 
-```
+```sh
 pdfsigner serve pksc11 \
   --serve-address "127.0.0.1"\
   --serve-port "8080"\
@@ -233,14 +237,14 @@ pdfsigner serve pksc11 \
 
 specific flags:
 
-```
+```sh
 --config path/to/config/file 
 --signer-name "name-of-the-signer-from-the-config-file"
 ```
 
 #### Example
 
-```
+```sh
 pdfsigner serve signer \
   --signer-name signerNameFromTheConfig   
   --serve-address "127.0.0.1"\
@@ -249,7 +253,7 @@ pdfsigner serve signer \
 
 Preconfigured signer settings could be overwritten with flags:
 
-```
+```sh
 pdfsigner serve signer --signer-name "name-of-the-signer" \
   --signer-name signerNameFromTheConfig   
   --serve-address "127.0.0.1"\
@@ -277,17 +281,17 @@ Depending on the type of the signer appropriate flags should be used:
 
 PEM:
 
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 
 ```
 
 PKSC11
 
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 
 ```
 
@@ -302,7 +306,7 @@ Multiple preconfigured signers
 
 #### Example
 
-```
+```sh
 pdfsigner serve multiple-signers signer1 signer2 signer3 \
   --serve-address "127.0.0.1"\
   --serve-port "8080"

@@ -11,16 +11,15 @@ Command - `pdfsigner sign`
 
 specific flags: 
 
-
-```
---key string             Private key path
---crt string             Certificate path
+```sh
+--key string             # Private key path
+--crt string             # Certificate path
 
 ```
 
 ### Example
 
-```
+```sh
 pdfsigner sign pem \
   --crt path/to/certificate \
   --key path/to/private/key \
@@ -45,15 +44,15 @@ pdfsigner sign pem \
 
 specific flags:
 
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 
 ```
 
 ### Example
 
-```
+```sh
 pdfsigner sign pksc11 \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
@@ -77,20 +76,22 @@ pdfsigner sign pksc11 \
 
 `pdfsigner sign signer`
 
-```
---config string          Path to config file
---signer-name string     Signer name
+```sh
+--config string          # Path to config file
+--signer-name string     # Signer name
 ```
 
 ### Example
 
-`pdfsigner sign signer --config path/to/config/file --signer-name signerNameFromTheConfig path/to/file.pdf`
+```sh
+pdfsigner sign signer --config path/to/config/file --signer-name signerNameFromTheConfig path/to/file.pdf
+```
 
 specific flags:
 
 Preconfigured signer settings could be overwritten with flags:
 
-```
+```sh
 pdfsigner sign signer --config path/to/config/file --signer-name "name-of-the-signer" \
   --crt path/to/certificate \
   --key path/to/private/key \
@@ -114,17 +115,17 @@ pdfsigner sign signer --config path/to/config/file --signer-name "name-of-the-si
 
 Depending on the type of the signer appropriate flags should be used:
 
-PEM:
+**PEM:**
+
+```sh
+--key string             # Private key path
+--crt string             # Certificate path
 
 ```
---key string             Private key path
---crt string             Certificate path
 
-```
+**PKSC11**
 
-PKSC11
-
-```
---lib string             Path to PKCS11 library
---pass string            PKCS11 password
+```sh
+--lib string             # Path to PKCS11 library
+--pass string            # PKCS11 password
 ```

@@ -6,6 +6,6 @@ Command - `pdfsigner verify`
 
 ### Example
 
-```
+```sh
 pdfsigner verify path/to/file.pdf path/to/file2.pdf
 ```

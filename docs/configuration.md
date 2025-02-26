@@ -36,15 +36,21 @@ PKSC11 specifc settings:
 `pass` - password
 
 signature settings are provided inside `signData.signature` section
-`certType` - defines certificate type. Allowed values are: 
+`certType` - defines certificate type. Allowed values:
   - `1` - Approval signature
-  - `2` - Certification signature. Certification signature required to provide the `docmdp` setting as well.  
-  - `3` - UsageRightsSignature.
-  - `4` - TimeStampSignature.
-`docmdp` - defines the certification signature type. Allowd values are:
-  - `1` - Do not allow any changes
-  - `2` - Allow filling in existing form fields and signatures
-  - `3` - Allow filling in existing form fields and signatures and annotation creation, deletion, and modification. 
+  - `2` - Certification signature (requires docmdp)
+  - `3` - Usage Rights signature 
+  - `4` - TimeStamp signature
+
+`docmdp` - defines certification signature restrictions:
+  - `1` - No changes allowed
+  - `2` - Allow form filling and signatures
+  - `3` - Allow form filling, signatures and annotations
+
+TSA settings (optional):
+`tsaUrl` - URL of Time Stamping Authority
+`tsaUsername` - TSA authentication username
+`tsaPassword` - TSA authentication password
 
 signature information settings are provided inside `signData.signature.info` section
 `name` - name of the person creating signature

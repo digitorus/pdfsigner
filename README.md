@@ -1,4 +1,6 @@
-# PDFSigner is a multipurpose PDF signer and verifier application
+# PDFSigner
+
+A comprehensive PDF digital signature solution that supports multiple signing methods, automated workflows, and API integration.
 
 [![Build & Test](https://github.com/digitorus/pdfsigner/workflows/Build%20&%20Test/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/go.yml)
 [![golangci-lint](https://github.com/digitorus/pdfsigner/workflows/golangci-lint/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml)
@@ -7,18 +9,34 @@
 [![Coverage Status](https://codecov.io/gh/digitorus/pdfsigner/branch/master/graph/badge.svg)](https://codecov.io/gh/digitorus/pdfsigner)
 [![Go Reference](https://pkg.go.dev/badge/github.com/digitorus/pdfsigner.svg)](https://pkg.go.dev/github.com/digitorus/pdfsigner)
 
-The application is in development, things might not work as expected and functionalities of APIs might change, bug reports, contributions and suggestions are welcome.
+## Overview
 
-### General
+PDFSigner is a robust application written in Go that provides:
 
-PDFSigner is a multipurpose PDF signer and verifier application written in [Go](https://go.dev) it allows to use it as a command line tool and as a watch and sign tool, it also provides a simple Web API to sign and verify files.
+- Digital signature creation and verification for PDF documents
+- Multiple signing methods (PEM, PKCS#11) 
+- Automated folder watching for batch processing
+- RESTful API for remote operations
+- Multiple concurrent signing services
+- Configurable signature workflows
 
-### Documentation
+## Quick Start
 
-Complete documentation is inside the [docs](./docs/) folder.
+1. [Install the license](docs/license.md)
+2. Choose your preferred signing method:
+   - [Command line tool](docs/command-line-signer.md)
+   - [Watch folder automation](docs/watch-and-sign.md)
+   - [Web API integration](docs/web-api.md)
 
-### License
+## Documentation
 
-This application is dual licensed as [GNU](LICENSE.md) / Commercial software.
+Full documentation covering all features is available in the [docs](./docs/) directory.
 
-For commercial licensing, contact us at https://digitorus.com.
+## Development Status
+
+This project is under active development. While core functionality is stable, APIs and features may evolve. We welcome bug reports, contributions and suggestions.
+
+## License
+
+Dual licensed under [GNU](LICENSE.md) and Commercial licenses.
+For commercial licensing, please contact us at https://digitorus.com.
