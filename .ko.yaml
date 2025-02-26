@@ -1,0 +1,9 @@
+builds:
+- id: pdfsigner
+  env:
+  - CGO_ENABLED=1
+  ldflags:
+    - -X main.BuildDate={{ .Date }}
+    - -X main.Version={{ .Git.ShortCommit }}
+    - -X main.GitCommit={{ .Git.FullCommit }}
+    - -X main.GitBranch={{ .Git.Branch }}
