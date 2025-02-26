@@ -3,13 +3,12 @@ package cmd
 import (
 	"os"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsign/verify"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// verifyCmd represents the verify command
+// verifyCmd represents the verify command.
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Verify PDF signature",

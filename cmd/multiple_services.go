@@ -3,17 +3,16 @@ package cmd
 import (
 	"sync"
 
-	"github.com/digitorus/pdfsigner/queues/queue"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/files"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/digitorus/pdfsigner/webapi"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// multiCmd represents the multi command
+// multiCmd represents the multi command.
 var multiCmd = &cobra.Command{
 	Use:   "services",
 	Short: "Run multiple services using the config file",
@@ -81,7 +80,7 @@ func setupServiceWithSigners(serviceConf serviceConfig, wg *sync.WaitGroup) {
 // directoryWatchersCount used to count the amount of directories watched. Required for license limits.
 var directoryWatchersCount int
 
-// setupSigners depending on the service type, watch or serve, setups the signer or signers
+// setupSigners depending on the service type, watch or serve, setups the signer or signers.
 func setupSigners(serviceType, configSignerName string, configSignerNames []string) {
 	switch serviceType {
 	case "watch":
@@ -98,6 +97,7 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 		// setup signer
 		if configSignerName != "" {
 			setupSigner(configSignerName)
+
 			return
 		}
 	case "serve":
@@ -137,7 +137,7 @@ func setupSigner(signerName string) {
 	signVerifyQueue.AddSignUnit(signerName, config.SignData)
 }
 
-// setupService depending on the type of the service setups service
+// setupService depending on the type of the service setups service.
 func setupService(service serviceConfig) {
 	if service.Type == "watch" {
 		setupWatch(service)
@@ -150,7 +150,6 @@ func setupService(service serviceConfig) {
 // setupWatch setups watcher which watches the input folder and adds the tasks to the queue.
 func setupWatch(service serviceConfig) {
 	files.Watch(service.In, func(inputFilePath string, left int) {
-
 		// make signed file path
 		signedFilePath := getOutputFilePathByInputFilePath(inputFilePath, service.Out)
 
@@ -166,11 +165,10 @@ func setupWatch(service serviceConfig) {
 			_ = signVerifyQueue.SaveToDB(jobID)
 		}
 	})
-
 	// batch save to the db
 }
 
-// setupServe runs the web api according to the config settings
+// setupServe runs the web api according to the config settings.
 func setupServe(service serviceConfig) {
 	// serve but only use allowed signers
 	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signVerifyQueue, service.Signers, ver, service.ValidateSignature)

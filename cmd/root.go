@@ -8,15 +8,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// configFilePathFlag contains path to config file
+// configFilePathFlag contains path to config file.
 var configFilePathFlag string
 
-// licenseStrConfOrFlag contains path to license file
+// licenseStrConfOrFlag contains path to license file.
 var licenseStrConfOrFlag string
 
 var ver version.Version
 
-// RootCmd represents the base command when called without any subcommands
+// RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
 	Use:   "pdfsigner",
 	Short: "PDFSigner is a multi purpose PDF signer and verifier",
@@ -46,7 +46,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-	//RootCmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "")
+	// RootCmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

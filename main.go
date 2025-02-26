@@ -6,13 +6,13 @@ import (
 )
 
 var (
-	// Version of the application set at build time
+	// Version of the application set at build time.
 	Version = "undefined"
-	// BuildDate of the application set at build time
+	// BuildDate of the application set at build time.
 	BuildDate string
-	// GitCommit of the application set at build time
+	// GitCommit of the application set at build time.
 	GitCommit string
-	// GitBranch of the application set at build time
+	// GitBranch of the application set at build time.
 	GitBranch string
 )
 
@@ -27,7 +27,7 @@ func main() {
 }
 
 //
-//func main() {
+// func main() {
 //	// if no flags provided print usage
 //	if len(os.Args) == 1 {
 //		//usage()
@@ -51,7 +51,7 @@ func main() {
 //
 //}
 //
-//func signCmd() {
+// func signCmd() {
 //	signCommand := flag.NewFlagSet("sign", flag.ExitOnError)
 //	switch os.Args[2] {
 //	case "pksc11":
@@ -68,7 +68,7 @@ func main() {
 //	signCommand.Parse(os.Args[2:])
 //}
 //
-//var (
+// var (
 //	cfgFile               string
 //	signatureApproval     bool
 //	signatureType         uint

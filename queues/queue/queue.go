@@ -8,35 +8,35 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/digitorus/pdfsign/sign"
+	"github.com/digitorus/pdfsign/verify"
 	"github.com/digitorus/pdfsigner/db"
+	"github.com/digitorus/pdfsigner/queues/priority_queue"
+	"github.com/digitorus/pdfsigner/signer"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/digitorus/pdfsign/verify"
-	"github.com/digitorus/pdfsigner/queues/priority_queue"
-	"github.com/digitorus/pdfsigner/signer"
 )
 
 var (
-	// StatusPending represents
+	// StatusPending represents.
 	StatusPending = "Pending"
-	// StatusFailed is a failed status
+	// StatusFailed is a failed status.
 	StatusFailed = "Failed"
-	// StatusCompleted is a completed status
+	// StatusCompleted is a completed status.
 	StatusCompleted = "Completed"
-	// VerificationUnitName represents a task that should not be signed but verified
+	// VerificationUnitName represents a task that should not be signed but verified.
 	VerificationUnitName = "VerificationUnitName"
 )
 
-// Queue represents sign queue
+// Queue represents sign queue.
 type Queue struct {
 	units map[string]*unit // units represent all the units by name of the signer
 	jobs  map[string]*Job  // jobs represents jobs by id of the job
 	mu    sync.RWMutex
 }
 
-// unit represents queue unit which could be a signer or verifier
+// unit represents queue unit which could be a signer or verifier.
 type unit struct {
 	// name represents the name of the signer
 	name string
@@ -48,32 +48,32 @@ type unit struct {
 	signData signer.SignData
 }
 
-// Job represents a job for sign queue, stores tasks and sign data to override units initial sign data
+// Job represents a job for sign queue, stores tasks and sign data to override units initial sign data.
 type Job struct {
 	// ID represents id of the job
 	ID string `json:"id"`
 	// TasksMap represents tasks added to the job
 	TasksMap map[string]Task `json:"task_map"`
 	// totalProcessedTasks represents total processed tasks of the job, incremented atomically
-	TotalProcesedTasks uint32 `json:"total_procesed_tasks"`
+	TotalProcesedTasks uint32 `json:"total_proceeds_tasks"`
 	// JobSignConfig represents additional sign data added by request to override signer initial sign data
 	SignConfig JobSignConfig `json:"sign_data"`
 }
 
 type JobSignConfig struct {
 	// sign data
-	Signer      string `json:"signer"`
-	Name        string `json:"name"`
-	Location    string `json:"location"`
-	Reason      string `json:"reason"`
-	ContactInfo string `json:"contact_info"`
-	CertType    uint   `json:"cert_type"`
-	DocMDPPerms uint   `json:"doc_mdp_perms"`
+	Signer      string          `json:"signer"`
+	Name        string          `json:"name"`
+	Location    string          `json:"location"`
+	Reason      string          `json:"reason"`
+	ContactInfo string          `json:"contact_info"`
+	CertType    sign.CertType   `json:"cert_type"`
+	DocMDPPerms sign.DocMDPPerm `json:"doc_mdp_perms"`
 	// ValidateSignature allows to verify the job after it's being singed
 	ValidateSignature bool `json:"verify_after_sign"`
 }
 
-// Task represents a single unit of work(file)
+// Task represents a single unit of work(file).
 type Task struct {
 	// ID represents id of the task
 	ID string `json:"id"`
@@ -93,8 +93,7 @@ type Task struct {
 	Error string `json:"error,omitempty"`
 }
 
-// GetTasks returns all the completed tasks if status is empty string,
-// and only tasks with specific status if status is provided
+// and only tasks with specific status if status is provided.
 func (j *Job) GetTasks(status string) ([]Task, error) {
 	// determine status to search with
 	switch status {
@@ -109,6 +108,7 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 
 	// find tasks by status
 	var tasks []Task
+
 	for _, t := range j.TasksMap {
 		if status == "" || t.Status == status {
 			tasks = append(tasks, t)
@@ -118,7 +118,7 @@ func (j *Job) GetTasks(status string) ([]Task, error) {
 	return tasks, nil
 }
 
-// NewQueue creates new sign queue
+// NewQueue creates new sign queue.
 func NewQueue() *Queue {
 	return &Queue{
 		units: make(map[string]*unit, 1),
@@ -126,12 +126,13 @@ func NewQueue() *Queue {
 	}
 }
 
-// addUnit adds unit to units map
+// addUnit adds unit to units map.
 func (q *Queue) addUnit(unitName string) *unit {
 	// skip if already setup
 	q.mu.RLock()
 	if _, exists := q.units[unitName]; exists {
 		q.mu.RUnlock()
+
 		return nil
 	}
 	q.mu.RUnlock()
@@ -150,7 +151,7 @@ func (q *Queue) addUnit(unitName string) *unit {
 	return &u
 }
 
-// AddSignUnit adds signer unit to units map
+// AddSignUnit adds signer unit to units map.
 func (q *Queue) AddSignUnit(unitName string, signData signer.SignData) {
 	u := q.addUnit(unitName)
 	// set sign data if provided
@@ -158,12 +159,12 @@ func (q *Queue) AddSignUnit(unitName string, signData signer.SignData) {
 	u.isSigningUnit = true
 }
 
-// AddVerifyUnit adds verify unit to units map
+// AddVerifyUnit adds verify unit to units map.
 func (q *Queue) AddVerifyUnit() {
 	q.addUnit(VerificationUnitName)
 }
 
-// addJob adds job to the jobs map
+// addJob adds job to the jobs map.
 func (q *Queue) addJob() *Job {
 	// generate unique id
 	id := generateID()
@@ -182,20 +183,22 @@ func (q *Queue) addJob() *Job {
 	return &j
 }
 
-// AddSignJob adds sign job to the jobs map
+// AddSignJob adds sign job to the jobs map.
 func (q *Queue) AddSignJob(signConfig JobSignConfig) string {
 	j := q.addJob()
 	j.SignConfig = signConfig
+
 	return j.ID
 }
 
-// AddVerifyJob adds sign job to the jobs map
+// AddVerifyJob adds sign job to the jobs map.
 func (q *Queue) AddVerifyJob() string {
 	j := q.addJob()
+
 	return j.ID
 }
 
-// DeleteJob deletes job from the jobs and database
+// DeleteJob deletes job from the jobs and database.
 func (q *Queue) DeleteJob(jobID string) error {
 	err := q.DeleteFromDB(jobID)
 	if err != nil {
@@ -209,18 +212,20 @@ func (q *Queue) DeleteJob(jobID string) error {
 	return nil
 }
 
-// AddTask adds task to the specific job by job id
+// AddTask adds task to the specific job by job id.
 func (q *Queue) AddTask(unitName, jobID, originalFileName, inputFilePath, outputFilePath string, priority priority_queue.Priority) (string, error) {
 	q.mu.RLock()
 
 	// check if the unit is in the map
 	if _, exists := q.units[unitName]; !exists {
 		q.mu.RUnlock()
+
 		return "", errors.New("unit is not in map")
 	}
 	// check if the job is in the map
 	if _, exists := q.jobs[jobID]; !exists {
 		q.mu.RUnlock()
+
 		return "", errors.New("job doesn't exists")
 	}
 	q.mu.RUnlock()
@@ -237,7 +242,7 @@ func (q *Queue) addTask(unitName, jobID, originalFileName, inputFilePath, output
 	// generate unique task id
 	id := generateID()
 
-	//create task
+	// create task
 	t := Task{
 		ID:               id,
 		InputFilePath:    inputFilePath,
@@ -247,17 +252,17 @@ func (q *Queue) addTask(unitName, jobID, originalFileName, inputFilePath, output
 		OriginalFileName: originalFileName,
 	}
 
-	//create queue item
+	// create queue item
 	i := priority_queue.Item{
 		Value:    t,
 		Priority: priority,
 	}
 
-	//add task to tasks map
+	// add task to tasks map
 	q.mu.Lock()
 	q.jobs[jobID].TasksMap[t.ID] = t
 
-	//add item to queue
+	// add item to queue
 	q.units[unitName].pq.Push(i)
 	q.mu.Unlock()
 
@@ -269,12 +274,14 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[st
 	q.mu.RLock()
 	if _, exists := q.units[unitName]; !exists {
 		q.mu.RUnlock()
+
 		return errors.New("unit is not in map")
 	}
 	// check if the job is in the map
 	_, exists := q.jobs[jobID]
 	if !exists {
 		q.mu.RUnlock()
+
 		return errors.New("job doesn't exists")
 	}
 	q.mu.RUnlock()
@@ -294,13 +301,15 @@ func (q *Queue) AddBatchPersistentTasks(unitName, jobID string, fileNames map[st
 	return nil
 }
 
-// processNextTask signs task available for signing
+// processNextTask signs task available for signing.
 func (q *Queue) processNextTask(unitName string) error {
 	// check if the unit exists
 	q.mu.RLock()
+
 	unit, exists := q.units[unitName]
 	if !exists {
 		q.mu.RUnlock()
+
 		return errors.New("signer is not in map")
 	}
 
@@ -314,16 +323,20 @@ func (q *Queue) processNextTask(unitName string) error {
 
 	// get job
 	q.mu.RLock()
+
 	job, exists := q.jobs[task.JobID]
 	if !exists {
 		q.mu.RUnlock()
+
 		return errors.New("signer is not in map")
 	}
 	q.mu.RUnlock()
 
 	// process verify or sign task
 	var err error
+
 	var verifyResp *verify.Response
+
 	if unit.isSigningUnit {
 		// sign task
 		err = signTask(task, job.SignConfig, unit.signData)
@@ -373,7 +386,7 @@ func (q *Queue) GetJobByID(jobID string) (Job, error) {
 	return *q.jobs[jobID], nil
 }
 
-// GetCompletedTask returns the file path if the task is completed
+// GetCompletedTask returns the file path if the task is completed.
 func (q *Queue) GetCompletedTask(jobID, taskID string) (Task, error) {
 	q.mu.RLock()
 	defer q.mu.RUnlock()
@@ -417,7 +430,7 @@ func (q *Queue) GetQueueSizeByUnitName(signerName string) (priority_queue.LenAll
 	return q.units[signerName].pq.LenAll(), nil
 }
 
-// signTask merges job and signer signdata
+// signTask merges job and signer signdata.
 func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.SignData) error {
 	// get signer sign data
 	signData := signer.SignData(signerSignData)
@@ -463,10 +476,11 @@ func verifyTask(task Task) (resp *verify.Response, err error) {
 	if err != nil {
 		return resp, errors.Wrap(err, "verify task")
 	}
+
 	return resp, nil
 }
 
-// StartProcessor starts separate go routine for each signer which signs associated job tasks when they appear
+// StartProcessor starts separate go routine for each signer which signs associated job tasks when they appear.
 func (q *Queue) StartProcessor() {
 	// run separate go routine for each signer
 	for _, s := range q.units {
@@ -480,7 +494,6 @@ func (q *Queue) StartProcessor() {
 			}
 		}(s.name)
 	}
-
 }
 
 const dbJobPrefix = "job_"
@@ -519,9 +532,9 @@ func (q *Queue) LoadFromDB() error {
 
 	// load jobs and tasks
 	for _, dbJob := range dbJobs {
-
 		// load job
 		var job Job
+
 		err := json.Unmarshal(dbJob, &job)
 		if err != nil {
 			return errors.Wrap(err, "unmarshal job")

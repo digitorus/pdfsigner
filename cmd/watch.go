@@ -8,14 +8,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// watchCmd represents the watch command
+// watchCmd represents the watch command.
 var watchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Watch folder for new files, sign and put to another folder",
 	Long:  `Watch folder for new PDF documents, sign it using PEM or PKSC11 or preconfigured signer`,
 }
 
-// watchPEMCmd watches folders and signs files with PEM using flags only
+// watchPEMCmd watches folders and signs files with PEM using flags only.
 var watchPEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Watch and sign with PEM formatted certificate",
@@ -40,7 +40,7 @@ var watchPEMCmd = &cobra.Command{
 	},
 }
 
-// watchPKSC11Cmd watches folders and signs files with PEM using flags only
+// watchPKSC11Cmd watches folders and signs files with PEM using flags only.
 var watchPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Watch and sign with PSKC11",
@@ -65,7 +65,7 @@ var watchPKSC11Cmd = &cobra.Command{
 	},
 }
 
-// watchBySignerNameCmd wathces folders and signs files using singer from the config with possibility to override it with flags
+// watchBySignerNameCmd wathces folders and signs files using singer from the config with possibility to override it with flags.
 var watchBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
 	Short: "Watch and sign with preconfigured signer",
@@ -95,7 +95,7 @@ var watchBySignerNameCmd = &cobra.Command{
 	},
 }
 
-// startWatch starts watcher
+// startWatch starts watcher.
 func startWatch(signData signer.SignData) {
 	license.LD.AutoSave()
 	files.Watch(inputPathFlag, func(filePath string, left int) {
@@ -123,7 +123,7 @@ func init() {
 	parseInputPathFlag(watchPKSC11Cmd)
 	parsePKSC11CertificateFlags(watchPKSC11Cmd)
 
-	// add watch command with signer signer from config and parse related flags
+	// add watch command with signer from config and parse related flags
 	watchCmd.AddCommand(watchBySignerNameCmd)
 	parseConfigFlag(watchBySignerNameCmd)
 	parseSignerName(watchBySignerNameCmd)
