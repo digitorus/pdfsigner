@@ -11,8 +11,7 @@ import (
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
 )
 
-// savePDFToTemp saves pdf files to temporary folder
-// TODO: check if the encryption is needed
+// TODO: check if the encryption is needed.
 func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 	// return error if the provided file has not supported extension
 	ext := path.Ext(p.FileName())
@@ -32,6 +31,7 @@ func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 		if err != nil {
 			return err
 		}
+
 		if written == 0 {
 			return errors.New("written 0 bytes")
 		}
@@ -42,7 +42,7 @@ func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 	return nil
 }
 
-// determinePriority determines priority based on amount of the tasks needed to process
+// determinePriority determines priority based on amount of the tasks needed to process.
 func determinePriority(totalTasks int) priority_queue.Priority {
 	var priority priority_queue.Priority
 	if totalTasks == 1 {

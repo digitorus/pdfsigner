@@ -20,20 +20,19 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// licenseCmd represents the license command
+// licenseCmd represents the license command.
 var licenseCmd = &cobra.Command{
 	Use:   "license",
 	Short: "Check and update license",
 }
 
-// licenseInfoCmd represents the license info command
+// licenseInfoCmd represents the license info command.
 var licenseSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "license setup",
@@ -49,7 +48,7 @@ var licenseSetupCmd = &cobra.Command{
 	},
 }
 
-// licenseInfoCmd represents the license info command
+// licenseInfoCmd represents the license info command.
 var licenseInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "license info",
@@ -81,7 +80,9 @@ func initializeLicense() error {
 	} else {
 		// get license from the stdout
 		fmt.Fprint(os.Stdout, "Paste your license here:")
+
 		var err error
+
 		licenseStr, err = bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			return errors.Wrap(err, "")

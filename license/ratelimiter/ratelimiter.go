@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-// Limit represents the limit with current state
+// Limit represents the limit with current state.
 type Limit struct {
 	// MaxCount represents maximum number of allowed works
 	MaxCount int `json:"m"`
@@ -31,7 +31,7 @@ type Limit struct {
 	LimitState `json:"-"`
 }
 
-// LimitState represents the state of the limit
+// LimitState represents the state of the limit.
 type LimitState struct {
 	// CurCount represents counter of allowed works
 	CurCount int `json:"c"`
@@ -39,7 +39,7 @@ type LimitState struct {
 	LastTime time.Time `json:"l"`
 }
 
-// allow checks if the work is allowed
+// allow checks if the work is allowed.
 func (l *Limit) allow() bool {
 	// check if the limit is unlimited
 	if l.IsUnlimited() {
@@ -50,6 +50,7 @@ func (l *Limit) allow() bool {
 	if time.Since(l.LastTime) < l.Interval {
 		if l.CurCount > 0 {
 			l.CurCount--
+
 			return true
 		}
 
@@ -59,15 +60,16 @@ func (l *Limit) allow() bool {
 	// initialize if run first time or if the interval is past
 	l.CurCount = l.MaxCount - 1
 	l.LastTime = time.Now()
+
 	return true
 }
 
-// IsUnlimited checks if the interval is unlimited
+// IsUnlimited checks if the interval is unlimited.
 func (l *Limit) IsUnlimited() bool {
 	return l.MaxCount == -1
 }
 
-// Left returns how much time needed to wait until the limiter would allow to run work again
+// Left returns how much time needed to wait until the limiter would allow to run work again.
 func (l *Limit) Left() time.Duration {
 	return l.Interval - time.Since(l.LastTime)
 }
@@ -89,7 +91,7 @@ type RateLimiter struct {
 // and an interval of 100*time.Millilsecond.
 func NewRateLimiter(limits ...*Limit) *RateLimiter {
 	rl := RateLimiter{}
-	//for _, l := range limits {
+	// for _, l := range limits {
 	//	if l.LastTime.IsZero() {
 	//		l.CurCount = l.MaxCount
 	//	}
@@ -114,12 +116,13 @@ func (rl *RateLimiter) Allow() (bool, *Limit) {
 	return true, nil
 }
 
-// GetState returns current state of the limits
+// GetState returns current state of the limits.
 func (rl *RateLimiter) GetState() []LimitState {
 	var limitStates []LimitState
 
 	for _, l := range rl.limits {
 		limitStates = append(limitStates, l.LimitState)
 	}
+
 	return limitStates
 }

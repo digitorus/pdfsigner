@@ -13,9 +13,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var (
-	DB *bolt.DB
-)
+var DB *bolt.DB
 
 func init() {
 	// get path to executable file
@@ -35,10 +33,11 @@ func init() {
 	opts := bolt.DefaultOptions
 	opts.Timeout = 5
 
-	DB, err = bolt.Open(dbFileName, 0600, opts)
+	DB, err = bolt.Open(dbFileName, 0o600, opts)
 	if err != nil {
 		if err.Error() == "timeout" {
 			log.Fatal(errors.New("Another PDFSigner process is running..."))
+
 			return
 		}
 
@@ -54,19 +53,21 @@ func getBucketName(key string) string {
 	return key
 }
 
-// SaveByKey saves value into bolt by key
+// SaveByKey saves value into bolt by key.
 func SaveByKey(key string, value []byte) error {
 	err := DB.Update(func(tx *bolt.Tx) error {
-		//spew.Dump(key, string(value))
+		// spew.Dump(key, string(value))
 		bucketName := getBucketName(key)
+
 		b, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {
 			return err
 		}
+
 		err = b.Put([]byte(key), value)
+
 		return err
 	})
-
 	if err != nil {
 		return errors.Wrap(err, "update by key")
 	}
@@ -74,17 +75,20 @@ func SaveByKey(key string, value []byte) error {
 	return nil
 }
 
-// LoadByKey loads from bolt by key
+// LoadByKey loads from bolt by key.
 func LoadByKey(key string) ([]byte, error) {
 	var result []byte
+
 	err := DB.View(func(tx *bolt.Tx) error {
 		bucketName := getBucketName(key)
+
 		b := tx.Bucket([]byte(bucketName))
 		if b == nil {
 			return nil
 		}
 
 		result = b.Get([]byte(key))
+
 		return nil
 	})
 	if err != nil {
@@ -94,19 +98,21 @@ func LoadByKey(key string) ([]byte, error) {
 	return result, nil
 }
 
-// DeleteByKey deletes value by key
+// DeleteByKey deletes value by key.
 func DeleteByKey(key string) error {
 	err := DB.Update(func(tx *bolt.Tx) error {
 		bucketName := getBucketName(key)
+
 		return tx.Bucket([]byte(bucketName)).Delete([]byte(key))
 	})
 
 	return err
 }
 
-// BatchLoad loads multiple values and returns map
+// BatchLoad loads multiple values and returns map.
 func BatchLoad(prefix string) (map[string][]byte, error) {
-	var result = make(map[string][]byte)
+	result := make(map[string][]byte)
+
 	prefix = getBucketName(prefix)
 
 	err := DB.View(func(tx *bolt.Tx) error {
@@ -114,13 +120,15 @@ func BatchLoad(prefix string) (map[string][]byte, error) {
 		if b == nil {
 			return nil
 		}
+
 		c := b.Cursor()
+
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			result[string(k[:])] = v
+			result[string(k)] = v
 		}
+
 		return nil
 	})
-
 	if err != nil {
 		return result, err
 	}

@@ -1,22 +1,21 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/signer"
 	"github.com/digitorus/pdfsigner/webapi"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// serveCmd represents the serve command
+// serveCmd represents the serve command.
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Run web server to sign and verify files using HTTP protocol",
 	Long:  `Web API allows to sign and verify files by communicating with the application using HTTP protocol`,
 }
 
-// servePEMCmd runs web api with PEM using only flags
+// servePEMCmd runs web api with PEM using only flags.
 var servePEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Serve using PEM signer",
@@ -46,7 +45,7 @@ var servePEMCmd = &cobra.Command{
 	},
 }
 
-// servePKSC11Cmd runs web api with PKSC11 using only flags
+// servePKSC11Cmd runs web api with PKSC11 using only flags.
 var servePKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Serve using PKSC11 signer",
@@ -77,7 +76,7 @@ var servePKSC11Cmd = &cobra.Command{
 	},
 }
 
-// serveWithMultipleSignersCmd runs web api using multiple signers, with NO possibility to override it with flags
+// serveWithMultipleSignersCmd runs web api using multiple signers, with NO possibility to override it with flags.
 var serveWithMultipleSignersCmd = &cobra.Command{
 	Use:   "signers",
 	Short: "Serve with multiple signers from the config",
@@ -113,7 +112,7 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 	},
 }
 
-// startWebAPIWithRunnersUnnamedSigner start the web api
+// startWebAPIWithRunnersUnnamedSigner start the web api.
 func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
 	id := "signer"
 	signVerifyQueue.AddSignUnit(id, signData)
@@ -121,7 +120,7 @@ func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
 	startWebAPIWithProcessor([]string{id})
 }
 
-// startWebAPIWithProcessor
+// startWebAPIWithProcessor.
 func startWebAPIWithProcessor(allowedSigners []string) {
 	wa := webapi.NewWebAPI(getAddrPort(), signVerifyQueue, allowedSigners, ver, validateSignature)
 

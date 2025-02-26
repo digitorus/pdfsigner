@@ -6,32 +6,30 @@ import (
 	"time"
 
 	"github.com/denisbrodbeck/machineid"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/db"
 	"github.com/digitorus/pdfsigner/license/ratelimiter"
 	"github.com/gtank/cryptopasta"
 	"github.com/hyperboloide/lk"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
-// TestLicense used in unit tests
+// TestLicense used in unit tests.
 const TestLicense = "LP+HAwEBB0xpY2Vuc2UB/4gAAQMBBERhdGEBCgABAVIB/4QAAQFTAf+EAAAACv+DBQEC/4YAAAD+AV3/iAH/8XsibiI6Ik5hbWUiLCJlIjoidGVzdEBleGFtcGxlLmNvbSIsImVuZCI6IjIxMjItMDYtMTFUMTM6Mzc6MDUuODg0OTIxMyswMjowMCIsImwiOlt7Im0iOjIsImkiOiIxcyJ9LHsibSI6MTAsImkiOiIxMHMifSx7Im0iOjEwMCwiaSI6IjFtIn0seyJtIjoyMDAwLCJpIjoiMWgifSx7Im0iOjIwMDAwMCwiaSI6IjI0aCJ9LHsibSI6MjAwMDAwMCwiaSI6IjcyMGgifSx7Im0iOjIwMDAwMDAwLCJpIjoiODY0MDAwaCJ9XSwiZCI6Mn0BMQIOpEnubsOkG6SGq8IjqBAtv7uFwY0aZJDLd4+JMA3DZWxQyg5OAavJ8AFQ3nPyORMBMQKsLzLxRDHhFf2wQG5gyaBpuSkIV1okdw06pg3cAAD0pcjaDQNj/+E9VQGc5I3QNckA"
 
-// HMACKeyForLimitsEncryption
+// HMACKeyForLimitsEncryption.
 const HMACKeyForLimitsEncryption = "HMACKeyForLimitsEncryption"
 
-// ErrOverLimit contains error for over limit
+// ErrOverLimit contains error for over limit.
 var ErrOverLimit = errors.New("limit is over")
 
-// TotalLimitDuration is a time duration to be used for total time range in a string representation
-// 864000h is equal to 100 years
+// 864000h is equal to 100 years.
 var TotalLimitDuration = "864000h"
 
-// LD stores all the license related data
+// LD stores all the license related data.
 var LD LicenseData
 
-// LicenseData represents all the license related data
+// LicenseData represents all the license related data.
 type LicenseData struct {
 	// Name represents the name license assigned to
 	Name string `json:"n"`
@@ -53,10 +51,12 @@ type LicenseData struct {
 }
 
 // the public key b64 encoded from the private key using: lkgen pub my_private_key_file`.
-const PublicKeyBase64 = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
-const appNameMachineID = "PDFSigner_unique_key_"
+const (
+	PublicKeyBase64  = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
+	appNameMachineID = "PDFSigner_unique_key_"
+)
 
-// Initialize extracts license from the bytes provided to LD variable and stores it inside the db
+// Initialize extracts license from the bytes provided to LD variable and stores it inside the db.
 func Initialize(licenseBytes []byte) error {
 	log.Info("Initializing license...")
 
@@ -93,7 +93,7 @@ func Initialize(licenseBytes []byte) error {
 	return nil
 }
 
-// Load loads the license from the db and extracts it to LD variable
+// Load loads the license from the db and extracts it to LD variable.
 func Load() error {
 	log.Info("Loading license from the DB...")
 
@@ -151,6 +151,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 		return ld, errors.Wrap(err, "")
 	} else if !ok {
 		err = errors.New("Invalid license signature")
+
 		return ld, errors.Wrap(err, "")
 	}
 
@@ -161,7 +162,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 
 	// Now you just have to check that the end date is after time.Now() then you can continue!
 	if ld.End.Before(time.Now()) {
-		return ld, errors.Wrap(errors.New(fmt.Sprintf("License expired on: %s", ld.End.Format("2006-01-02"))), "")
+		return ld, errors.Wrap(errors.New("License expired on: "+ld.End.Format("2006-01-02")), "")
 	}
 
 	// check limits
@@ -175,6 +176,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 		if err != nil {
 			return ld, errors.Wrap(errors.New("parse interval error"), "")
 		}
+
 		l.Interval = i
 	}
 
@@ -193,7 +195,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	return ld, nil
 }
 
-// SaveLimitState saves the limit state to the db
+// SaveLimitState saves the limit state to the db.
 func (ld *LicenseData) SaveLimitState() error {
 	if !ld.isStateChanged() {
 		return nil
@@ -221,7 +223,7 @@ func (ld *LicenseData) SaveLimitState() error {
 	return nil
 }
 
-// isStateChanged checks if the state is changed since last saving to the db
+// isStateChanged checks if the state is changed since last saving to the db.
 func (ld *LicenseData) isStateChanged() bool {
 	// TODO: check if that correct way to do it
 	if len(ld.lastState) == 0 {
@@ -238,7 +240,7 @@ func (ld *LicenseData) isStateChanged() bool {
 	return false
 }
 
-// loadLimitState loads state from the db
+// loadLimitState loads state from the db.
 func (ld LicenseData) loadLimitState() error {
 	// load limit state from the db
 	limitStatesCiphered, err := db.LoadByKey("license_limits")
@@ -254,6 +256,7 @@ func (ld LicenseData) loadLimitState() error {
 
 	// unmarshal state
 	var limitStates []ratelimiter.LimitState
+
 	err = json.Unmarshal(limitStatesBytes, &limitStates)
 	if err != nil {
 		return err
@@ -265,23 +268,23 @@ func (ld LicenseData) loadLimitState() error {
 	}
 
 	// assign state to the limits
-	for i := 0; i < len(ld.Limits); i++ {
+	for i := range len(ld.Limits) {
 		ld.Limits[i].LimitState = limitStates[i]
 	}
 
 	return nil
 }
 
-// AutoSave saves state every second
+// AutoSave saves state every second.
 func (ld *LicenseData) AutoSave() {
 	go func(ld *LicenseData) {
 		time.Sleep(1 * time.Second)
+
 		_ = ld.SaveLimitState()
 	}(ld)
 }
 
-// Wait validates license end data and limits, if one of the limits are reached,
-// waits the time till the work is allowed again
+// waits the time till the work is allowed again.
 func (ld *LicenseData) Wait() error {
 	// validate license data
 	if time.Now().After(ld.End) {
@@ -306,10 +309,11 @@ func (ld *LicenseData) Wait() error {
 			time.Sleep(limit.Left())
 		}
 	}
+
 	return nil
 }
 
-// Info returns formatted information about the license
+// Info returns formatted information about the license.
 func (ld *LicenseData) Info() string {
 	var res string
 
@@ -338,8 +342,8 @@ func (ld *LicenseData) Info() string {
 		} else {
 			res += "\n"
 		}
-
 	}
+
 	return res
 }
 
@@ -359,14 +363,15 @@ func saveMachineID() error {
 	return nil
 }
 
-// laod and check machine id
+// laod and check machine id.
 func checkMachineID() error {
 	// load machine id from the db
 	savedMachineID, err := db.LoadByKey("license_machineid")
 	if err != nil {
 		return errors.Wrap(err, "couldn't load host info from the db")
 	}
-	savedMachineIDStr := string(savedMachineID[:])
+
+	savedMachineIDStr := string(savedMachineID)
 
 	// get current machine id
 	machineID, err := machineid.ProtectedID(appNameMachineID)
@@ -387,7 +392,7 @@ func checkMachineID() error {
 	return nil
 }
 
-// isTotalLimit checks if the provided limit is a total limit
+// isTotalLimit checks if the provided limit is a total limit.
 func isTotalLimit(limit *ratelimiter.Limit) bool {
 	return limit.IntervalStr == TotalLimitDuration
 }

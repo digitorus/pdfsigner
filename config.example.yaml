@@ -1,0 +1,58 @@
+# Main configuration
+licensePath: ./pdfsigner.lic
+
+# Common signature settings (anchor)
+.signature_defaults: &signature_defaults
+  docMDP: 1
+  certType: 1
+
+# Common signature info (anchor)
+.signature_info_defaults: &signature_info_defaults
+  name: Company Name
+  location: New York
+  reason: Document approval
+  contactInfo: support@example.com
+
+# Services Configuration
+services:
+  # watch_incoming:
+  #   type: watch
+  #   signer: company_cert # Reference to the signer configuration below
+  #   in: ./incoming # Where to look for new PDFs
+  #   out: ./signed # Where to put signed PDFs
+  #   validateSignature: true # Verify signature after signing
+
+  api_endpoint:
+    type: serve
+    signers:
+      - company_cert # List of allowed signers
+    addr: 127.0.0.1 # Listen address
+    port: 3000 # Listen port
+    validateSignature: true
+
+# Signers Configuration
+signers:
+  company_cert:
+    type: pem
+    crtPath: ./testfiles/test.crt
+    keyPath: ./testfiles/test.pem
+    crtChainPath: ./testfiles/test.crt
+    signData:
+      signature:
+        <<: *signature_defaults # Reuse common signature settings
+        info:
+          <<: *signature_info_defaults # Reuse common info settings
+
+  # hardware_token:
+  #   type: pkcs11
+  #   libPath: /usr/lib/softokn3.so
+  #   pass: token_password
+  #   crtChainPath: ./testfiles/test.crt
+  #   signData:
+  #     signature:
+  #       <<: *signature_defaults # Reuse common signature settings
+  #       info:
+  #         name: Hardware Token
+  #         location: Secure Element
+  #         reason: Secure signing
+  #         contactInfo: security@company.com

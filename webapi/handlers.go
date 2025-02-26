@@ -8,18 +8,19 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsign/verify"
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
 
-// handleSignSchedule adds a job to the queue
+// handleSignSchedule adds a job to the queue.
 func (wa *WebAPI) handleSignSchedule(w http.ResponseWriter, r *http.Request) error {
 	return wa.scheduleJob("sign", w, r)
 }
 
-// handleSignSchedule adds a job to the queue
+// handleSignSchedule adds a job to the queue.
 func (wa *WebAPI) handleVerifySchedule(w http.ResponseWriter, r *http.Request) error {
 	return wa.scheduleJob("verify", w, r)
 }
@@ -32,6 +33,7 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 	}
 
 	var f fields
+
 	fileNames := map[string]string{}
 
 	// set default validate signature that could be then overwritten by request validateSignature if provided
@@ -44,17 +46,18 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
 			return httpError(w, errors.Wrap(err, "get multipart"), http.StatusBadRequest)
 		}
 
-		//parse fields
+		// parse fields
 		err = parseFields(p, &f)
 		if err != nil {
 			return httpError(w, errors.Wrap(err, "parse fields"), http.StatusBadRequest)
 		}
 
-		//save pdf file to tmp
+		// save pdf file to tmp
 		err = savePDFToTemp(p, fileNames)
 		if err != nil {
 			return httpError(w, errors.Wrap(err, "save pdf to tmp"), http.StatusBadRequest)
@@ -77,7 +80,7 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 	return respondJSON(w, res, http.StatusCreated)
 }
 
-// fields represents data received with scheduling request
+// fields represents data received with scheduling request.
 type fields struct {
 	unitName   string
 	signConfig queue.JobSignConfig
@@ -86,7 +89,7 @@ type fields struct {
 func parseFields(p *multipart.Part, f *fields) error {
 	switch p.FormName() {
 	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
-		//parse params
+		// parse params
 		slurp, err := io.ReadAll(p)
 		if err != nil {
 			return nil
@@ -111,18 +114,21 @@ func parseFields(p *multipart.Part, f *fields) error {
 			if err != nil {
 				return err
 			}
-			f.signConfig.CertType = uint(i)
+
+			f.signConfig.CertType = sign.CertType(i)
 		case "docMDPPermissions":
 			i, err := strconv.Atoi(str)
 			if err != nil {
 				return err
 			}
-			f.signConfig.DocMDPPerms = uint(i)
+
+			f.signConfig.DocMDPPerms = sign.DocMDPPerm(i)
 		case "validateSignature":
 			b, err := strconv.ParseBool(str)
 			if err != nil {
 				return err
 			}
+
 			f.signConfig.ValidateSignature = b
 		}
 	}
@@ -131,7 +137,6 @@ func parseFields(p *multipart.Part, f *fields) error {
 }
 
 func addJob(jobType string, qs *queue.Queue, f fields, fileNames map[string]string) (string, error) {
-
 	// check if at least one file was provided
 	if len(fileNames) < 1 {
 		return "", errors.New("no files provided")
@@ -140,10 +145,12 @@ func addJob(jobType string, qs *queue.Queue, f fields, fileNames map[string]stri
 	totalTasks := len(fileNames)
 
 	var jobID string
+
 	if jobType == "sign" {
 		if f.unitName == "" {
 			return "", errors.New("signer name was not provided")
 		}
+
 		jobID = qs.AddSignJob(f.signConfig)
 	} else {
 		f.unitName = queue.VerificationUnitName
@@ -171,12 +178,14 @@ func (wa *WebAPI) handleStatus(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	status := r.URL.Query().Get("status")
+
 	tasks, err := j.GetTasks(status)
 	if err != nil {
 		return httpError(w, err, http.StatusBadRequest)
 	}
 
 	var responseTasks []task
+
 	for _, t := range tasks {
 		rt := task{ID: t.ID, Status: t.Status, OriginalFileName: t.OriginalFileName, Error: t.Error}
 		responseTasks = append(responseTasks, rt)
@@ -215,6 +224,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, completedTask.OriginalFileName))
 	w.Header().Set("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
+
 	_, err = io.Copy(w, file)
 	if err != nil {
 		return httpError(w, err, http.StatusInternalServerError)
@@ -223,7 +233,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
-// handleVerifyGetInfo
+// handleVerifyGetInfo.
 func (wa *WebAPI) handleVerifyGetInfo(w http.ResponseWriter, r *http.Request) error {
 	// get vars
 	vars := mux.Vars(r)
@@ -241,16 +251,15 @@ func (wa *WebAPI) handleVerifyGetInfo(w http.ResponseWriter, r *http.Request) er
 		DocumentInfo: completedTask.VerificationData.DocumentInfo,
 		Signers:      completedTask.VerificationData.Signers,
 	}, http.StatusOK)
-
 }
 
-// handleVerifyGetInfoResponse used for handleVerifyGetInfo response
+// handleVerifyGetInfoResponse used for handleVerifyGetInfo response.
 type handleVerifyGetInfoResponse struct {
 	DocumentInfo verify.DocumentInfo `json:"document_info"`
 	Signers      []verify.Signer     `json:"signers"`
 }
 
-// handleSignDelete removes job from the queue
+// handleSignDelete removes job from the queue.
 func (wa *WebAPI) handleDelete(w http.ResponseWriter, r *http.Request) error {
 	// get job
 	vars := mux.Vars(r)
@@ -264,5 +273,6 @@ func (wa *WebAPI) handleDelete(w http.ResponseWriter, r *http.Request) error {
 
 	// respond with ok
 	w.WriteHeader(http.StatusOK)
+
 	return nil
 }

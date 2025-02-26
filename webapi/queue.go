@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// handleGetQueueSize responses with queue size by signer name
+// handleGetQueueSize responses with queue size by signer name.
 func (wa *WebAPI) handleGetQueueSize(w http.ResponseWriter, r *http.Request) error {
 	// get tasks for job
 	vars := mux.Vars(r)

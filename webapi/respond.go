@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// httpErr represents the error response to the user
+// httpErr represents the error response to the user.
 type httpErr struct {
 	// Error represents error message
 	Error string `json:"error"`
@@ -15,7 +15,7 @@ type httpErr struct {
 	Code int `json:"code"`
 }
 
-// httpError writes to the response writer error and the code in json format
+// httpError writes to the response writer error and the code in json format.
 func httpError(w http.ResponseWriter, err error, code int) error {
 	e := httpErr{Error: errors.Cause(err).Error(), Code: code}
 
@@ -25,7 +25,7 @@ func httpError(w http.ResponseWriter, err error, code int) error {
 	return err
 }
 
-// respondJSON responds with json
+// respondJSON responds with json.
 func respondJSON(w http.ResponseWriter, data interface{}, code int) error {
 	// marshal data
 	j, err := json.Marshal(data)

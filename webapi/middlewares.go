@@ -1,14 +1,14 @@
 package webapi
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"errors"
 	"net/http"
 	"runtime/debug"
+
+	log "github.com/sirupsen/logrus"
 )
 
-// loggerMiddleware logs the requests
+// loggerMiddleware logs the requests.
 func loggerMiddleware(next handler) handler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		log.WithFields(log.Fields{
@@ -24,11 +24,11 @@ func loggerMiddleware(next handler) handler {
 
 func errorHandler(next handler) handler {
 	h := func(w http.ResponseWriter, r *http.Request) error {
-
 		// log error if panic
 		defer func() {
 			if r := recover(); r != nil {
 				_ = httpError(w, errors.New("unhandled"), http.StatusInternalServerError)
+
 				log.Print(debug.Stack())
 			}
 		}()

@@ -4,20 +4,19 @@ import (
 	"net/http"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/digitorus/pdfsigner/version"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
-// handler represents mux handle function
+// handler represents mux handle function.
 type handler func(w http.ResponseWriter, r *http.Request) error
 
-// middleware represents middleware that could be added to handle function
+// middleware represents middleware that could be added to handle function.
 type middleware func(handler) handler
 
-// WebAPI represents all the data related to webapi
+// WebAPI represents all the data related to webapi.
 type WebAPI struct {
 	// r represents router
 	r *mux.Router
@@ -35,9 +34,8 @@ type WebAPI struct {
 	defaultValidateSignature bool
 }
 
-// NewWebAPI initializes web api with routes
+// NewWebAPI initializes web api with routes.
 func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version version.Version, defaultValidateSignature bool) *WebAPI {
-
 	// initialize web api
 	wa := WebAPI{
 		addr:                     addr,
@@ -71,7 +69,7 @@ func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version vers
 	return &wa
 }
 
-// handle adds middlewares and runs mux handler
+// handle adds middlewares and runs mux handler.
 func (wa *WebAPI) handle(verb string, path string, handler handler) {
 	// add middlewares
 	for i := len(wa.middlewares) - 1; i >= 0; i-- {
@@ -90,12 +88,12 @@ func (wa *WebAPI) handle(verb string, path string, handler handler) {
 	wa.r.HandleFunc(path, h).Methods(verb)
 }
 
-// addMiddleware adds middleware to web api to be  run before handler
+// addMiddleware adds middleware to web api to be  run before handler.
 func (wa *WebAPI) addMiddleware(m middleware) {
 	wa.middlewares = append(wa.middlewares, m)
 }
 
-// Serve starts the web server
+// Serve starts the web server.
 func (wa *WebAPI) Serve() {
 	// create server
 	s := &http.Server{
