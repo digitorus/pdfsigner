@@ -4,10 +4,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsigner/license"
+	"github.com/sirupsen/logrus"
 )
 
 func TestSigner(t *testing.T) {
@@ -34,7 +33,7 @@ func TestSigner(t *testing.T) {
 	}
 	signData.SetPEM("../testfiles/test.crt", "../testfiles/test.pem", "")
 
-	for i := 0; i < 1; i++ {
+	for range 1 {
 		err = SignFile("../testfiles/testfile12.pdf", "../testfiles/testfile12_signed.pdf", signData, true)
 		if err != nil {
 			t.Fatal(err)

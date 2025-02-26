@@ -43,10 +43,12 @@ func TestQSignersMap(t *testing.T) {
 
 	// add sign job
 	jobID := qs.AddSignJob(JobSignConfig{ValidateSignature: true})
+
 	job, err := qs.GetJobByID(jobID)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	assert.Equal(t, jobID, job.ID)
 
 	// add job
@@ -62,7 +64,7 @@ func TestQSignersMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 1, len(job.TasksMap))
+	assert.Len(t, job.TasksMap, 1)
 
 	// sign job
 	assert.NoError(t, qs.processNextTask("simple"))
@@ -71,7 +73,8 @@ func TestQSignersMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 1, len(job.TasksMap))
+
+	assert.Len(t, job.TasksMap, 1)
 	assert.Equal(t, StatusCompleted, job.TasksMap[taskID].Status, job.TasksMap[taskID].Error)
 
 	// test bad file
@@ -87,7 +90,8 @@ func TestQSignersMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 2, len(job.TasksMap))
+
+	assert.Len(t, job.TasksMap, 2)
 	// sign job
 	assert.NoError(t, qs.processNextTask("simple"))
 
@@ -95,7 +99,8 @@ func TestQSignersMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 2, len(job.TasksMap))
+
+	assert.Len(t, job.TasksMap, 2)
 	assert.Equal(t, StatusFailed, job.TasksMap[taskID].Status)
 
 	// test saving to db

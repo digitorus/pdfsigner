@@ -6,66 +6,49 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/signer"
 	"github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// servicesConfigArr stores configs for signers for multiple-services command
-// Since Viper is not supporting access to array, we need to make structures and unmarshal config manually
-var signersConfigArr []signerConfig
-
-// serviceConfig is a config of the service
-type signerConfig struct {
-	// Name is the name of the signer used to identify signer inside the config
-	Name string
-	// Type is the type of the signer. PEM, PKSC11.
-	Type string
-	// CrtPath is the path to the certificate file.
-	CrtPath string
-	// KeyPath is the path to the private key file
-	KeyPath string
-	// LibPath is the path to the PKSC11 library.
-	LibPath string
-	// Pass is the password for PSKC11.
-	Pass string
-	// CrtChainPath is the path to chain of the certificates
-	CrtChainPath string
-	// SignConfig contains data needed for signing
-	SignData signer.SignData
+// Config holds the root configuration structure.
+type Config struct {
+	LicensePath string                   `mapstructure:"licensePath"`
+	Services    map[string]serviceConfig `mapstructure:"services"`
+	Signers     map[string]signerConfig  `mapstructure:"signers"`
 }
 
-// servicesConfigArr stores configs for services for multiple-services command
-var servicesConfigArr []serviceConfig
-
-// serviceConfig is a config of the service
+// serviceConfig is a config of the service.
 type serviceConfig struct {
-	// Name is the name of the service
-	Name string
-	// Type is the type of the service. Watch, Serve.
-	Type string
-	// ValidateSignature allows to verify signature after sign used as default for serve services
-	ValidateSignature bool
-
-	// Watch config.
-	// Signer is the signer name to be used by watch.
-	Signer string
-	// In is the input folder used by watch.
-	In string
-	// Out is the output folder used by watch.
-	Out string
-
-	// Serve config.
-	// Signers is the signers names to be used by serve.
-	Signers []string
-	// Addr is the address on which to serve
-	Addr string
-	// Port is the port on which to serve
-	Port string
+	Name              string   `mapstructure:"-"` // Added for backward compatibility
+	Type              string   `mapstructure:"type"`
+	Signer            string   `mapstructure:"signer,omitempty"`
+	Signers           []string `mapstructure:"signers,omitempty"`
+	In                string   `mapstructure:"in,omitempty"`
+	Out               string   `mapstructure:"out,omitempty"`
+	ValidateSignature bool     `mapstructure:"validateSignature"`
+	Addr              string   `mapstructure:"addr,omitempty"`
+	Port              string   `mapstructure:"port,omitempty"` // Changed to string
 }
+
+type signerConfig struct {
+	Name         string          `mapstructure:"-"` // Added for backward compatibility
+	Type         string          `mapstructure:"type"`
+	CrtPath      string          `mapstructure:"crtPath,omitempty"`
+	KeyPath      string          `mapstructure:"keyPath,omitempty"`
+	LibPath      string          `mapstructure:"libPath,omitempty"`
+	Pass         string          `mapstructure:"pass,omitempty"`
+	CrtChainPath string          `mapstructure:"crtChainPath,omitempty"`
+	SignData     signer.SignData `mapstructure:"signData"`
+}
+
+var (
+	config            Config
+	signersConfigArr  []signerConfig
+	servicesConfigArr []serviceConfig
+)
 
 // initConfig reads in config inputFile and ENV variables if set.
 func initConfig(cmd *cobra.Command) {
@@ -99,32 +82,38 @@ func initConfig(cmd *cobra.Command) {
 			log.Fatal(errors.New("config is not properly formatted or empty"))
 		}
 	}
+
 	if err != nil && configFilePathFlag != "" {
 		log.Fatal(err)
 	}
 
-	// unmarshal signers
-	if err := unmarshalSigners(); err != nil {
-		log.Fatal(err)
+	// Unmarshal the full config
+	if err := viper.Unmarshal(&config); err != nil {
+		log.Fatal("Error decoding config:", err)
 	}
 
-	// unmarshal services for mixed command
-	if err := unmarshalServices(); err != nil {
-		log.Fatal(err)
+	// Convert nested config to flat arrays for backward compatibility
+	for name, signer := range config.Signers {
+		signer.Name = name // Set the name field
+		signersConfigArr = append(signersConfigArr, signer)
 	}
 
-	// assign licensePath config value to variable
-	licenseStrConfOrFlag = viper.GetString("license")
+	for name, service := range config.Services {
+		service.Name = name // Set the name field
+		servicesConfigArr = append(servicesConfigArr, service)
+	}
+
+	licenseStrConfOrFlag = config.LicensePath
 
 	// setup CLI overrides for signers and services of the config if it's multi command
 	setupMultiSignersFlags(cmd)
 	setupMultiServiceFlags(cmd)
 }
 
-// preParseConfigFlag parses config flag before cobra initialized.
-// needed to override signers and services config settings
+// needed to override signers and services config settings.
 func preParseConfigFlag() {
 	const configFlagName = "--config"
+
 	args := strings.Join(os.Args[1:], " ")
 	if strings.Contains(args, configFlagName) {
 		fields := strings.Fields(args)
@@ -134,37 +123,4 @@ func preParseConfigFlag() {
 			}
 		}
 	}
-}
-
-// unmarshalSigners assigns signers from the config into the signersConfigArr variable
-func unmarshalSigners() error {
-	for key := range viper.AllSettings() {
-		if strings.HasPrefix(key, "signer") {
-			var sc signerConfig
-			if err := viper.UnmarshalKey(key, &sc); err != nil {
-				return err
-			}
-			//sc.Name = strings.Replace(key, "signer", "", 1)
-			sc.Name = key
-			signersConfigArr = append(signersConfigArr, sc)
-		}
-	}
-
-	return nil
-}
-
-// unmarshalSigners assigns services from the config into the servicesConfigArr variable
-func unmarshalServices() error {
-	for key := range viper.AllSettings() {
-		if strings.HasPrefix(key, "service") {
-			var sc serviceConfig
-			if err := viper.UnmarshalKey(key, &sc); err != nil {
-				return err
-			}
-			//sc.Name = strings.Replace(key, "service", "", 1)
-			sc.Name = key
-			servicesConfigArr = append(servicesConfigArr, sc)
-		}
-	}
-	return nil
 }

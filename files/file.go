@@ -5,10 +5,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/signer"
+	log "github.com/sirupsen/logrus"
 )
 
 // func storeTempFile(file io.Reader) (string, error) {
@@ -25,19 +24,21 @@ import (
 // 	return tmpFile.Name(), nil
 // }
 
-// findFilesByPatterns finds all files matched the patterns
+// findFilesByPatterns finds all files matched the patterns.
 func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	for _, f := range patterns {
 		m, err := filepath.Glob(f)
 		if err != nil {
 			return matchedFiles, err
 		}
+
 		matchedFiles = append(matchedFiles, m...)
 	}
+
 	return matchedFiles, err
 }
 
-// SignFilesByPatterns signs files by matched patterns and stores it inside the same folder with _signed.pdf suffix
+// SignFilesByPatterns signs files by matched patterns and stores it inside the same folder with _signed.pdf suffix.
 func SignFilesByPatterns(filePatterns []string, signData signer.SignData, validateSignature bool) {
 	// get files
 	files, err := findFilesByPatterns(filePatterns)

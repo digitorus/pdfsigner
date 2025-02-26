@@ -12,13 +12,12 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/digitorus/pdfsigner/signer"
 	"github.com/digitorus/pdfsigner/version"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,12 +34,12 @@ var (
 	baseURL = proto + addr
 )
 
-// TestMain setup / tear down before tests
+// TestMain setup / tear down before tests.
 func TestMain(m *testing.M) {
 	os.Exit(runTest(m))
 }
 
-// runTest initializes the environment
+// runTest initializes the environment.
 func runTest(m *testing.M) int {
 	log.SetOutput(io.Discard)
 
@@ -83,7 +82,7 @@ func runTest(m *testing.M) int {
 
 func TestSignFlow(t *testing.T) {
 	// test upload
-	//create file parts
+	// create file parts
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile12.pdf"},
 		{"testfile2", "../testfiles/testfile12.pdf"},
@@ -109,6 +108,7 @@ func TestSignFlow(t *testing.T) {
 	w := httptest.NewRecorder()
 	// make request
 	wa.r.ServeHTTP(w, r)
+
 	if w.Code != http.StatusCreated {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
@@ -118,6 +118,7 @@ func TestSignFlow(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
 		t.Fatal(err)
 	}
+
 	assert.NotEmpty(t, scheduleResponse.JobID)
 	assert.Equal(t, "/sign/"+scheduleResponse.JobID, w.Header().Get("Location"), "location is not set")
 
@@ -125,7 +126,7 @@ func TestSignFlow(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// test status
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
+	r = httptest.NewRequest(http.MethodGet, baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
@@ -135,23 +136,27 @@ func TestSignFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 3, len(jobStatus.Tasks))
+	assert.Len(t, jobStatus.Tasks, 3)
+
 	var completedTasks int
+
 	for _, task := range jobStatus.Tasks {
 		// work with failed malformed task
 		if task.Status != queue.StatusCompleted {
 			assert.NotEmpty(t, task.Error)
+
 			continue
 		}
 
 		// happy path
 		assert.Equal(t, "testfile12.pdf", task.OriginalFileName)
 		// test get completed task
-		r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
+		r = httptest.NewRequest(http.MethodGet, baseURL+"/sign/"+scheduleResponse.JobID+"/"+task.ID+"/download", nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Equal(t, 20651, len(w.Body.Bytes()))
+		assert.Len(t, w.Body.Bytes(), 20651)
+
 		completedTasks += 1
 	}
 
@@ -159,19 +164,19 @@ func TestSignFlow(t *testing.T) {
 	assert.Equal(t, 2, completedTasks)
 
 	// test delete job
-	r = httptest.NewRequest("DELETE", baseURL+"/sign/"+scheduleResponse.JobID, nil)
+	r = httptest.NewRequest(http.MethodDelete, baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
-	r = httptest.NewRequest("GET", baseURL+"/sign/"+scheduleResponse.JobID, nil)
+	r = httptest.NewRequest(http.MethodGet, baseURL+"/sign/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 
 	assert.NotEqual(t, http.StatusOK, w.Code, w.Body.String(), "not removed")
 
 	// test get version
-	r = httptest.NewRequest("GET", baseURL+"/version", nil)
+	r = httptest.NewRequest(http.MethodGet, baseURL+"/version", nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
@@ -181,11 +186,11 @@ func TestSignFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, ver.Version, "0.1")
+	assert.Equal(t, "0.1", ver.Version)
 }
 
 func TestVerifyFlow(t *testing.T) {
-	//create file parts
+	// create file parts
 	fileParts := []filePart{
 		{"testfile1", "../testfiles/testfile12_signed.pdf"},
 	}
@@ -201,6 +206,7 @@ func TestVerifyFlow(t *testing.T) {
 	w := httptest.NewRecorder()
 	// make request
 	wa.r.ServeHTTP(w, r)
+
 	if w.Code != http.StatusCreated {
 		t.Fatalf("status not ok: %v", w.Body.String())
 	}
@@ -210,6 +216,7 @@ func TestVerifyFlow(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&scheduleResponse); err != nil {
 		t.Fatal(err)
 	}
+
 	assert.NotEmpty(t, scheduleResponse.JobID)
 	assert.Equal(t, "/verify/"+scheduleResponse.JobID, w.Header().Get("Location"), "location is not set")
 
@@ -217,7 +224,7 @@ func TestVerifyFlow(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// test status
-	r = httptest.NewRequest("GET", baseURL+"/verify/"+scheduleResponse.JobID, nil)
+	r = httptest.NewRequest(http.MethodGet, baseURL+"/verify/"+scheduleResponse.JobID, nil)
 	w = httptest.NewRecorder()
 	wa.r.ServeHTTP(w, r)
 	assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
@@ -227,22 +234,26 @@ func TestVerifyFlow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, 1, len(jobStatus.Tasks))
+	assert.Len(t, jobStatus.Tasks, 1)
+
 	var completedTasks int
+
 	for _, task := range jobStatus.Tasks {
 		// work with failed malformed task
 		if task.Status != queue.StatusCompleted {
 			assert.NotEmpty(t, task.Error)
+
 			continue
 		}
 
 		// happy path
 		assert.Equal(t, "testfile12_signed.pdf", task.OriginalFileName)
 		// test get completed task
-		r = httptest.NewRequest("GET", baseURL+"/verify/"+scheduleResponse.JobID+"/info/"+task.ID, nil)
+		r = httptest.NewRequest(http.MethodGet, baseURL+"/verify/"+scheduleResponse.JobID+"/info/"+task.ID, nil)
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
+
 		completedTasks += 1
 	}
 
@@ -250,9 +261,10 @@ func TestVerifyFlow(t *testing.T) {
 	assert.Equal(t, 1, completedTasks)
 }
 
-// Creates a new multiple files upload http request with optional extra params
+// Creates a new multiple files upload http request with optional extra params.
 func newMultipleFilesUploadRequest(uri string, params map[string]string, fileParts []filePart) (*http.Request, error) {
 	body := &bytes.Buffer{}
+
 	writer := multipart.NewWriter(body)
 	for key, val := range params {
 		_ = writer.WriteField(key, val)
@@ -269,6 +281,7 @@ func newMultipleFilesUploadRequest(uri string, params map[string]string, filePar
 		if err != nil {
 			return nil, err
 		}
+
 		_, err = io.Copy(part, file)
 		if err != nil {
 			return nil, err
@@ -280,7 +293,8 @@ func newMultipleFilesUploadRequest(uri string, params map[string]string, filePar
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", uri, body)
+	req, err := http.NewRequest(http.MethodPost, uri, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
 	return req, err
 }

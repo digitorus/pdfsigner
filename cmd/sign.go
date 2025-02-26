@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// signCmd represents the sign command
+// signCmd represents the sign command.
 var signCmd = &cobra.Command{
 	Use:   "sign",
 	Short: "Sign files using PEM or PKSC11",
 	Long:  `Command line signer allows to sign document using PEM or PKSC11 provided directly as well as using preconfigured signer from the config file.`,
 }
 
-// signPEMCmd signs files with PEM using flags only
+// signPEMCmd signs files with PEM using flags only.
 var signPEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Sign PDF with PEM formatted certificate",
@@ -40,7 +40,7 @@ var signPEMCmd = &cobra.Command{
 	},
 }
 
-// signPKSC11Cmd signs files with PKSC11 using flags only
+// signPKSC11Cmd signs files with PKSC11 using flags only.
 var signPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Signs PDF with PSKC11",
@@ -68,7 +68,7 @@ var signPKSC11Cmd = &cobra.Command{
 	},
 }
 
-// signBySignerNameCmd signs files using singer from the config with possibility to override it with flags
+// signBySignerNameCmd signs files using singer from the config with possibility to override it with flags.
 var signBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
 	Short: "Sign PDF with preconfigured signer",
@@ -107,25 +107,25 @@ func init() {
 	// add PEM sign command and parse related flags
 	signCmd.AddCommand(signPEMCmd)
 	parseCommonFlags(signPEMCmd)
-	//parseOutputPathFlag(signPEMCmd)
+	// parseOutputPathFlag(signPEMCmd)
 	parsePEMCertificateFlags(signPEMCmd)
 
 	// add PKSC11 sign command and parse related flags
 	signCmd.AddCommand(signPKSC11Cmd)
 	parseCommonFlags(signPKSC11Cmd)
-	//parseOutputPathFlag(signPKSC11Cmd)
+	// parseOutputPathFlag(signPKSC11Cmd)
 	parsePKSC11CertificateFlags(signPKSC11Cmd)
 
 	// add sign with signer from config command and parse related flags
 	signCmd.AddCommand(signBySignerNameCmd)
 	parseConfigFlag(signBySignerNameCmd)
 	parseSignerName(signBySignerNameCmd)
-	//parseOutputPathFlag(signBySignerNameCmd)
+	// parseOutputPathFlag(signBySignerNameCmd)
 	parsePEMCertificateFlags(signBySignerNameCmd)
 	parsePKSC11CertificateFlags(signBySignerNameCmd)
 }
 
-// requireFilePatterns checks if the filePatterns were provided
+// requireFilePatterns checks if the filePatterns were provided.
 func requireFilePatterns(filePatterns []string) {
 	if len(filePatterns) < 1 {
 		log.Fatal("no file patterns provided")

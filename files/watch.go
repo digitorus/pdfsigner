@@ -4,14 +4,13 @@ import (
 	"path"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/fsnotify/fsnotify"
+	log "github.com/sirupsen/logrus"
 )
 
 type callback func(filePath string, left int)
 
-// Watch watches inside the provided folder and runs callback when event happened
+// Watch watches inside the provided folder and runs callback when event happened.
 func Watch(watchFolder string, cb callback) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -44,5 +43,6 @@ func Watch(watchFolder string, cb callback) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	<-done
 }

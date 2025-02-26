@@ -18,27 +18,31 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLimiter1(t *testing.T) {
 	rl := NewRateLimiter(&Limit{MaxCount: 1, Interval: 10 * time.Millisecond})
+
 	var result bool
+
 	result, _ = rl.Allow()
 	if !result {
 		t.Error("Allow: false, want true")
 	}
+
 	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
 
 	time.Sleep(11 * time.Millisecond)
+
 	result, _ = rl.Allow()
 	if !result {
 		t.Error("Allow: false, want true")
 	}
+
 	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
@@ -47,25 +51,30 @@ func TestLimiter1(t *testing.T) {
 
 func TestLimiter2(t *testing.T) {
 	rl := NewRateLimiter(&Limit{MaxCount: 2, Interval: 10 * time.Millisecond})
+
 	var result bool
-	for i := 0; i < 2; i++ {
+
+	for i := range 2 {
 		result, _ = rl.Allow()
 		if !result {
 			t.Errorf("Allow(%d): false, want true", i)
 		}
 	}
+
 	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
 	}
 
 	time.Sleep(11 * time.Millisecond)
-	for i := 0; i < 2; i++ {
+
+	for i := range 2 {
 		result, _ = rl.Allow()
 		if !result {
 			t.Errorf("Allow(%d): false, want true", i)
 		}
 	}
+
 	result, _ = rl.Allow()
 	if result {
 		t.Error("Allow: true, want false")
@@ -82,18 +91,19 @@ func TestLimiter3(t *testing.T) {
 		&Limit{MaxCount: 20000000, Interval: 864000 * time.Hour},
 	)
 
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		for {
 			allowed, limit := rl.Allow()
 			if !allowed {
 				log.Println("sleep", limit.Left())
 				time.Sleep(limit.Left())
+
 				continue
 			} else {
 				log.Println("allowed")
+
 				break
 			}
-
 		}
 	}
 }

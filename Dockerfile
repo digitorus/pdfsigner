@@ -6,4 +6,4 @@ ADD pdfsigner /
 COPY passwd /etc/passwd
 WORKDIR /
 USER user
-CMD ["./pdfsinger", "serve", "multiple-signers", "--config", "./config.toml", "--serve-address", "0.0.0.0", "--serve-port", "3000", "simple"]
+CMD ["./pdfsinger", "serve", "multiple-signers", "--config", "./config.yaml", "--serve-address", "0.0.0.0", "--serve-port", "3000", "simple"]

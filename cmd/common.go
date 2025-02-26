@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsigner/license"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/digitorus/pdfsigner/queues/queue"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// signVerifyQueue stores queue for signs
+// signVerifyQueue stores queue for signs.
 var signVerifyQueue *queue.Queue
 
 func init() {
@@ -25,14 +25,14 @@ func setupVerifier() {
 }
 
 var (
-	// common flags
+	// common flags.
 	signerNameFlag           string
 	validateSignature        bool
 	certificateChainPathFlag string
 	inputPathFlag            string
 	outputPathFlag           string
 
-	// Signature flags
+	// Signature flags.
 	signatureTypeFlag         uint
 	docMdpPermsFlag           uint
 	signatureInfoNameFlag     string
@@ -43,20 +43,20 @@ var (
 	signatureTSAUsernameFlag  string
 	signatureTSAPasswordFlag  string
 
-	// PEM flags
+	// PEM flags.
 	certificatePathFlag string
 	privateKeyPathFlag  string
 
-	// PKSC11 flags
+	// PKSC11 flags.
 	pksc11LibPathFlag string
 	pksc11PassFlag    string
 
-	// serve flags
+	// serve flags.
 	serveAddrFlag string
 	servePortFlag string
 )
 
-// parseCommonFlags binds common flags to variables
+// parseCommonFlags binds common flags to variables.
 func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
 	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", 1, "DocMDP permissions")
@@ -76,37 +76,37 @@ func parseConfigFlag(cmd *cobra.Command) {
 	_ = cmd.MarkPersistentFlagRequired("config")
 }
 
-// parsePEMCertificateFlags binds PEM specific flags to variables
+// parsePEMCertificateFlags binds PEM specific flags to variables.
 func parsePEMCertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Path to certificate file")
 	cmd.PersistentFlags().StringVar(&privateKeyPathFlag, "key", "", "Path to private key")
 }
 
-// parsePKSC11CertificateFlags binds PKSC11 specific flags to variables
+// parsePKSC11CertificateFlags binds PKSC11 specific flags to variables.
 func parsePKSC11CertificateFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&pksc11LibPathFlag, "lib", "", "Path to PKCS11 library")
 	cmd.PersistentFlags().StringVar(&pksc11PassFlag, "pass", "", "PKCS11 password")
 }
 
-// parseInputPathFlag binds input folder flag to variable
+// parseInputPathFlag binds input folder flag to variable.
 func parseInputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&inputPathFlag, "in", "", "Input path")
 	_ = cmd.MarkPersistentFlagRequired("in")
 }
 
-// parseOutputPathFlag binds output folder flag to variable
+// parseOutputPathFlag binds output folder flag to variable.
 func parseOutputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&outputPathFlag, "out", "", "Output path")
 	_ = cmd.MarkPersistentFlagRequired("out")
 }
 
-// parseSignerName binds signer name flag to variable
+// parseSignerName binds signer name flag to variable.
 func parseSignerName(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
 	_ = cmd.MarkPersistentFlagRequired("signer-name")
 }
 
-// parseServeFlags binds serve address and port flags to variables
+// parseServeFlags binds serve address and port flags to variables.
 func parseServeFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "Address to serve Web API")
 	_ = cmd.MarkPersistentFlagRequired("serve-address")
@@ -119,13 +119,14 @@ func isMultiSignerCmd() bool {
 		return false
 	}
 
-	var cmd = os.Args[1]
-	var subCmd = os.Args[2]
+	cmd := os.Args[1]
+
+	subCmd := os.Args[2]
 
 	return (cmd == "sign" && subCmd == "signer") || (cmd == "serve" && subCmd == "signers") || cmd == "services"
 }
 
-// setupMultiSignersFlags setups commands to override signers config settings
+// setupMultiSignersFlags setups commands to override signers config settings.
 func setupMultiSignersFlags(cmd *cobra.Command) {
 	if !isMultiSignerCmd() {
 		return
@@ -143,11 +144,38 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 		if len(servicesConfigArr) > 0 {
 			usageSuffix += " " + s.Name
 		}
+
 		usageSuffix += " config override flag"
 
-		// create commands
-		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.CertType, "type"+flagSuffix, s.SignData.Signature.CertType, "Certificate type"+usageSuffix)
-		cmd.PersistentFlags().UintVar(&signersConfigArr[i].SignData.Signature.DocMDPPerm, "docmdp"+flagSuffix, s.SignData.Signature.DocMDPPerm, "DocMDP permissions"+usageSuffix)
+		// create commands with temporary uint variables
+		certTypeUint := uint(s.SignData.Signature.CertType)
+		docMDPPermUint := uint(s.SignData.Signature.DocMDPPerm)
+
+		cmd.PersistentFlags().UintVar(&certTypeUint, "type"+flagSuffix, certTypeUint, "Certificate type"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&docMDPPermUint, "docmdp"+flagSuffix, docMDPPermUint, "DocMDP permissions"+usageSuffix)
+
+		// Store the index for later use in flag handling
+		certTypeIndices := make(map[string]int)
+		docMDPPermIndices := make(map[string]int)
+		certTypeIndices["type"+flagSuffix] = i
+		docMDPPermIndices["docmdp"+flagSuffix] = i
+
+		// Add post-processing for these flags
+		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+			for flagName, idx := range certTypeIndices {
+				if cmd.PersistentFlags().Changed(flagName) {
+					val, _ := cmd.PersistentFlags().GetUint(flagName)
+					signersConfigArr[idx].SignData.Signature.CertType = sign.CertType(val)
+				}
+			}
+
+			for flagName, idx := range docMDPPermIndices {
+				if cmd.PersistentFlags().Changed(flagName) {
+					val, _ := cmd.PersistentFlags().GetUint(flagName)
+					signersConfigArr[idx].SignData.Signature.DocMDPPerm = sign.DocMDPPerm(val)
+				}
+			}
+		}
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
@@ -167,7 +195,7 @@ func isMultiServiceCmd() bool {
 	return os.Args[1] == "services"
 }
 
-// setupMultiServiceFlags setups commands to override services config settings
+// setupMultiServiceFlags setups commands to override services config settings.
 func setupMultiServiceFlags(cmd *cobra.Command) {
 	if !isMultiServiceCmd() {
 		return
@@ -185,6 +213,7 @@ func setupMultiServiceFlags(cmd *cobra.Command) {
 		if len(servicesConfigArr) > 0 {
 			usageSuffix += " " + s.Name
 		}
+
 		usageSuffix += " config override flag"
 
 		// create commands
@@ -192,7 +221,7 @@ func setupMultiServiceFlags(cmd *cobra.Command) {
 	}
 }
 
-// getAddrPort returns server address and port formatted
+// getAddrPort returns server address and port formatted.
 func getAddrPort() string {
 	return serveAddrFlag + ":" + servePortFlag
 }
@@ -204,26 +233,33 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 
 	// JobSignConfig
 	if cmd.PersistentFlags().Changed("docmdp") {
-		c.SignData.Signature.DocMDPPerm = docMdpPermsFlag
+		c.SignData.Signature.DocMDPPerm = sign.DocMDPPerm(docMdpPermsFlag)
 	}
+
 	if cmd.PersistentFlags().Changed("type") {
-		c.SignData.Signature.CertType = signatureTypeFlag
+		c.SignData.Signature.CertType = sign.CertType(signatureTypeFlag)
 	}
+
 	if cmd.PersistentFlags().Changed("name") {
 		c.SignData.Signature.Info.Name = signatureInfoNameFlag
 	}
+
 	if cmd.PersistentFlags().Changed("location") {
 		c.SignData.Signature.Info.Location = signatureInfoLocationFlag
 	}
+
 	if cmd.PersistentFlags().Changed("reason") {
 		c.SignData.Signature.Info.Reason = signatureInfoReasonFlag
 	}
+
 	if cmd.PersistentFlags().Changed("contact") {
 		c.SignData.Signature.Info.ContactInfo = signatureInfoContactFlag
 	}
+
 	if cmd.PersistentFlags().Changed("tsa-password") {
 		c.SignData.TSA.URL = signatureTSAUrlFlag
 	}
+
 	if cmd.PersistentFlags().Changed("tsa-url") {
 		c.SignData.TSA.Password = signatureTSAPasswordFlag
 	}
@@ -237,6 +273,7 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	if cmd.PersistentFlags().Changed("crt") {
 		c.CrtPath = certificatePathFlag
 	}
+
 	if cmd.PersistentFlags().Changed("key") {
 		c.KeyPath = privateKeyPathFlag
 	}
@@ -245,12 +282,13 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	if cmd.PersistentFlags().Changed("lib") {
 		c.LibPath = pksc11LibPathFlag
 	}
+
 	if cmd.PersistentFlags().Changed("pass") {
 		c.Pass = pksc11PassFlag
 	}
 }
 
-// getSignerConfigByName returns config of the signer by name
+// getSignerConfigByName returns config of the signer by name.
 func getSignerConfigByName(signerName string) signerConfig {
 	if signerName == "" {
 		log.Fatal("signer name is empty")
@@ -270,7 +308,7 @@ func getSignerConfigByName(signerName string) signerConfig {
 	return s
 }
 
-// getConfigServiceByName returns service config by name
+// getConfigServiceByName returns service config by name.
 func getConfigServiceByName(serviceName string) serviceConfig {
 	if serviceName == "" {
 		log.Fatal("service name is not provided")
@@ -290,15 +328,17 @@ func getConfigServiceByName(serviceName string) serviceConfig {
 	return s
 }
 
-// requireLicense loads license
+// requireLicense loads license.
 func requireLicense() error {
 	// load license from the db
 	var licenseInitErr error
+
 	licenseLoadErr := license.Load()
 	if licenseLoadErr != nil {
 		// if the license couldn't be loaded try to initialize it
 		licenseInitErr = initializeLicense()
 	}
+
 	if licenseInitErr != nil {
 		return licenseInitErr
 	}
@@ -309,5 +349,6 @@ func requireLicense() error {
 func getOutputFilePathByInputFilePath(inputFilePath, outputFolderPath string) string {
 	_, fileName := filepath.Split(inputFilePath)
 	fileNameNoExt := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+
 	return filepath.Join(outputFolderPath, fileNameNoExt+"_signed"+filepath.Ext(fileName))
 }
