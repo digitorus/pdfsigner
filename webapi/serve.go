@@ -66,7 +66,16 @@ func NewWebAPI(addr string, qs *queue.Queue, allowedUnits []string, version vers
 	wa.handle("GET", "/verify/{jobID}", wa.handleStatus)
 	wa.handle("GET", "/verify/{jobID}/info/{taskID}", wa.handleVerifyGetInfo)
 
+	// add health check endpoint
+	wa.handle("GET", "/health", wa.handleHealth)
+
 	return &wa
+}
+
+// handleHealth returns 200 OK for container health checks
+func (wa *WebAPI) handleHealth(w http.ResponseWriter, r *http.Request) error {
+	w.WriteHeader(http.StatusOK)
+	return nil
 }
 
 // handle adds middlewares and runs mux handler.
