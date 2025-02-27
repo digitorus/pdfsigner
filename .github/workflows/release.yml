@@ -1,10 +1,10 @@
 name: GoReleaser
 
 on:
-  pull_request:
-  push:
-    tags:
-      - '*'
+  workflow_run:
+    workflows: ["Build & Test"]
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -16,8 +16,9 @@ jobs:
   goreleaser:
     name: Build and Release
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
-      flags: ""
+      flags: ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,7 +40,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          version: '~> v2'
           args: release --clean ${{ env.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
