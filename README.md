@@ -6,7 +6,7 @@ A comprehensive PDF digital signature solution that supports multiple signing me
 [![golangci-lint](https://github.com/digitorus/pdfsigner/workflows/golangci-lint/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml)
 [![CodeQL](https://github.com/digitorus/pdfsigner/workflows/CodeQL/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/codeql-analysis.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/digitorus/pdfsigner)](https://goreportcard.com/report/github.com/digitorus/pdfsigner)
-[![Coverage Status](https://codecov.io/gh/digitorus/pdfsigner/branch/master/graph/badge.svg)](https://codecov.io/gh/digitorus/pdfsigner)
+[![Coverage Status](https://codecov.io/gh/digitorus/pdfsigner/graph/badge.svg?token=SylidcS2uJ)](https://codecov.io/gh/digitorus/pdfsigner)
 [![Go Reference](https://pkg.go.dev/badge/github.com/digitorus/pdfsigner.svg)](https://pkg.go.dev/github.com/digitorus/pdfsigner)
 
 ## Overview
