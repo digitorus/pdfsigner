@@ -3,7 +3,7 @@
 A comprehensive PDF digital signature solution that supports multiple signing methods, automated workflows, and API integration.
 
 [![Build & Test](https://github.com/digitorus/pdfsigner/workflows/Build%20&%20Test/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/go.yml)
-[![golangci-lint](https://github.com/digitorus/pdfsigner/workflows/golangci-lint/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml)
+[![GolangCI-Lint](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/golangci-lint.yml)
 [![CodeQL](https://github.com/digitorus/pdfsigner/workflows/CodeQL/badge.svg)](https://github.com/digitorus/pdfsigner/actions/workflows/codeql-analysis.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/digitorus/pdfsigner)](https://goreportcard.com/report/github.com/digitorus/pdfsigner)
 [![Coverage Status](https://codecov.io/gh/digitorus/pdfsigner/graph/badge.svg?token=SylidcS2uJ)](https://codecov.io/gh/digitorus/pdfsigner)
