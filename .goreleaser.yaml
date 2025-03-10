@@ -13,6 +13,9 @@ builds:
   - -X main.Version={{ .ShortCommit }}
   - -X main.GitCommit={{ .FullCommit }}
   - -X main.GitBranch={{ .Branch }}
+  - -X github.com/digitorus/pdfsigner/license.publicKeyBase64={{ .Env.PDFSIGNER_LICENSE_PUBLIC_KEY }}
+  - -X github.com/digitorus/pdfsigner/license.licenseBase64={{ .Env.PDFSIGNER_LICENSE }}
+  - -X github.com/digitorus/pdfsigner/license.hmacKey={{ .Env.PDFSIGNER_HMAC_KEY }}
   flags:
   - -trimpath
   env:
@@ -40,6 +43,8 @@ builds:
   - -X main.Version={{ .Version }}
   - -X main.GitCommit={{ .FullCommit }}
   - -X main.GitBranch={{ .Branch }}
+  - -X github.com/digitorus/pdfsigner/license.publicKeyBase64={{ .Env.PDFSIGNER_LICENSE_PUBLIC_KEY }}
+  - -X github.com/digitorus/pdfsigner/license.licenseBase64={{ .Env.PDFSIGNER_LICENSE }}
   flags:
   - -trimpath
   env:
@@ -54,6 +59,66 @@ builds:
         {{- if eq .Arch "amd64" }}CC=zig c++ -target x86_64-windows-gnu{{- end }}
         {{- if eq .Arch "arm64"}}CC=zig c++ -target aarch64-windows-gnu{{- end }}
       {{- end }}
+
+dockers:
+  - ids:
+    - pdfsigner-linux
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}-amd64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-amd64"
+    - "digitorus/{{ .ProjectName }}:latest-amd64"
+    build_flag_templates:
+    - "--label=org.opencontainers.image.created={{ .Date }}"
+    - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+    - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    - "--label=org.opencontainers.image.version={{ .Version }}"
+    - "--label=org.opencontainers.image.source={{ urlPathEscape .GitURL }}"
+    - "--label=org.opencontainers.image.vendor=Digitorus"
+    - "--platform=linux/amd64"
+    extra_files:
+    - config.example.yml
+    - pdfsigner.lic
+
+  - ids:
+    - pdfsigner-linux
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:{{ .Tag }}-arm64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}-arm64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm64"
+    - "digitorus/{{ .ProjectName }}:latest-arm64"
+    build_flag_templates:
+    - "--label=org.opencontainers.image.created={{ .Date }}"
+    - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+    - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+    - "--label=org.opencontainers.image.version={{ .Version }}"
+    - "--label=org.opencontainers.image.source={{ urlPathEscape .GitURL }}"
+    - "--label=org.opencontainers.image.vendor=Digitorus"
+    - "--platform=linux/arm64"
+    extra_files:
+    - config.example.yml
+    - pdfsigner.lic
+
+docker_manifests:
+  - name_template: "digitorus/{{ .ProjectName }}:{{ .Tag }}"
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    - "digitorus/{{ .ProjectName }}:{{ .Tag }}-arm64"
+
+  - name_template: "digitorus/{{ .ProjectName }}:v{{ .Major }}"
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}-amd64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}-arm64"
+    
+  - name_template: "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}"
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-amd64"
+    - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm64"
+
+  - name_template: "digitorus/{{ .ProjectName }}:latest"
+    image_templates:
+    - "digitorus/{{ .ProjectName }}:latest-amd64"
+    - "digitorus/{{ .ProjectName }}:latest-arm64"
 
 archives:
   - formats: [ 'tar.gz' ]
