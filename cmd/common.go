@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"os"
+	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/queue"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // signVerifyQueue stores queue for signs.
@@ -25,307 +25,198 @@ func setupVerifier() {
 }
 
 var (
-	// common flags.
-	signerNameFlag           string
-	validateSignature        bool
-	certificateChainPathFlag string
-	inputPathFlag            string
-	outputPathFlag           string
-
-	// Signature flags.
-	signatureTypeFlag         uint
-	docMdpPermsFlag           uint
-	signatureInfoNameFlag     string
-	signatureInfoLocationFlag string
-	signatureInfoReasonFlag   string
-	signatureInfoContactFlag  string
-	signatureTSAUrlFlag       string
-	signatureTSAUsernameFlag  string
-	signatureTSAPasswordFlag  string
-
-	// PEM flags.
-	certificatePathFlag string
-	privateKeyPathFlag  string
-
-	// PKSC11 flags.
-	pksc11LibPathFlag string
-	pksc11PassFlag    string
-
-	// serve flags.
-	serveAddrFlag string
-	servePortFlag string
+	// Common flag variables - now only used for command-line arguments that don't map directly to config
+	validateSignature bool
+	inputPathFlag     string
+	outputPathFlag    string
 )
 
 // parseCommonFlags binds common flags to variables.
 func parseCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
-	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", 1, "DocMDP permissions")
-	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "name", "", "Signature info name")
-	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "location", "", "Signature info location")
-	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "reason", "", "Signature reason")
-	cmd.PersistentFlags().StringVar(&signatureInfoContactFlag, "contact", "", "Signature contact")
-	cmd.PersistentFlags().StringVar(&signatureTSAUrlFlag, "tsa-url", "", "TSA url")
-	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
-	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
-	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain path")
-	cmd.PersistentFlags().BoolVar(&validateSignature, "validate-signature", true, "Certificate chain path")
-}
+	cmd.PersistentFlags().UintP("type", "t", 1, "Certificate type")
+	_ = viper.BindPFlag("type", cmd.PersistentFlags().Lookup("type"))
 
-func parseConfigFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&configFilePathFlag, "config", "", "Path to config file")
-	_ = cmd.MarkPersistentFlagRequired("config")
+	cmd.PersistentFlags().UintP("docmdp", "d", 1, "DocMDP permissions")
+	_ = viper.BindPFlag("docmdp", cmd.PersistentFlags().Lookup("docmdp"))
+
+	cmd.PersistentFlags().StringP("signer", "s", "", "Name of signer configuration")
+	_ = viper.BindPFlag("signer", cmd.PersistentFlags().Lookup("signer"))
+
+	cmd.PersistentFlags().StringP("name", "n", "", "Signature info name")
+	_ = viper.BindPFlag("name", cmd.PersistentFlags().Lookup("name"))
+
+	cmd.PersistentFlags().StringP("location", "l", "", "Signature info location")
+	_ = viper.BindPFlag("location", cmd.PersistentFlags().Lookup("location"))
+
+	cmd.PersistentFlags().StringP("reason", "r", "", "Signature reason")
+	_ = viper.BindPFlag("reason", cmd.PersistentFlags().Lookup("reason"))
+
+	cmd.PersistentFlags().StringP("contact", "c", "", "Signature contact")
+	_ = viper.BindPFlag("contact", cmd.PersistentFlags().Lookup("contact"))
+
+	cmd.PersistentFlags().String("tsa-url", "", "TSA url")
+	_ = viper.BindPFlag("tsa.url", cmd.PersistentFlags().Lookup("tsa-url"))
+
+	cmd.PersistentFlags().String("tsa-username", "", "TSA username")
+	_ = viper.BindPFlag("tsa.username", cmd.PersistentFlags().Lookup("tsa-username"))
+
+	cmd.PersistentFlags().String("tsa-password", "", "TSA password")
+	_ = viper.BindPFlag("tsa.password", cmd.PersistentFlags().Lookup("tsa-password"))
+
+	cmd.PersistentFlags().BoolVar(&validateSignature, "validate-signature", true, "Validate signature")
+	_ = viper.BindPFlag("validateSignature", cmd.PersistentFlags().Lookup("validate-signature"))
 }
 
 // parsePEMCertificateFlags binds PEM specific flags to variables.
 func parsePEMCertificateFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&certificatePathFlag, "crt", "", "Path to certificate file")
-	cmd.PersistentFlags().StringVar(&privateKeyPathFlag, "key", "", "Path to private key")
+	cmd.PersistentFlags().String("cert", "", "Path to certificate file")
+	_ = viper.BindPFlag("cert", cmd.PersistentFlags().Lookup("cert"))
+
+	cmd.PersistentFlags().String("key", "", "Path to private key")
+	_ = viper.BindPFlag("key", cmd.PersistentFlags().Lookup("key"))
+
+	cmd.PersistentFlags().String("chain", "", "Certificate chain path")
+	_ = viper.BindPFlag("chain", cmd.PersistentFlags().Lookup("chain"))
 }
 
 // parsePKSC11CertificateFlags binds PKSC11 specific flags to variables.
 func parsePKSC11CertificateFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&pksc11LibPathFlag, "lib", "", "Path to PKCS11 library")
-	cmd.PersistentFlags().StringVar(&pksc11PassFlag, "pass", "", "PKCS11 password")
+	cmd.PersistentFlags().String("lib", "", "Path to PKCS11 library")
+	_ = viper.BindPFlag("lib", cmd.PersistentFlags().Lookup("lib"))
+
+	cmd.PersistentFlags().String("pass", "", "PKCS11 password")
+	_ = viper.BindPFlag("pass", cmd.PersistentFlags().Lookup("pass"))
 }
 
 // parseInputPathFlag binds input folder flag to variable.
 func parseInputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&inputPathFlag, "in", "", "Input path")
 	_ = cmd.MarkPersistentFlagRequired("in")
+	_ = viper.BindPFlag("in", cmd.PersistentFlags().Lookup("in"))
 }
 
 // parseOutputPathFlag binds output folder flag to variable.
 func parseOutputPathFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&outputPathFlag, "out", "", "Output path")
 	_ = cmd.MarkPersistentFlagRequired("out")
-}
-
-// parseSignerName binds signer name flag to variable.
-func parseSignerName(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&signerNameFlag, "signer-name", "", "Signer name")
-	_ = cmd.MarkPersistentFlagRequired("signer-name")
+	_ = viper.BindPFlag("out", cmd.PersistentFlags().Lookup("out"))
 }
 
 // parseServeFlags binds serve address and port flags to variables.
 func parseServeFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&serveAddrFlag, "serve-address", "", "Address to serve Web API")
+	cmd.PersistentFlags().String("serve-address", "", "Address to serve Web API")
 	_ = cmd.MarkPersistentFlagRequired("serve-address")
-	cmd.PersistentFlags().StringVar(&servePortFlag, "serve-port", "", "Port to serve Web API")
+	_ = viper.BindPFlag("serve.address", cmd.PersistentFlags().Lookup("serve-address"))
+
+	cmd.PersistentFlags().String("serve-port", "", "Port to serve Web API")
 	_ = cmd.MarkPersistentFlagRequired("serve-port")
-}
-
-func isMultiSignerCmd() bool {
-	if len(os.Args) < 3 {
-		return false
-	}
-
-	cmd := os.Args[1]
-
-	subCmd := os.Args[2]
-
-	return (cmd == "sign" && subCmd == "signer") || (cmd == "serve" && subCmd == "signers") || cmd == "services"
-}
-
-// setupMultiSignersFlags setups commands to override signers config settings.
-func setupMultiSignersFlags(cmd *cobra.Command) {
-	if !isMultiSignerCmd() {
-		return
-	}
-
-	for i, s := range signersConfigArr {
-		// set flagSuffix if multiple signers provided inside config
-		flagSuffix := ""
-		if len(servicesConfigArr) > 0 {
-			flagSuffix = "_" + s.Name
-		}
-
-		// set usage suffix
-		var usageSuffix string
-		if len(servicesConfigArr) > 0 {
-			usageSuffix += " " + s.Name
-		}
-
-		usageSuffix += " config override flag"
-
-		// create commands with temporary uint variables
-		certTypeUint := uint(s.SignData.Signature.CertType)
-		docMDPPermUint := uint(s.SignData.Signature.DocMDPPerm)
-
-		cmd.PersistentFlags().UintVar(&certTypeUint, "type"+flagSuffix, certTypeUint, "Certificate type"+usageSuffix)
-		cmd.PersistentFlags().UintVar(&docMDPPermUint, "docmdp"+flagSuffix, docMDPPermUint, "DocMDP permissions"+usageSuffix)
-
-		// Store the index for later use in flag handling
-		certTypeIndices := make(map[string]int)
-		docMDPPermIndices := make(map[string]int)
-		certTypeIndices["type"+flagSuffix] = i
-		docMDPPermIndices["docmdp"+flagSuffix] = i
-
-		// Add post-processing for these flags
-		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			for flagName, idx := range certTypeIndices {
-				if cmd.PersistentFlags().Changed(flagName) {
-					val, _ := cmd.PersistentFlags().GetUint(flagName)
-					signersConfigArr[idx].SignData.Signature.CertType = sign.CertType(val)
-				}
-			}
-
-			for flagName, idx := range docMDPPermIndices {
-				if cmd.PersistentFlags().Changed(flagName) {
-					val, _ := cmd.PersistentFlags().GetUint(flagName)
-					signersConfigArr[idx].SignData.Signature.DocMDPPerm = sign.DocMDPPerm(val)
-				}
-			}
-		}
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.ContactInfo, "contact"+flagSuffix, s.SignData.Signature.Info.ContactInfo, "Signature contact"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.URL, "tsa-url"+flagSuffix, s.SignData.TSA.URL, "TSA url"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Username, "tsa-username"+flagSuffix, s.SignData.TSA.Username, "TSA username"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Password, "tsa-password"+flagSuffix, s.SignData.TSA.Password, "TSA password"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].CrtChainPath, "chain"+flagSuffix, s.CrtChainPath, "Certificate chain path"+usageSuffix)
-	}
-}
-
-func isMultiServiceCmd() bool {
-	if len(os.Args) < 2 {
-		return false
-	}
-
-	return os.Args[1] == "services"
-}
-
-// setupMultiServiceFlags setups commands to override services config settings.
-func setupMultiServiceFlags(cmd *cobra.Command) {
-	if !isMultiServiceCmd() {
-		return
-	}
-
-	for i, s := range servicesConfigArr {
-		// set suffix if multiple signers provided inside config
-		suffix := ""
-		if len(servicesConfigArr) > 0 {
-			suffix = "_" + s.Name
-		}
-
-		// set usage suffix
-		var usageSuffix string
-		if len(servicesConfigArr) > 0 {
-			usageSuffix += " " + s.Name
-		}
-
-		usageSuffix += " config override flag"
-
-		// create commands
-		cmd.PersistentFlags().BoolVar(&servicesConfigArr[i].ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path"+usageSuffix)
-	}
+	_ = viper.BindPFlag("serve.port", cmd.PersistentFlags().Lookup("serve-port"))
 }
 
 // getAddrPort returns server address and port formatted.
 func getAddrPort() string {
-	return serveAddrFlag + ":" + servePortFlag
+	addr := viper.GetString("serve.address")
+	port := viper.GetString("serve.port")
+	return addr + ":" + port
 }
 
-// bindSignerFlagsToConfig binds signer specific flags to variables.
-// Since viper is not supporting binding flags to an item of the array we use this workaround.
+// bindSignerFlagsToConfig populates signer config with values from config file,
+// then overrides with any explicitly provided command line flags.
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
-	log.Debug("bindSignerFlagsToConfig")
-
-	// JobSignConfig
-	if cmd.PersistentFlags().Changed("docmdp") {
-		c.SignData.Signature.DocMDPPerm = sign.DocMDPPerm(docMdpPermsFlag)
+	// First set values from the configuration file if available
+	if c.SignData.Signature.DocMDPPerm == 0 {
+		c.SignData.Signature.DocMDPPerm = sign.DocMDPPerm(viper.GetUint("docmdp"))
 	}
 
-	if cmd.PersistentFlags().Changed("type") {
-		c.SignData.Signature.CertType = sign.CertType(signatureTypeFlag)
+	if c.SignData.Signature.CertType == 0 {
+		c.SignData.Signature.CertType = sign.CertType(viper.GetUint("type"))
 	}
 
-	if cmd.PersistentFlags().Changed("name") {
-		c.SignData.Signature.Info.Name = signatureInfoNameFlag
+	if c.SignData.Signature.Info.Name == "" {
+		c.SignData.Signature.Info.Name = viper.GetString("name")
 	}
 
-	if cmd.PersistentFlags().Changed("location") {
-		c.SignData.Signature.Info.Location = signatureInfoLocationFlag
+	if c.SignData.Signature.Info.Location == "" {
+		c.SignData.Signature.Info.Location = viper.GetString("location")
 	}
 
-	if cmd.PersistentFlags().Changed("reason") {
-		c.SignData.Signature.Info.Reason = signatureInfoReasonFlag
+	if c.SignData.Signature.Info.Reason == "" {
+		c.SignData.Signature.Info.Reason = viper.GetString("reason")
 	}
 
-	if cmd.PersistentFlags().Changed("contact") {
-		c.SignData.Signature.Info.ContactInfo = signatureInfoContactFlag
+	if c.SignData.Signature.Info.ContactInfo == "" {
+		c.SignData.Signature.Info.ContactInfo = viper.GetString("contact")
 	}
 
-	if cmd.PersistentFlags().Changed("tsa-password") {
-		c.SignData.TSA.URL = signatureTSAUrlFlag
+	if c.SignData.TSA.URL == "" {
+		c.SignData.TSA.URL = viper.GetString("tsa.url")
 	}
 
-	if cmd.PersistentFlags().Changed("tsa-url") {
-		c.SignData.TSA.Password = signatureTSAPasswordFlag
+	if c.SignData.TSA.Password == "" {
+		c.SignData.TSA.Password = viper.GetString("tsa.password")
 	}
 
-	// Certificate chain
-	if cmd.PersistentFlags().Changed("chain") {
-		c.CrtChainPath = certificateChainPathFlag
+	if c.SignData.TSA.Username == "" {
+		c.SignData.TSA.Username = viper.GetString("tsa.username")
 	}
 
-	// PEM
-	if cmd.PersistentFlags().Changed("crt") {
-		c.CrtPath = certificatePathFlag
+	if c.Chain == "" {
+		c.Chain = viper.GetString("chain")
 	}
 
-	if cmd.PersistentFlags().Changed("key") {
-		c.KeyPath = privateKeyPathFlag
+	if c.Cert == "" {
+		c.Cert = viper.GetString("cert")
 	}
 
-	// PKSC11
-	if cmd.PersistentFlags().Changed("lib") {
-		c.LibPath = pksc11LibPathFlag
+	if c.Key == "" {
+		c.Key = viper.GetString("key")
 	}
 
-	if cmd.PersistentFlags().Changed("pass") {
-		c.Pass = pksc11PassFlag
-	}
-}
-
-// getSignerConfigByName returns config of the signer by name.
-func getSignerConfigByName(signerName string) signerConfig {
-	if signerName == "" {
-		log.Fatal("signer name is empty")
+	if c.Lib == "" {
+		c.Lib = viper.GetString("lib")
 	}
 
-	// find signer config
-	var s signerConfig
-	for _, s = range signersConfigArr {
-		if s.Name == signerName {
-			return s
+	if c.Pass == "" {
+		c.Pass = viper.GetString("pass")
+	}
+
+	// Override with command line flags only if explicitly provided
+	// Define flag mappings to their corresponding setters
+	stringFlags := map[string]func(string){
+		"name":         func(val string) { c.SignData.Signature.Info.Name = val },
+		"location":     func(val string) { c.SignData.Signature.Info.Location = val },
+		"reason":       func(val string) { c.SignData.Signature.Info.Reason = val },
+		"contact":      func(val string) { c.SignData.Signature.Info.ContactInfo = val },
+		"tsa-url":      func(val string) { c.SignData.TSA.URL = val },
+		"tsa-password": func(val string) { c.SignData.TSA.Password = val },
+		"tsa-username": func(val string) { c.SignData.TSA.Username = val },
+		"chain":        func(val string) { c.Chain = val },
+		"cert":         func(val string) { c.Cert = val },
+		"key":          func(val string) { c.Key = val },
+		"lib":          func(val string) { c.Lib = val },
+		"pass":         func(val string) { c.Pass = val },
+	}
+
+	uintFlags := map[string]func(uint){
+		"docmdp": func(val uint) { c.SignData.Signature.DocMDPPerm = sign.DocMDPPerm(val) },
+		"type":   func(val uint) { c.SignData.Signature.CertType = sign.CertType(val) },
+	}
+
+	// Process string flags
+	for flagName, setter := range stringFlags {
+		if cmd.Flags().Changed(flagName) {
+			val, _ := cmd.Flags().GetString(flagName)
+			setter(val)
 		}
 	}
 
-	// fail if signer not found
-	log.Fatal("signer not found")
-
-	return s
-}
-
-// getConfigServiceByName returns service config by name.
-func getConfigServiceByName(serviceName string) serviceConfig {
-	if serviceName == "" {
-		log.Fatal("service name is not provided")
-	}
-
-	// find service config
-	var s serviceConfig
-	for _, s = range servicesConfigArr {
-		if s.Name == serviceName {
-			return s
+	// Process uint flags
+	for flagName, setter := range uintFlags {
+		if cmd.Flags().Changed(flagName) {
+			val, _ := cmd.Flags().GetUint(flagName)
+			setter(val)
 		}
 	}
-
-	// fail if service not found
-	log.Fatal("service not found")
-
-	return s
 }
 
 // requireLicense loads license.
@@ -335,12 +226,16 @@ func requireLicense() error {
 
 	licenseLoadErr := license.Load()
 	if licenseLoadErr != nil {
-		// if the license couldn't be loaded try to initialize it
-		licenseInitErr = initializeLicense()
+		// try to initialize license with buid-in license
+		err := license.Initialize(nil)
+		if err != nil {
+			// if the license couldn't be loaded try to initialize it
+			licenseInitErr = initializeLicense()
+		}
 	}
 
 	if licenseInitErr != nil {
-		return licenseInitErr
+		return fmt.Errorf("license error: %w", licenseInitErr)
 	}
 
 	return nil
