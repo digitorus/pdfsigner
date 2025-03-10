@@ -1,5 +1,5 @@
 # Main configuration
-licensePath: ./pdfsigner.lic
+licensePath: /etc/pdfsigner/default.lic
 
 # Common signature settings (anchor)
 .signature_defaults: &signature_defaults
@@ -8,35 +8,35 @@ licensePath: ./pdfsigner.lic
 
 # Common signature info (anchor)
 .signature_info_defaults: &signature_info_defaults
-  name: Company Name
-  location: New York
-  reason: Document approval
-  contactInfo: support@example.com
+  name: Example Organization
+  location: Amsterdam
+  reason: Testing the Digitorus PDF Signer
+  contactInfo: contact@example.com
 
 # Services Configuration
 services:
-  # watch_incoming:
-  #   type: watch
-  #   signer: company_cert # Reference to the signer configuration below
-  #   in: ./incoming # Where to look for new PDFs
-  #   out: ./signed # Where to put signed PDFs
-  #   validateSignature: true # Verify signature after signing
+  watch_incoming:
+    type: watch
+    signer: default # Reference to the signer configuration below
+    in: /var/lib/pdfsigner/input # Where to look for new PDFs
+    out: /var/lib/pdfsigner/output # Where to put signed PDFs
+    validateSignature: true # Verify signature after signing
 
   api_endpoint:
     type: serve
     signers:
-      - company_cert # List of allowed signers
-    addr: 127.0.0.1 # Listen address
-    port: 3000 # Listen port
+      - default # List of allowed signers
+    addr: localhost # Listen address
+    port: 8080 # Listen port
     validateSignature: true
 
 # Signers Configuration
 signers:
-  company_cert:
+  default:
     type: pem
-    crtPath: ./testfiles/test.crt
-    keyPath: ./testfiles/test.pem
-    crtChainPath: ./testfiles/test.crt
+    crtPath: /etc/pdfsigner/default.crt
+    keyPath: /etc/pdfsigner/default.pem
+    crtChainPath: /etc/pdfsigner/chain.pem
     signData:
       signature:
         <<: *signature_defaults # Reuse common signature settings
