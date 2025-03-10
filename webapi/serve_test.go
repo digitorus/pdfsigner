@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/digitorus/pdfsign/sign"
-	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/digitorus/pdfsigner/signer"
 	"github.com/digitorus/pdfsigner/version"
@@ -43,11 +42,6 @@ func TestMain(m *testing.M) {
 func runTest(m *testing.M) int {
 	log.SetOutput(io.Discard)
 
-	err := license.Initialize([]byte(license.TestLicense))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// create new queue
 	q = queue.NewQueue()
 
@@ -65,7 +59,7 @@ func runTest(m *testing.M) int {
 			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
 		},
 	}
-	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
+	_ = signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
 	q.AddSignUnit("simple", signData)
 	q.AddVerifyUnit()
 	q.StartProcessor()
