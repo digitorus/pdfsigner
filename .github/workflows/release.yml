@@ -50,3 +50,6 @@ jobs:
           args: release --clean ${{ env.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PDFSIGNER_LICENSE_PUBLIC_KEY: ${{ secrets.PDFSIGNER_LICENSE_PUBLIC_KEY }}
+          PDFSIGNER_HMAC_KEY: ${{ secrets.PDFSIGNER_HMAC_KEY }}
+          PDFSIGNER_LICENSE: ${{ secrets.PDFSIGNER_LICENSE }}
