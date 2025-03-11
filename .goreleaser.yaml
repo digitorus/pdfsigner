@@ -68,14 +68,15 @@ dockers:
     - "digitorus/{{ .ProjectName }}:v{{ .Major }}-amd64"
     - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-amd64"
     - "digitorus/{{ .ProjectName }}:latest-amd64"
+    use: buildx
     build_flag_templates:
+    - "--platform=linux/amd64"
     - "--label=org.opencontainers.image.created={{ .Date }}"
     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
     - "--label=org.opencontainers.image.version={{ .Version }}"
     - "--label=org.opencontainers.image.source={{ urlPathEscape .GitURL }}"
     - "--label=org.opencontainers.image.vendor=Digitorus"
-    - "--platform=linux/amd64"
     extra_files:
     - config.example.yaml
 
@@ -86,14 +87,16 @@ dockers:
     - "digitorus/{{ .ProjectName }}:v{{ .Major }}-arm64"
     - "digitorus/{{ .ProjectName }}:v{{ .Major }}.{{ .Minor }}-arm64"
     - "digitorus/{{ .ProjectName }}:latest-arm64"
+    use: buildx
+    goarch: arm64
     build_flag_templates:
+    - "--platform=linux/arm64"
     - "--label=org.opencontainers.image.created={{ .Date }}"
     - "--label=org.opencontainers.image.title={{ .ProjectName }}"
     - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
     - "--label=org.opencontainers.image.version={{ .Version }}"
     - "--label=org.opencontainers.image.source={{ urlPathEscape .GitURL }}"
     - "--label=org.opencontainers.image.vendor=Digitorus"
-    - "--platform=linux/arm64"
     extra_files:
     - config.example.yaml
 
