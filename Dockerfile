@@ -1,7 +1,7 @@
 FROM alpine
 
 # Create non-root user
-RUN addgroup --system --gid 1000 appgroup && adduser --system --uid 1000 --gid 1000 appuser
+RUN addgroup -S -g 1000 appgroup && adduser -S -u 1000 -G appgroup appuser
 
 # Install certificates
 RUN apk add --no-cache ca-certificates
