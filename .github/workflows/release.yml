@@ -35,7 +35,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: stable
-      
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Zig
         uses: mlugg/setup-zig@v1
 
