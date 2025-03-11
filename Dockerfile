@@ -1,4 +1,4 @@
-FROM alpine:3
+FROM alpine
 
 # Create non-root user
 RUN addgroup --system --gid 1000 appgroup && adduser --system --uid 1000 --gid 1000 appuser
