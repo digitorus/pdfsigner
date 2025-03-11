@@ -77,8 +77,7 @@ dockers:
     - "--label=org.opencontainers.image.vendor=Digitorus"
     - "--platform=linux/amd64"
     extra_files:
-    - config.example.yml
-    - pdfsigner.lic
+    - config.example.yaml
 
   - ids:
     - pdfsigner-linux
@@ -96,8 +95,7 @@ dockers:
     - "--label=org.opencontainers.image.vendor=Digitorus"
     - "--platform=linux/arm64"
     extra_files:
-    - config.example.yml
-    - pdfsigner.lic
+    - config.example.yaml
 
 docker_manifests:
   - name_template: "digitorus/{{ .ProjectName }}:{{ .Tag }}"

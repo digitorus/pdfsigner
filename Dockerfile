@@ -15,7 +15,6 @@ RUN mkdir -p /usr/local/bin \
 
 # Copy application files
 COPY config.example.yaml /etc/pdfsigner/config.yaml
-COPY pdfsigner.lic /etc/pdfsigner/pdfsigner.lic
 COPY pdfsigner /usr/local/bin/pdfsigner
 
 # Set permissions and ownership
