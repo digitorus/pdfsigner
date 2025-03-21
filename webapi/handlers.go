@@ -29,7 +29,7 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 	// put job with specified signer
 	mr, err := r.MultipartReader()
 	if err != nil {
-		return httpError(w, errors.Wrap(err, "read multipart"), http.StatusInternalServerError)
+		return httpError(w, fmt.Errorf("read multipart: %w", err), http.StatusInternalServerError)
 	}
 
 	var f fields
@@ -48,26 +48,26 @@ func (wa *WebAPI) scheduleJob(jobType string, w http.ResponseWriter, r *http.Req
 		}
 
 		if err != nil {
-			return httpError(w, errors.Wrap(err, "get multipart"), http.StatusBadRequest)
+			return httpError(w, fmt.Errorf("get multipart: %w", err), http.StatusBadRequest)
 		}
 
 		// parse fields
 		err = parseFields(p, &f)
 		if err != nil {
-			return httpError(w, errors.Wrap(err, "parse fields"), http.StatusBadRequest)
+			return httpError(w, fmt.Errorf("parse fields: %w", err), http.StatusBadRequest)
 		}
 
 		// save pdf file to tmp
 		err = savePDFToTemp(p, fileNames)
 		if err != nil {
-			return httpError(w, errors.Wrap(err, "save pdf to tmp"), http.StatusBadRequest)
+			return httpError(w, fmt.Errorf("save pdf to tmp: %w", err), http.StatusBadRequest)
 		}
 	}
 
 	// add job to the queue
 	jobID, err := addJob(jobType, wa.queue, f, fileNames)
 	if err != nil {
-		return httpError(w, errors.Wrap(err, "add tasks"), http.StatusBadRequest)
+		return httpError(w, fmt.Errorf("add tasks: %w", err), http.StatusBadRequest)
 	}
 
 	// create response
@@ -268,7 +268,7 @@ func (wa *WebAPI) handleDelete(w http.ResponseWriter, r *http.Request) error {
 	// delete job by id
 	err := wa.queue.DeleteJob(jobID)
 	if err != nil {
-		return httpError(w, errors.Wrap(err, "couldn't delete job"), http.StatusBadRequest)
+		return httpError(w, fmt.Errorf("couldn't delete job: %w", err), http.StatusBadRequest)
 	}
 
 	// respond with ok

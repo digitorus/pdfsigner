@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/digitorus/pdfsigner/files"
@@ -16,43 +18,30 @@ import (
 var multiCmd = &cobra.Command{
 	Use:   "services",
 	Short: "Run multiple services using the config file",
-	Run: func(cmd *cobra.Command, serviceNames []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, serviceNames []string) error {
 		// loading jobs from the db
-		err = signVerifyQueue.LoadFromDB()
+		err := signVerifyQueue.LoadFromDB()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		// check if the config contains services
-		if len(servicesConfigArr) < 1 {
-			log.Fatal("no services found inside the config")
+		if len(config.Services) < 1 {
+			return fmt.Errorf("no services found inside the config")
 		}
 
 		// setup wait group
 		var wg sync.WaitGroup
 
 		// setup services
-		if len(serviceNames) > 1 {
+		for sname, sconfig := range config.Services {
 			// setup services by name
-			wg.Add(len(serviceNames))
-			for _, n := range serviceNames {
-				// get service config by name
-				serviceConf := getConfigServiceByName(n)
-				// setup service with signers
-				setupServiceWithSigners(serviceConf, &wg)
-			}
-		} else {
-			// setup all services
-			wg.Add(len(servicesConfigArr))
-			for _, s := range servicesConfigArr {
-				// setup service with signers
-				setupServiceWithSigners(s, &wg)
+			if len(serviceNames) == 0 {
+				wg.Add(len(sname))
+				setupServiceWithSigners(sconfig, &wg)
+			} else if slices.Contains(serviceNames, sname) {
+				wg.Add(len(sname))
+				setupServiceWithSigners(sconfig, &wg)
 			}
 		}
 
@@ -64,6 +53,7 @@ var multiCmd = &cobra.Command{
 
 		// wait
 		wg.Wait()
+		return nil
 	},
 }
 
@@ -96,7 +86,10 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 
 		// setup signer
 		if configSignerName != "" {
-			setupSigner(configSignerName)
+			err := setupSigner(configSignerName)
+			if err != nil {
+				log.Fatalf("failed to setup signer: %s", err)
+			}
 
 			return
 		}
@@ -109,7 +102,10 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 		// setup signers
 		if len(configSignerNames) > 1 {
 			for _, sn := range configSignerNames {
-				setupSigner(sn)
+				err := setupSigner(sn)
+				if err != nil {
+					log.Fatalf("failed to setup signer: %s", err)
+				}
 			}
 		}
 
@@ -121,34 +117,45 @@ func setupSigners(serviceType, configSignerName string, configSignerNames []stri
 }
 
 // setupSigner adds found inside the config by name signer to the queue for later use.
-func setupSigner(signerName string) {
+func setupSigner(signerName string) error {
 	// get config signer by name
-	config := getSignerConfigByName(signerName)
+	config, err := getSignerConfigByName(signerName)
+	if err != nil {
+		return err
+	}
 
-	// set sign data
 	switch config.Type {
 	case "pem":
-		config.SignData.SetPEM(config.CrtPath, config.KeyPath, config.CrtChainPath)
+		err = config.SignData.SetPEM(config.Cert, config.Key, config.Chain)
 	case "pksc11":
-		config.SignData.SetPKSC11(config.LibPath, config.Pass, config.CrtChainPath)
+		err = config.SignData.SetPKSC11(config.Lib, config.Pass, config.Chain)
+	}
+	if err != nil {
+		return err
 	}
 
 	// add signer to signers map
 	signVerifyQueue.AddSignUnit(signerName, config.SignData)
+
+	return nil
 }
 
 // setupService depending on the type of the service setups service.
 func setupService(service serviceConfig) {
+	var err error
 	if service.Type == "watch" {
-		setupWatch(service)
+		err = setupWatch(service)
 	} else if service.Type == "serve" {
-		setupServe(service)
-		log.Println("watch service", service.Name, "started")
+		err = setupServe(service)
+	}
+
+	if err != nil {
+		log.Fatalf("failed to setup %s: %s", service.Type, err)
 	}
 }
 
 // setupWatch setups watcher which watches the input folder and adds the tasks to the queue.
-func setupWatch(service serviceConfig) {
+func setupWatch(service serviceConfig) error {
 	files.Watch(service.In, func(inputFilePath string, left int) {
 		// make signed file path
 		signedFilePath := getOutputFilePathByInputFilePath(inputFilePath, service.Out)
@@ -158,21 +165,29 @@ func setupWatch(service serviceConfig) {
 			ValidateSignature: service.ValidateSignature,
 		})
 
-		// push job
-		// TODO: should we write any errors to the debug log?
-		_, _ = signVerifyQueue.AddTask(service.Signer, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
+		// push job to the queue
+		_, err := signVerifyQueue.AddTask(service.Signer, jobID, "", inputFilePath, signedFilePath, priority_queue.LowPriority)
+		if err != nil {
+			log.Debugf("failed to add task: %s", err)
+		}
 		if left == 0 {
-			_ = signVerifyQueue.SaveToDB(jobID)
+			err = signVerifyQueue.SaveToDB(jobID)
+			if err != nil {
+				log.Debugf("failed to save job to db: %s", err)
+			}
 		}
 	})
-	// batch save to the db
+
+	return nil
 }
 
 // setupServe runs the web api according to the config settings.
-func setupServe(service serviceConfig) {
+func setupServe(service serviceConfig) error {
 	// serve but only use allowed signers
 	wa := webapi.NewWebAPI(service.Addr+":"+service.Port, signVerifyQueue, service.Signers, ver, service.ValidateSignature)
 	wa.Serve()
+
+	return nil
 }
 
 // runQueues starts the mechanism to sign the files whenever they are getting into the queue.
@@ -182,5 +197,5 @@ func runQueues() {
 
 func init() {
 	RootCmd.AddCommand(multiCmd)
-	parseConfigFlag(multiCmd)
+	// No need to call parseConfigFlag since config is now a global flag
 }

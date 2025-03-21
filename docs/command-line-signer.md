@@ -13,7 +13,7 @@ specific flags:
 
 ```sh
 --key string             # Private key path
---crt string             # Certificate path
+--cert string             # Certificate path
 
 ```
 
@@ -21,7 +21,7 @@ specific flags:
 
 ```sh
 pdfsigner sign pem \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -78,13 +78,13 @@ pdfsigner sign pksc11 \
 
 ```sh
 --config string          # Path to config file
---signer-name string     # Signer name
+--signer string          # Signer name
 ```
 
 ### Example
 
 ```sh
-pdfsigner sign signer --config path/to/config/file --signer-name signerNameFromTheConfig path/to/file.pdf
+pdfsigner sign signer --config path/to/config/file --signer signerNameFromTheConfig path/to/file.pdf
 ```
 
 specific flags:
@@ -92,12 +92,13 @@ specific flags:
 Preconfigured signer settings could be overwritten with flags:
 
 ```sh
-pdfsigner sign signer --config path/to/config/file --signer-name "name-of-the-signer" \
-  --crt path/to/certificate \
+pdfsigner sign signer \
+  --config path/to/config/file \
+  --signer-name "name-of-the-signer" \
   --key path/to/private/key \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -119,8 +120,8 @@ Depending on the type of the signer appropriate flags should be used:
 
 ```sh
 --key string             # Private key path
---crt string             # Certificate path
-
+--cert string            # Certificate path
+--chain string           # Certificate chain path
 ```
 
 **PKSC11**
@@ -128,4 +129,5 @@ Depending on the type of the signer appropriate flags should be used:
 ```sh
 --lib string             # Path to PKCS11 library
 --pass string            # PKCS11 password
+--chain string           # Certificate chain path
 ```

@@ -3,11 +3,9 @@
 
 package signer
 
-import (
-	log "github.com/sirupsen/logrus"
-)
+import "github.com/pkg/errors"
 
 // SetPKSC11 provides a stub implementation when PKCS11 is not available.
-func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
-	log.Fatal("PKCS11 support is not available in this build. Please rebuild with CGO_ENABLED=1")
+func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) error {
+	return errors.New("PKCS11 support is not available in this build")
 }
