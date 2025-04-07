@@ -9,7 +9,7 @@ require (
 	github.com/digitorus/pdf v0.1.2
 	github.com/digitorus/pdfsign v0.0.0-20250226084642-540ffbbec869
 	github.com/digitorus/pkcs11 v0.0.0-20231109204637-6ee79d00536b
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-test/deep v1.1.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
