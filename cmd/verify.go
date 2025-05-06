@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
 	"github.com/digitorus/pdfsign/verify"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -12,26 +13,31 @@ import (
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Verify PDF signature",
-	Run: func(cmd *cobra.Command, inputFileNames []string) {
+	RunE: func(cmd *cobra.Command, inputFileNames []string) error {
 		if len(inputFileNames) < 1 {
-			log.Fatal("no files provided")
+			return errors.New("no files provided")
 		}
 
 		for _, f := range inputFileNames {
 			input_file, err := os.Open(f)
 			if err != nil {
-				log.Fatal("Couldn't open file", f, ",", err)
+				return fmt.Errorf("couldn't open file %w", err)
 			}
 			defer input_file.Close()
 
-			_, err = verify.File(input_file)
+			response, err := verify.File(input_file)
 			if err != nil {
-				log.Println("File", f, "Couldn't be verified", err)
-			} else {
-				log.Println("File", f, "verified successfully")
+				return fmt.Errorf("couldn't verify file %w", err)
 			}
 
+			if response.Error != "" {
+				return errors.New(response.Error)
+			} else {
+				cmd.Print("File verified successfully")
+			}
 		}
+
+		return nil
 	},
 }
 

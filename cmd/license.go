@@ -1,17 +1,3 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -21,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/digitorus/pdfsigner/license"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // licenseCmd represents the license command.
@@ -32,19 +17,21 @@ var licenseCmd = &cobra.Command{
 	Short: "Check and update license",
 }
 
-// licenseInfoCmd represents the license info command.
+// licenseSetupCmd represents the license setup command.
 var licenseSetupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "license setup",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// initialize license
 		err := initializeLicense()
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to initialize license: %w", err)
 		}
 
 		// print license info
-		fmt.Print(license.LD.Info())
+		cmd.Print(license.LD.Info())
+
+		return nil
 	},
 }
 
@@ -52,15 +39,21 @@ var licenseSetupCmd = &cobra.Command{
 var licenseInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "license info",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// load license
 		err := license.Load()
 		if err != nil {
-			log.Fatal(err)
+			// try to initialize license with buid-in license
+			err := license.Initialize(nil)
+			if err != nil {
+				return fmt.Errorf("failed to initialize license: %w", err)
+			}
 		}
 
 		// print license info
-		fmt.Print(license.LD.Info())
+		cmd.Print(license.LD.Info())
+
+		return nil
 	},
 }
 
@@ -68,32 +61,49 @@ func init() {
 	RootCmd.AddCommand(licenseCmd)
 	licenseCmd.AddCommand(licenseSetupCmd)
 	licenseCmd.AddCommand(licenseInfoCmd)
+
+	// Add license path flag
+	licenseCmd.PersistentFlags().String("license-path", "", "Path to license file")
+	_ = viper.BindPFlag("licensePath", licenseCmd.PersistentFlags().Lookup("license-path"))
 }
 
-// initializeLicense loads the license file with provided path licenseStrConfOrFlag or stdin.
+// initializeLicense loads the license file with provided path from viper config or command line.
 func initializeLicense() error {
-	// reading license file name. Info: can't read license directly from stdin because of a darwin 1024 limit.
-	var licenseStr string
-	if licenseStrConfOrFlag != "" {
-		// try to get license from the flag provided
-		licenseStr = licenseStrConfOrFlag
-	} else {
-		// get license from the stdout
-		fmt.Fprint(os.Stdout, "Paste your license here:")
+	// Get license from viper (can be from flag, env var, or config)
+	licenseStr := viper.GetString("license")
+	licenseFilePath := viper.GetString("licensePath")
 
-		var err error
+	// If neither license string nor license path is provided through viper
+	if licenseStr == "" && licenseFilePath == "" {
+		// Check if license was provided directly from command line
+		if licenseStrConfOrFlag != "" {
+			licenseStr = licenseStrConfOrFlag
+		} else {
+			// As a last resort, get license from stdin
+			fmt.Fprint(os.Stdout, "Paste your license here: ")
 
-		licenseStr, err = bufio.NewReader(os.Stdin).ReadString('\n')
-		if err != nil {
-			return errors.Wrap(err, "")
+			var err error
+			licenseStr, err = bufio.NewReader(os.Stdin).ReadString('\n')
+			if err != nil {
+				return fmt.Errorf("failed to read license from stdin: %w", err)
+			}
 		}
+	} else if licenseStr == "" && licenseFilePath != "" {
+		// If license path is provided, read from file
+		licenseBytes, err := os.ReadFile(licenseFilePath)
+		if err != nil {
+			return fmt.Errorf("failed to read license file: %w", err)
+		}
+		licenseStr = string(licenseBytes)
 	}
 
+	// Process the license string
 	licenseBytes := []byte(strings.Replace(strings.TrimSpace(licenseStr), "\n", "", -1))
-	// initialize license
+
+	// Initialize license
 	err := license.Initialize(licenseBytes)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return fmt.Errorf("failed to initialize license: %w", err)
 	}
 
 	return nil

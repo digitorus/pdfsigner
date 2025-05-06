@@ -7,7 +7,7 @@ toolchain go1.23.3
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/digitorus/pdf v0.1.2
-	github.com/digitorus/pdfsign v0.0.0-20250226084642-540ffbbec869
+	github.com/digitorus/pdfsign v0.0.0-20250310195202-94790aeb1f48
 	github.com/digitorus/pkcs11 v0.0.0-20231109204637-6ee79d00536b
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-test/deep v1.1.1
@@ -45,12 +45,10 @@ require (
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.35.0 // indirect
-	golang.org/x/exp v0.0.0-20250218142911-aa4b98e5adaa // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/digitorus/pkcs11 v0.0.0-20220705083045-3847d33b47af => ../pkcs11

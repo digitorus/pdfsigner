@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/signer"
 	"github.com/digitorus/pdfsigner/webapi"
@@ -13,23 +15,29 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Run web server to sign and verify files using HTTP protocol",
 	Long:  `Web API allows to sign and verify files by communicating with the application using HTTP protocol`,
+	// Add RunE to handle the case when only 'serve' is provided with --config
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// If config file is specified, check if we can determine what to serve
+		if len(config.Services) > 0 {
+			log.Info("Found signers in config file, running in serve signers mode")
+			// Run the serve signers command
+			return serveWithMultipleSignersCmd.RunE(cmd, args)
+		}
+
+		// If no config is specified, show help for the serve command
+		return cmd.Help()
+	},
 }
 
 // servePEMCmd runs web api with PEM using only flags.
 var servePEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Serve using PEM signer",
-	Run: func(cmd *cobra.Command, attr []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, attr []string) error {
 		// loading jobs from the db
-		err = signVerifyQueue.LoadFromDB()
+		err := signVerifyQueue.LoadFromDB()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		config := signerConfig{}
@@ -38,10 +46,15 @@ var servePEMCmd = &cobra.Command{
 		bindSignerFlagsToConfig(cmd, &config)
 
 		// set sign data
-		config.SignData.SetPEM(config.CrtPath, config.KeyPath, config.CrtChainPath)
+		err = config.SignData.SetPEM(config.Cert, config.Key, config.Chain)
+		if err != nil {
+			return fmt.Errorf("failed to set PEM certificate data: %w", err)
+		}
 
 		// start web api with runners using unnamed signer
 		startWebAPIWithRunnersUnnamedSigner(config.SignData)
+
+		return nil
 	},
 }
 
@@ -49,17 +62,11 @@ var servePEMCmd = &cobra.Command{
 var servePKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Serve using PKSC11 signer",
-	Run: func(cmd *cobra.Command, attr []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, attr []string) error {
 		// loading jobs from the db
-		err = signVerifyQueue.LoadFromDB()
+		err := signVerifyQueue.LoadFromDB()
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to load jobs from the db: %w", err)
 		}
 
 		// create signer config
@@ -69,10 +76,15 @@ var servePKSC11Cmd = &cobra.Command{
 		bindSignerFlagsToConfig(cmd, &config)
 
 		// set sign data
-		config.SignData.SetPKSC11(config.LibPath, config.Pass, config.CrtChainPath)
+		err = config.SignData.SetPKSC11(config.Lib, config.Pass, config.Chain)
+		if err != nil {
+			return fmt.Errorf("failed to set PKSC11 configuration: %w", err)
+		}
 
 		// start web api with runners using unnamed signer
 		startWebAPIWithRunnersUnnamedSigner(config.SignData)
+
+		return nil
 	},
 }
 
@@ -81,27 +93,32 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 	Use:   "signers",
 	Short: "Serve with multiple signers from the config",
 	Long:  `Runs multiple signers. Settings couldn't be overwritten`,
-	Run: func(cmd *cobra.Command, signerNames []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, signerNames []string) error {
 		// loading jobs from the db
-		err = signVerifyQueue.LoadFromDB()
+		err := signVerifyQueue.LoadFromDB()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
-		// check if the signer names provided
+		// Get signers from config if not provided as arguments
 		if len(signerNames) < 1 {
-			log.Fatal("signers are not provided")
+			// Use all configured signers
+			for name := range config.Signers {
+				signerNames = append(signerNames, name)
+			}
+
+			// Check again if we have signers
+			if len(signerNames) < 1 {
+				return fmt.Errorf("no signers found in config and none provided as arguments")
+			}
 		}
 
 		// setup signers
 		for _, sn := range signerNames {
-			setupSigner(sn)
+			err = setupSigner(sn)
+			if err != nil {
+				return fmt.Errorf("failed to setup signer: %w", err)
+			}
 		}
 
 		// setup verifier
@@ -109,6 +126,8 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 
 		// start web api with runners
 		startWebAPIWithProcessor(signerNames)
+
+		return nil
 	},
 }
 
@@ -151,6 +170,6 @@ func init() {
 
 	// add serve with multiple signers and parse related flags
 	serveCmd.AddCommand(serveWithMultipleSignersCmd)
-	parseConfigFlag(serveWithMultipleSignersCmd)
+	// No need to call parseConfigFlag since config is now a global flag
 	parseServeFlags(serveWithMultipleSignersCmd)
 }

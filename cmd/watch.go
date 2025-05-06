@@ -1,11 +1,16 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/digitorus/pdfsigner/files"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/signer"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // watchCmd represents the watch command.
@@ -19,13 +24,7 @@ var watchCmd = &cobra.Command{
 var watchPEMCmd = &cobra.Command{
 	Use:   "pem",
 	Short: "Watch and sign with PEM formatted certificate",
-	Run: func(cmd *cobra.Command, args []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// create signer config
 		c := signerConfig{}
 
@@ -33,10 +32,16 @@ var watchPEMCmd = &cobra.Command{
 		bindSignerFlagsToConfig(cmd, &c)
 
 		// set sign data
-		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
+		if err := c.SignData.SetPEM(c.Cert, c.Key, c.Chain); err != nil {
+			return fmt.Errorf("failed to set PEM certificate data: %w", err)
+		}
 
 		// start watch
-		startWatch(c.SignData)
+		if err := startWatch(c.SignData); err != nil {
+			return fmt.Errorf("failed to start watch process: %w", err)
+		}
+
+		return nil
 	},
 }
 
@@ -44,13 +49,7 @@ var watchPEMCmd = &cobra.Command{
 var watchPKSC11Cmd = &cobra.Command{
 	Use:   "pksc11",
 	Short: "Watch and sign with PSKC11",
-	Run: func(cmd *cobra.Command, args []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// create signer config
 		c := signerConfig{}
 
@@ -58,26 +57,31 @@ var watchPKSC11Cmd = &cobra.Command{
 		bindSignerFlagsToConfig(cmd, &c)
 
 		// set sign data
-		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
+		err := c.SignData.SetPKSC11(c.Lib, c.Pass, c.Chain)
+		if err != nil {
+			return fmt.Errorf("failed to set PKSC11 configuration: %w", err)
+		}
 
 		// start watch
-		startWatch(c.SignData)
+		if err := startWatch(c.SignData); err != nil {
+			return fmt.Errorf("failed to start watch process: %w", err)
+		}
+
+		return nil
 	},
 }
 
-// watchBySignerNameCmd wathces folders and signs files using singer from the config with possibility to override it with flags.
+// watchBySignerNameCmd watches folders and signs files using singer from the config with possibility to override it with flags.
 var watchBySignerNameCmd = &cobra.Command{
 	Use:   "signer",
 	Short: "Watch and sign with preconfigured signer",
-	Run: func(cmd *cobra.Command, args []string) {
-		// require license
-		err := requireLicense()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// get signer config from the config file by name
-		c := getSignerConfigByName(signerNameFlag)
+		signerName := viper.GetString("signerName")
+		c, err := getSignerConfigByName(signerName)
+		if err != nil {
+			return err
+		}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
@@ -85,29 +89,79 @@ var watchBySignerNameCmd = &cobra.Command{
 		// set sign data
 		switch c.Type {
 		case "pem":
-			c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
+			// set sign data
+			if err := c.SignData.SetPEM(c.Cert, c.Key, c.Chain); err != nil {
+				return fmt.Errorf("failed to set PEM certificate data: %w", err)
+			}
 		case "pksc11":
-			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
+			err := c.SignData.SetPKSC11(c.Lib, c.Pass, c.Chain)
+			if err != nil {
+				return fmt.Errorf("failed to set PKSC11 configuration: %w", err)
+			}
+		default:
+			return fmt.Errorf("unknown signer type: %s", c.Type)
 		}
 
 		// start watch
-		startWatch(c.SignData)
+		if err := startWatch(c.SignData); err != nil {
+			return fmt.Errorf("failed to start watch process: %w", err)
+		}
+
+		return nil
 	},
 }
 
 // startWatch starts watcher.
-func startWatch(signData signer.SignData) {
+func startWatch(signData signer.SignData) error {
 	license.LD.AutoSave()
-	files.Watch(inputPathFlag, func(filePath string, left int) {
-		signedFilePath := getOutputFilePathByInputFilePath(filePath, outputPathFlag)
-		if err := signer.SignFile(filePath, signedFilePath, signData, validateSignature); err != nil {
+
+	// Get input and output paths from viper
+	inputPath := viper.GetString("in")
+	outputPath := viper.GetString("out")
+	validateSig := viper.GetBool("validateSignature")
+
+	// Fallback to flag values if not found in viper
+	if inputPath == "" {
+		inputPath = inputPathFlag
+	}
+	if outputPath == "" {
+		inputPath = outputPathFlag
+	}
+
+	// Check if input and output paths exist
+	if _, err := os.Stat(inputPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("input directory does not exist: %s", inputPath)
+		} else {
+			return fmt.Errorf("cannot access input directory %s: %w", inputPath, err)
+		}
+	}
+
+	if _, err := os.Stat(outputPath); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("output directory does not exist: %s", outputPath)
+		} else {
+			return fmt.Errorf("cannot access output directory %s: %w", outputPath, err)
+		}
+	}
+
+	files.Watch(inputPath, func(filePath string, left int) {
+		signedFilePath := getOutputFilePathByInputFilePath(filePath, outputPath)
+		if err := signer.SignFile(filePath, signedFilePath, signData, validateSig); err != nil {
 			log.Errorln(err)
 		}
 	})
+
+	return nil
 }
 
 func init() {
 	RootCmd.AddCommand(watchCmd)
+	parseCommonFlags(watchCmd)
+	parseInputPathFlag(watchCmd)
+	parseOutputPathFlag(watchCmd)
+	parsePEMCertificateFlags(watchCmd)
+	parsePKSC11CertificateFlags(watchCmd)
 
 	// add PEM sign command and parse related flags
 	watchCmd.AddCommand(watchPEMCmd)
@@ -125,8 +179,6 @@ func init() {
 
 	// add watch command with signer from config and parse related flags
 	watchCmd.AddCommand(watchBySignerNameCmd)
-	parseConfigFlag(watchBySignerNameCmd)
-	parseSignerName(watchBySignerNameCmd)
 	parseCommonFlags(watchBySignerNameCmd)
 	parseInputPathFlag(watchBySignerNameCmd)
 	parseOutputPathFlag(watchBySignerNameCmd)

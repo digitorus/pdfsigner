@@ -69,7 +69,7 @@ func SaveByKey(key string, value []byte) error {
 		return err
 	})
 	if err != nil {
-		return errors.Wrap(err, "update by key")
+		return fmt.Errorf("update by key: %w", err)
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func LoadByKey(key string) ([]byte, error) {
 		return nil
 	})
 	if err != nil {
-		return result, errors.Wrap(err, "view by key")
+		return result, fmt.Errorf("view by key: %w", err)
 	}
 
 	return result, nil

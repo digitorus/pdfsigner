@@ -168,7 +168,7 @@ PEM specific flags:
 
 ```
 --key string             Private key path
---crt string             Certificate path
+--cert string            Certificate path
 ```
 
 #### Example
@@ -177,7 +177,7 @@ PEM specific flags:
 pdfsigner serve pem \
   --serve-address "127.0.0.1"\
   --serve-port "8080"\
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -214,7 +214,7 @@ pdfsigner serve pksc11 \
   --serve-port "8080"\
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -258,11 +258,11 @@ pdfsigner serve signer --signer-name "name-of-the-signer" \
   --signer-name signerNameFromTheConfig   
   --serve-address "127.0.0.1"\
   --serve-port "8080"
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
