@@ -37,7 +37,7 @@ jobs:
           go-version: stable
       
       - name: Set up Zig
-        uses: mlugg/setup-zig@v1
+        uses: mlugg/setup-zig@v2
 
       - name: Check if release with tag or snapshot
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
