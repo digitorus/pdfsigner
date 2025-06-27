@@ -3,6 +3,7 @@ package signer
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"os"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/digitorus/pdfsign/sign"
 	"github.com/digitorus/pdfsign/verify"
 	"github.com/digitorus/pdfsigner/license"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,21 +21,21 @@ import (
 type SignData sign.SignData
 
 // SetPEM sets specific to PEM settings.
-func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
+func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) error {
 	// Set certificate
 	certificate_data, err := os.ReadFile(crtPath)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to read certificate file: %w", err)
 	}
 
 	certificate_data_block, _ := pem.Decode(certificate_data)
 	if certificate_data_block == nil {
-		log.Fatal("failed to parse PEM block containing the certificate")
+		return errors.New("failed to parse PEM block containing the certificate")
 	}
 
 	cert, err := x509.ParseCertificate(certificate_data_block.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
 	s.Certificate = cert
@@ -41,36 +43,44 @@ func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
 	// Set key
 	key_data, err := os.ReadFile(keyPath)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to read private key file: %w", err)
 	}
 
 	key_data_block, _ := pem.Decode(key_data)
 	if key_data_block == nil {
-		log.Fatal("failed to parse PEM block containing the private key")
+		return errors.New("failed to parse PEM block containing the private key")
 	}
 
 	pkey, err := x509.ParsePKCS1PrivateKey(key_data_block.Bytes)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to parse private key: %w", err)
 	}
 
 	s.Signer = pkey
 
-	s.SetCertificateChains(crtChainPath)
-	s.SetRevocationSettings()
+	err = s.SetCertificateChains(crtChainPath)
+	if err != nil {
+		return fmt.Errorf("failed to set certificate chains: %w", err)
+	}
+
+	if err := s.SetRevocationSettings(); err != nil {
+		return fmt.Errorf("failed to set revocation settings: %w", err)
+	}
+
+	return nil
 }
 
 // SetCertificateChains sets certificate chain settings.
-func (s *SignData) SetCertificateChains(crtChainPath string) {
+func (s *SignData) SetCertificateChains(crtChainPath string) error {
 	var certificate_chains [][]*x509.Certificate
 
 	if crtChainPath == "" {
-		return
+		return nil
 	}
 
 	chain_data, err := os.ReadFile(crtChainPath)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to read certificate chain file: %w", err)
 	}
 
 	certificate_pool := x509.NewCertPool()
@@ -82,16 +92,20 @@ func (s *SignData) SetCertificateChains(crtChainPath string) {
 		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 	})
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to verify certificate chains: %w", err)
 	}
 
 	s.CertificateChains = certificate_chains
+
+	return nil
 }
 
 // SetRevocationSettings sets default revocation settings.
-func (s *SignData) SetRevocationSettings() {
+func (s *SignData) SetRevocationSettings() error {
 	s.RevocationData = revocation.InfoArchival{}
 	s.RevocationFunction = sign.DefaultEmbedRevocationStatusFunction
+
+	return nil
 }
 
 // SignFile checks the license, waits if limits are reached, if allowed signs the file.
@@ -103,16 +117,18 @@ func SignFile(input, output string, s SignData, validateSignature bool) error {
 	}
 
 	// set date
-	s.Signature.Info.Date = time.Now().Local()
+	if s.Signature.Info.Date.IsZero() {
+		s.Signature.Info.Date = time.Now().Local()
+	}
 
 	// sign file
 	err = signFile(input, output, s, validateSignature)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return fmt.Errorf("failed to sign file: %w", err)
 	}
 
 	// log the result
-	log.Println("File signed:", output)
+	log.Debugf("File signed: %s", output)
 
 	return err
 }

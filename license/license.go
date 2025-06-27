@@ -1,8 +1,11 @@
 package license
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/denisbrodbeck/machineid"
@@ -14,17 +17,36 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TestLicense used in unit tests.
-const TestLicense = "LP+HAwEBB0xpY2Vuc2UB/4gAAQMBBERhdGEBCgABAVIB/4QAAQFTAf+EAAAACv+DBQEC/4YAAAD+AV3/iAH/8XsibiI6Ik5hbWUiLCJlIjoidGVzdEBleGFtcGxlLmNvbSIsImVuZCI6IjIxMjItMDYtMTFUMTM6Mzc6MDUuODg0OTIxMyswMjowMCIsImwiOlt7Im0iOjIsImkiOiIxcyJ9LHsibSI6MTAsImkiOiIxMHMifSx7Im0iOjEwMCwiaSI6IjFtIn0seyJtIjoyMDAwLCJpIjoiMWgifSx7Im0iOjIwMDAwMCwiaSI6IjI0aCJ9LHsibSI6MjAwMDAwMCwiaSI6IjcyMGgifSx7Im0iOjIwMDAwMDAwLCJpIjoiODY0MDAwaCJ9XSwiZCI6Mn0BMQIOpEnubsOkG6SGq8IjqBAtv7uFwY0aZJDLd4+JMA3DZWxQyg5OAavJ8AFQ3nPyORMBMQKsLzLxRDHhFf2wQG5gyaBpuSkIV1okdw06pg3cAAD0pcjaDQNj/+E9VQGc5I3QNckA"
+// Environment variable names
+const (
+	EnvPublicKey = "PDFSIGNER_LICENSE_PUBLIC_KEY"
+	EnvLicense   = "PDFSIGNER_LICENSE"
+	appID        = "PDFSigner_"
+)
 
-// HMACKeyForLimitsEncryption.
-const HMACKeyForLimitsEncryption = "HMACKeyForLimitsEncryption"
+// These variables can be set at build time using -ldflags
+// Example: go build -ldflags "-X github.com/digitorus/pdfsigner/license.publicKeyBase64=PUBLICKEY"
+// Example: go build -ldflags "-X github.com/digitorus/pdfsigner/license.licenseBase64=LICENSE"
+// Example: go build -ldflags "-X github.com/digitorus/pdfsigner/license.hmacKey=HMACKEY"
+var (
+	// publicKeyBase64 is the public key used to verify licenses
+	publicKeyBase64 string
 
-// ErrOverLimit contains error for over limit.
-var ErrOverLimit = errors.New("limit is over")
+	// licenseBase64 is the license that can be hardcoded into the binary
+	licenseBase64 string
+
+	// hmacKey is used for encryption of license limits
+	hmacKey string
+)
 
 // 864000h is equal to 100 years.
 var TotalLimitDuration = "864000h"
+
+// ErrOverLimit contains error for over limit.
+var ErrOverLimit = errors.New("exceeded license")
+
+// ErrMissingRequiredValue indicates a required value is missing
+var ErrMissingRequiredValue = errors.New("missing required value")
 
 // LD stores all the license related data.
 var LD LicenseData
@@ -50,15 +72,37 @@ type LicenseData struct {
 	lastState []ratelimiter.LimitState
 }
 
-// the public key b64 encoded from the private key using: lkgen pub my_private_key_file`.
-const (
-	PublicKeyBase64  = "BAgf/si0bLTtS9jgxULXWcDbVz213jCfs3vc/P+ccXcJuS44czEkzFH0RRQ+RDPAsS5c3yJCiU7e871rfnTtavlwQ1JhCEBCAr9mkyWjvm4bTI9+UpaD4qw4zf0S2D9IWg=="
-	appNameMachineID = "PDFSigner_unique_key_"
-)
+// getLicenseBytesFromEnv attempts to read license bytes from environment variable
+// License should always come from environment to allow for license changes without rebuilding
+func getLicenseBytesFromEnv() ([]byte, bool) {
+	if license := os.Getenv(EnvLicense); license != "" {
+		return []byte(license), true
+	}
+	return nil, false
+}
 
 // Initialize extracts license from the bytes provided to LD variable and stores it inside the db.
+// If licenseBytes is empty, tries to read from environment variable
 func Initialize(licenseBytes []byte) error {
-	log.Info("Initializing license...")
+	log.Debug("Initializing license...")
+
+	// Check if license bytes should be loaded from environment
+	if len(licenseBytes) == 0 {
+		if envBytes, exists := getLicenseBytesFromEnv(); exists {
+			licenseBytes = envBytes
+			log.Debug("Using license from environment variable")
+		} else if licenseBase64 != "" {
+			licenseBytes = []byte(licenseBase64)
+			log.Debug("Using license provided at build")
+		} else {
+			return errors.Wrap(ErrMissingRequiredValue,
+				fmt.Sprintf("license must be provided via %s environment variable", EnvLicense))
+		}
+	}
+
+	if len(licenseBytes) == 0 {
+		return errors.New("no license configured")
+	}
 
 	// load license data
 	ld, err := newExtractLicense(licenseBytes)
@@ -95,12 +139,12 @@ func Initialize(licenseBytes []byte) error {
 
 // Load loads the license from the db and extracts it to LD variable.
 func Load() error {
-	log.Info("Loading license from the DB...")
+	log.Debug("Loading license from the DB...")
 
 	// load license from the db
 	license, err := db.LoadByKey("license")
 	if err != nil {
-		return errors.Wrap(err, "couldn't load license from the db")
+		return fmt.Errorf("couldn't load license from the db: %w", err)
 	}
 
 	// check machine id
@@ -112,13 +156,13 @@ func Load() error {
 	// load license data
 	ld, err := newExtractLicense(license)
 	if err != nil {
-		return errors.Wrap(err, "couldn't extract license")
+		return fmt.Errorf("couldn't extract license: %w", err)
 	}
 
 	// load limit state from the db
 	err = ld.loadLimitState()
 	if err != nil {
-		return errors.Wrap(err, "couldn't load license limits")
+		return fmt.Errorf("couldn't load license limits: %w", err)
 	}
 
 	// initialize rate limiter
@@ -131,13 +175,14 @@ func Load() error {
 }
 
 func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
-	log.Info("Extracting license...")
+	log.Debug("Extracting license...")
 
 	ld := LicenseData{}
+
 	// Unmarshal the public key.
-	publicKey, err := lk.PublicKeyFromB64String(PublicKeyBase64)
+	publicKey, err := lk.PublicKeyFromB64String(publicKeyBase64)
 	if err != nil {
-		return ld, errors.Wrap(err, "")
+		return ld, fmt.Errorf("invalid public key format: %w", err)
 	}
 
 	// Unmarshal the customer license.
@@ -151,7 +196,6 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 		return ld, errors.Wrap(err, "")
 	} else if !ok {
 		err = errors.New("Invalid license signature")
-
 		return ld, errors.Wrap(err, "")
 	}
 
@@ -189,7 +233,7 @@ func newExtractLicense(licenseB64 []byte) (LicenseData, error) {
 	// set byte versions of the public key
 	publicKeyBytes := publicKey.ToBytes()
 	licenseBytes = append(licenseBytes, publicKeyBytes...)
-	hash := cryptopasta.Hash(HMACKeyForLimitsEncryption, licenseBytes)
+	hash := cryptopasta.Hash(hmacKey, licenseBytes)
 	copy(ld.cryptoKey[:], hash[:32])
 
 	return ld, nil
@@ -303,7 +347,7 @@ func (ld *LicenseData) Wait() error {
 			}
 
 			// log sleep time information
-			log.Println(ErrOverLimit, "wait for:", limit.Left())
+			log.Printf("%s (%d signatures per %s), wait for %s,", ErrOverLimit, limit.MaxCount, limit.IntervalStr, limit.Left())
 
 			// sleep
 			time.Sleep(limit.Left())
@@ -349,7 +393,7 @@ func (ld *LicenseData) Info() string {
 
 func saveMachineID() error {
 	// load machine id
-	machineID, err := machineid.ProtectedID(appNameMachineID)
+	machineID, err := machineid.ProtectedID(appID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -357,26 +401,26 @@ func saveMachineID() error {
 	// save machine id
 	err = db.SaveByKey("license_machineid", []byte(machineID))
 	if err != nil {
-		return errors.Wrap(err, "couldn't save host info")
+		return fmt.Errorf("couldn't save host info: %w", err)
 	}
 
 	return nil
 }
 
-// laod and check machine id.
+// check machine id.
 func checkMachineID() error {
 	// load machine id from the db
 	savedMachineID, err := db.LoadByKey("license_machineid")
 	if err != nil {
-		return errors.Wrap(err, "couldn't load host info from the db")
+		return fmt.Errorf("couldn't load host info from the db: %w", err)
 	}
 
 	savedMachineIDStr := string(savedMachineID)
 
 	// get current machine id
-	machineID, err := machineid.ProtectedID(appNameMachineID)
+	machineID, err := machineid.ProtectedID(appID)
 	if err != nil {
-		return errors.Wrap(err, "couldn't get host info")
+		return fmt.Errorf("couldn't get host info: %w", err)
 	}
 
 	// check that ids are not nil
@@ -395,4 +439,72 @@ func checkMachineID() error {
 // isTotalLimit checks if the provided limit is a total limit.
 func isTotalLimit(limit *ratelimiter.Limit) bool {
 	return limit.IntervalStr == TotalLimitDuration
+}
+
+// GenerateKeyPair creates a new public/private key pair for license generation
+func GenerateKeyPair() (privateKeyStr, publicKeyStr string, err error) {
+	privateKey, err := lk.NewPrivateKey()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate private key: %w", err)
+	}
+
+	privateKeyStr, err = privateKey.ToB64String()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to encode private key: %w", err)
+	}
+
+	publicKey := privateKey.GetPublicKey()
+	publicKeyStr = publicKey.ToB64String()
+
+	return privateKeyStr, publicKeyStr, nil
+}
+
+// GenerateLicense creates a license using the provided private key and license data
+func GenerateLicense(privateKeyStr string, licenseData interface{}) (string, error) {
+	// Parse private key
+	privateKey, err := lk.PrivateKeyFromB64String(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	// Marshal the license data to JSON
+	docBytes, err := json.Marshal(licenseData)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal license data: %w", err)
+	}
+
+	// Generate license
+	lic, err := lk.NewLicense(privateKey, docBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate license: %w", err)
+	}
+
+	// Encode license to base64
+	licStr, err := lic.ToB64String()
+	if err != nil {
+		return "", fmt.Errorf("failed to encode license: %w", err)
+	}
+
+	return licStr, nil
+}
+
+// GenerateRandomHMACKey creates a random HMAC key
+func GenerateRandomHMACKey() (string, error) {
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(randomBytes)[:32], nil
+}
+
+// GetPublicKeyFromPrivate extracts the public key from a private key
+func GetPublicKeyFromPrivate(privateKeyStr string) (string, error) {
+	privateKey, err := lk.PrivateKeyFromB64String(privateKeyStr)
+	if err != nil {
+		return "", fmt.Errorf("invalid private key: %w", err)
+	}
+
+	publicKey := privateKey.GetPublicKey()
+	return publicKey.ToB64String(), nil
 }

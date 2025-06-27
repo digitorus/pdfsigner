@@ -21,7 +21,7 @@ PEM specific flags:
 
 ```sh
 --key string             # Private key path
---crt string             # Certificate path
+--cert string             # Certificate path
 
 ```
 
@@ -29,7 +29,7 @@ PEM specific flags:
 
 ```sh
 pdfsigner watch --in path/to/folder/to/watch --out path/to/folder/with/signed/files pem \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -65,7 +65,7 @@ pdfsigner watch pksc11 \
   --out path/to/folder/with/signed/files \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \
@@ -108,11 +108,11 @@ Preconfigured signer settings could be overwritten with flags:
 pdfsigner watch signer \
   --config path/to/config/file \
   --signer-name "name-of-the-signer" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --lib path/to/pksc11/lib \
   --pass "pksc11-password" \
-  --crt path/to/certificate \
+  --cert path/to/certificate \
   --key path/to/private/key \
   --chain path/to/certificate/chain \
   --contact "Contact information" \

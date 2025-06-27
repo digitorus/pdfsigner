@@ -1,9 +1,34 @@
 FROM alpine
-ADD ca-certificates.crt /etc/ssl/certs/
-ADD static /static
-ADD config.yaml
-ADD pdfsigner /
-COPY passwd /etc/passwd
-WORKDIR /
-USER user
-CMD ["./pdfsinger", "serve", "--config", "./config.yaml"]
+
+# Create non-root user
+RUN addgroup -S -g 1000 appgroup && adduser -S -u 1000 -G appgroup appuser
+
+# Install certificates
+RUN apk add --no-cache ca-certificates
+
+# Create application directories
+RUN mkdir -p /usr/local/bin \
+    /etc/pdfsigner \
+    /var/lib/pdfsigner \ 
+    /var/lib/pdfsigner/input \
+    /var/lib/pdfsigner/output
+
+# Copy application files
+COPY config.example.yaml /etc/pdfsigner/config.yaml
+COPY pdfsigner /usr/local/bin/pdfsigner
+
+# Set permissions and ownership
+RUN chown -R appuser:appgroup /etc/pdfsigner /var/lib/pdfsigner
+RUN chmod 755 /usr/local/bin/pdfsigner
+    
+# Define volume for configuration
+VOLUME ["/etc/pdfsigner", "/var/lib/pdfsigner/input", "/var/lib/pdfsigner/output"]
+
+WORKDIR /var/lib/pdfsigner
+
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+CMD ["pdfsigner", "serve", "--config", "/etc/pdfsigner/config.yaml"]

@@ -15,8 +15,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -24,14 +22,15 @@ import (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Get PDFSigner version",
-	Run: func(cmd *cobra.Command, args []string) {
-		// print version
-		fmt.Println(
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Println(
 			"Version", ver.Version,
 			"BuildDate", ver.BuildDate,
 			"GitCommit", ver.GitCommit,
 			"GitBranch", ver.GitBranch,
 		)
+
+		return nil
 	},
 }
 

@@ -474,7 +474,7 @@ func verifyTask(task Task) (resp *verify.Response, err error) {
 
 	resp, err = verify.File(inputFile)
 	if err != nil {
-		return resp, errors.Wrap(err, "verify task")
+		return resp, fmt.Errorf("verify task: %w", err)
 	}
 
 	return resp, nil
@@ -527,7 +527,7 @@ func (q *Queue) LoadFromDB() error {
 
 	dbJobs, err := db.BatchLoad(dbJobPrefix)
 	if err != nil {
-		return errors.Wrap(err, "loading jobs from the db")
+		return fmt.Errorf("loading jobs from the db: %w", err)
 	}
 
 	// load jobs and tasks
@@ -537,7 +537,7 @@ func (q *Queue) LoadFromDB() error {
 
 		err := json.Unmarshal(dbJob, &job)
 		if err != nil {
-			return errors.Wrap(err, "unmarshal job")
+			return fmt.Errorf("unmarshal job: %w", err)
 		}
 
 		q.mu.Lock()

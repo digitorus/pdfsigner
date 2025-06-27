@@ -5,20 +5,15 @@ import (
 	"testing"
 
 	"github.com/digitorus/pdfsign/sign"
-	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
 	"github.com/digitorus/pdfsigner/signer"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestQSignersMap(t *testing.T) {
 	logrus.SetOutput(io.Discard)
-
-	err := license.Initialize([]byte(license.TestLicense))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// create sign data
 	d := signer.SignData{
@@ -33,7 +28,7 @@ func TestQSignersMap(t *testing.T) {
 			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
 		},
 	}
-	d.SetPEM("../../testfiles/test.crt", "../../testfiles/test.pem", "")
+	_ = d.SetPEM("../../testfiles/test.crt", "../../testfiles/test.pem", "")
 
 	// create Queue
 	qs := NewQueue()
