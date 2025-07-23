@@ -282,9 +282,8 @@ Depending on the type of the signer appropriate flags should be used:
 PEM:
 
 ```sh
---lib string             # Path to PKCS11 library
---pass string            # PKCS11 password
-
+--key string             # Private key path
+--crt string             # Certificate path
 ```
 
 PKSC11
