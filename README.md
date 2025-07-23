@@ -38,5 +38,5 @@ This project is under active development. While core functionality is stable, AP
 
 ## License
 
-Dual licensed under [GNU](LICENSE.md) and Commercial licenses.
+Dual licensed under [GNU](LICENSE) and Commercial licenses.
 For commercial licensing, please contact us at https://digitorus.com.
