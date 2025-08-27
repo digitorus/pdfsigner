@@ -213,7 +213,7 @@ func (wa *WebAPI) handleSignGetFile(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return httpError(w, err, http.StatusInternalServerError)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// get file info
 	fileInfo, err := file.Stat()

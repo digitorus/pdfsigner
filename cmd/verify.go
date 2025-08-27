@@ -22,7 +22,7 @@ var verifyCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal("Couldn't open file", f, ",", err)
 			}
-			defer input_file.Close()
+			defer func() { _ = input_file.Close() }()
 
 			_, err = verify.File(input_file)
 			if err != nil {

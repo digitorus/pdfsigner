@@ -275,7 +275,7 @@ func newMultipleFilesUploadRequest(uri string, params map[string]string, filePar
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 
 		part, err := writer.CreateFormFile(f.fieldName, filepath.Base(f.path))
 		if err != nil {

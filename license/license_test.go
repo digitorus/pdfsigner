@@ -33,7 +33,7 @@ func TestFlow(t *testing.T) {
 	assert.Equal(t, len(licData.Limits), len(LD.Limits))
 	assert.Empty(t, deep.Equal(licData.Limits, LD.Limits))
 	assert.Equal(t, licData.Limits[0].MaxCount, LD.Limits[0].MaxCount)
-	assert.Equal(t, licData.Limits[0].LimitState.CurCount, LD.Limits[0].LimitState.CurCount)
+	assert.Equal(t, licData.Limits[0].CurCount, LD.Limits[0].CurCount)
 	assert.Equal(t, licData.MaxDirectoryWatchers, LD.MaxDirectoryWatchers)
 
 	// test load

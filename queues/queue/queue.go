@@ -470,7 +470,7 @@ func verifyTask(task Task) (resp *verify.Response, err error) {
 	if err != nil {
 		return resp, errors.Wrap(err, "")
 	}
-	defer inputFile.Close()
+	defer func() { _ = inputFile.Close() }()
 
 	resp, err = verify.File(inputFile)
 	if err != nil {
@@ -568,5 +568,5 @@ func (q *Queue) DeleteFromDB(jobID string) error {
 }
 
 func generateID() string {
-	return strings.Replace(uuid.New().String(), "-", "", -1)
+	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }

@@ -122,13 +122,13 @@ func signFile(input string, output string, sign_data SignData, validateSignature
 	if err != nil {
 		return err
 	}
-	defer input_file.Close()
+	defer func() { _ = input_file.Close() }()
 
 	output_file, err := os.Create(output)
 	if err != nil {
 		return err
 	}
-	defer output_file.Close()
+	defer func() { _ = output_file.Close() }()
 
 	finfo, err := input_file.Stat()
 	if err != nil {
