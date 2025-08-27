@@ -139,9 +139,10 @@ func setupSigner(signerName string) {
 
 // setupService depending on the type of the service setups service.
 func setupService(service serviceConfig) {
-	if service.Type == "watch" {
+	switch service.Type {
+	case "watch":
 		setupWatch(service)
-	} else if service.Type == "serve" {
+	case "serve":
 		setupServe(service)
 		log.Println("watch service", service.Name, "started")
 	}

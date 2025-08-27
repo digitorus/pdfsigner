@@ -25,7 +25,7 @@ func savePDFToTemp(p *multipart.Part, fileNames map[string]string) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		written, err := io.Copy(f, p)
 		if err != nil {

@@ -79,7 +79,7 @@ func initializeLicense() error {
 		licenseStr = licenseStrConfOrFlag
 	} else {
 		// get license from the stdout
-		fmt.Fprint(os.Stdout, "Paste your license here:")
+		_, _ = fmt.Fprint(os.Stdout, "Paste your license here:")
 
 		var err error
 
@@ -89,7 +89,7 @@ func initializeLicense() error {
 		}
 	}
 
-	licenseBytes := []byte(strings.Replace(strings.TrimSpace(licenseStr), "\n", "", -1))
+	licenseBytes := []byte(strings.ReplaceAll(strings.TrimSpace(licenseStr), "\n", ""))
 	// initialize license
 	err := license.Initialize(licenseBytes)
 	if err != nil {
