@@ -9,6 +9,8 @@ github.com/denisbrodbeck/machineid v1.0.1 h1:geKr9qtkB876mXguW2X6TU4ZynleN6ezuMS
 github.com/denisbrodbeck/machineid v1.0.1/go.mod h1:dJUwb7PTidGDeYyUBmXZ2GphQBbjJCrnectwCyxcUSI=
 github.com/digitorus/pdf v0.1.2 h1:RjYEJNbiV6Kcn8QzRi6pwHuOaSieUUrg4EZo4b7KuIQ=
 github.com/digitorus/pdf v0.1.2/go.mod h1:05fDDJhPswBRM7GTfqCxNiDyeNcN0f+IobfOAl5pdXw=
+github.com/digitorus/pdf v0.2.0 h1:VTH4wOsVqIcV3CHeh8kahHDtvPmlK3jjRMIGhLXn4K4=
+github.com/digitorus/pdf v0.2.0/go.mod h1:hAVtI9P/OwJ4Hk+xoxxpLfBL3KHFpEFfcKMAnv02F80=
 github.com/digitorus/pdfsign v0.0.0-20250226084642-540ffbbec869 h1:3CtGdxJnOis/m/hHh7bxEi+5Sw7EyZNKFrHcPPWIwVY=
 github.com/digitorus/pdfsign v0.0.0-20250226084642-540ffbbec869/go.mod h1:EIX0ukk/f4C0ZdDYSB4YFGPSL/JfHy6JBwTxDYaMrVY=
 github.com/digitorus/pkcs11 v0.0.0-20231109204637-6ee79d00536b h1:vXN43Cuzh9pBsv1kfRc9F1iZr6r1mHHP0+RfCO7Pd1o=
