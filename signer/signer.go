@@ -142,13 +142,17 @@ func signFile(input string, output string, sign_data SignData, validateSignature
 		return err
 	}
 
-	err = sign.Sign(input_file, output_file, rdr, size, sign.SignData(sign_data))
+	err = sign.SignWithData(input_file, output_file, rdr, size, sign.SignData(sign_data))
 	if err != nil {
 		return err
 	}
 
 	if validateSignature {
-		_, err = verify.File(output_file)
+		// The verify.Response/Signer/Certificate shape (OCSP/CRL detail,
+		// certificate chains, ...) has no equivalent in pdfsign's newer
+		// fluent doc.Verify() API, so the deprecated top-level helper is
+		// kept deliberately rather than switched to the fluent API.
+		_, err = verify.VerifyFile(output_file) //nolint:staticcheck // see comment above
 		if err != nil {
 			return err
 		}

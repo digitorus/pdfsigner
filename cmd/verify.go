@@ -24,7 +24,9 @@ var verifyCmd = &cobra.Command{
 			}
 			defer func() { _ = input_file.Close() }()
 
-			_, err = verify.File(input_file)
+			// See the comment on the equivalent call in signer/signer.go for
+			// why the deprecated top-level helper is kept over the fluent API.
+			_, err = verify.VerifyFile(input_file) //nolint:staticcheck
 			if err != nil {
 				log.Println("File", f, "Couldn't be verified", err)
 			} else {

@@ -472,7 +472,9 @@ func verifyTask(task Task) (resp *verify.Response, err error) {
 	}
 	defer func() { _ = inputFile.Close() }()
 
-	resp, err = verify.File(inputFile)
+	// See the comment on the equivalent call in signer/signer.go for why the
+	// deprecated top-level helper is kept over the fluent API.
+	resp, err = verify.VerifyFile(inputFile) //nolint:staticcheck
 	if err != nil {
 		return resp, errors.Wrap(err, "verify task")
 	}
