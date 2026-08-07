@@ -29,16 +29,16 @@ The request should contain a `signer` field which defines which signer to use an
 
 The Web API is setup with default signature information which could be overwritten using folowing fields: 
 
-- `approval` - defines if the signature is approval or not, allowed values `true` and `false`
 - `certType` - defines certificate type. Allowed values are:
-  - `1` - Approval signature
-  - `2` - Certification signature (requires docmdp setting)
-  - `3` - Usage Rights signature
-  - `4` - TimeStamp signature
+  - `0` - Approval signature
+  - `1` - Certification signature (requires docMDP setting)
+  - `2` - DocumentTimestamp signature
+- `docMDP` - defines certification signature restrictions, see [configuration](configuration.md) for allowed values
 - `name` - name of the person creating signature
 - `location` - location of the person creating signature
 - `reason` - reason why the signature is created for
 - `contactInfo` - contact finformation
+- `validateSignature` - re-verify the signature after signing, allowed values `true` and `false`
 
 The successful request returns JSON `{"job_id":"jobidstr"}` that contains job id which could be then used to get information about the tasks and to download signed files.
 
@@ -300,13 +300,14 @@ PKSC11
 Multiple preconfigured signers 
 
 
-`pdfsigner serve multiple-signers` command allows the consumer of the Web API to choose which signer to use.
+`pdfsigner serve signers` command allows the consumer of the Web API to choose which signer to use.
 
 
 #### Example
 
 ```sh
-pdfsigner serve multiple-signers signer1 signer2 signer3 \
+pdfsigner serve signers signer1 signer2 signer3 \
+  --config path/to/config/file \
   --serve-address "127.0.0.1"\
   --serve-port "8080"
 ```

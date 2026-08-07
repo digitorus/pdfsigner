@@ -7,7 +7,7 @@ Configuration file allows to define the following settings:
   - `pdfsigner sign signer`
   - `pdfsigner watch signer`
   - `pdfsigner serve signer`
-  - `pdfsigner serve multiple-signers`
+  - `pdfsigner serve signers`
   - `pdfsigner services`
 - services to be used with `pdfsigner services command`
 
@@ -35,14 +35,18 @@ PKSC11 specifc settings:
 `libPath` - path to library
 `pass` - password
 
-signature settings are provided inside `signData.signature` section
-`certType` - defines certificate type. Allowed values:
-  - `1` - Approval signature
-  - `2` - Certification signature (requires docmdp)
-  - `3` - Usage Rights signature 
-  - `4` - TimeStamp signature
+Both signer types accept an optional `crtChainPath` - a PEM bundle of
+intermediate/root CA certificates used to resolve the certificate chain,
+needed when the leaf certificate isn't self-signed.
 
-`docmdp` - defines certification signature restrictions:
+Signature settings are provided inside the `options` section:
+
+`certType` - defines certificate type. Allowed values:
+  - `0` - Approval signature
+  - `1` - Certification signature (requires docMDP)
+  - `2` - DocumentTimestamp signature
+
+`docMDP` - defines certification signature restrictions:
   - `1` - No changes allowed
   - `2` - Allow form filling and signatures
   - `3` - Allow form filling, signatures and annotations
@@ -52,11 +56,25 @@ TSA settings (optional):
 `tsaUsername` - TSA authentication username
 `tsaPassword` - TSA authentication password
 
-signature information settings are provided inside `signData.signature.info` section
+Signature information settings, also inside `options`:
 `name` - name of the person creating signature
 `location` - location of the person creating signature
 `reason` - reason why the signature is created
 `contactInfo` - contact finformation
+
+### Visual signature appearance (optional)
+
+`options.appearance` draws a visible signature widget on the page. Omit it
+to sign without a visible widget (the default).
+
+`page` - 1-indexed page number the widget is placed on
+`x`, `y` - lower-left corner of the widget, in PDF points
+`width`, `height` - size of the widget, in PDF points
+`image` - path to a PNG/JPEG stamp image to draw instead of the standard
+  name/reason/location/date text layout; omit to use the text layout
+
+Note: pdfsign only allows visible appearances on approval signatures
+(`certType: 0`).
 
 ## Services settings
 
@@ -92,9 +110,6 @@ licensePath: ./pdfsigner.lic
 .signature_defaults: &signature_defaults
   docMDP: 1
   certType: 1
-
-# Common signature info (anchor)
-.signature_info_defaults: &signature_info_defaults
   name: Company Name
   location: New York
   reason: Document approval
@@ -123,26 +138,21 @@ signers:
     type: pem
     crtPath: /path/to/certificate.crt
     keyPath: /path/to/private.key
-    crtChainPath: /path/to/chain.pem
-    signData:
-      signature:
-        <<: *signature_defaults # Reuse common signature settings
-        info:
-          <<: *signature_info_defaults # Reuse common info settings
+    # crtChainPath: /path/to/chain.pem # only needed if the leaf isn't self-signed
+    options:
+      <<: *signature_defaults # Reuse common signature settings
 
   hardware_token:
-    type: pkcs11
+    type: pksc11
     libPath: /usr/lib/softokn3.so
     pass: token_password
     crtChainPath: /path/to/chain.pem
-    signData:
-      signature:
-        <<: *signature_defaults # Reuse common signature settings
-        info:
-          name: Hardware Token
-          location: Secure Element
-          reason: Secure signing
-          contactInfo: security@company.com
+    options:
+      <<: *signature_defaults # Reuse common signature settings
+      name: Hardware Token
+      location: Secure Element
+      reason: Secure signing
+      contactInfo: security@company.com
 
 ```
 

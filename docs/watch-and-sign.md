@@ -143,4 +143,9 @@ Depending on the type of the signer appropriate flags should be used:
 --pass string            # PKCS11 password
 ```
 
+## Visual signature appearance
+
+`pdfsigner watch` accepts the same `--visible`/`--appearance-*` flags as
+`pdfsigner sign`; see [command line signer](command-line-signer.md#visual-signature-appearance).
+
 

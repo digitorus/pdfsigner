@@ -30,10 +30,12 @@ func init() {
 		dbFileName = path.Join(runFileFolder, dbFileName)
 	}
 
-	opts := bolt.DefaultOptions
-	opts.Timeout = 5
+	// Copy DefaultOptions rather than mutating the shared package-level
+	// value bolt.DefaultOptions points to.
+	opts := *bolt.DefaultOptions
+	opts.Timeout = 5 * time.Second
 
-	DB, err = bolt.Open(dbFileName, 0o600, opts)
+	DB, err = bolt.Open(dbFileName, 0o600, &opts)
 	if err != nil {
 		if err.Error() == "timeout" {
 			log.Fatal(errors.New("Another PDFSigner process is running..."))

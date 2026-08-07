@@ -33,11 +33,11 @@ func respondJSON(w http.ResponseWriter, data interface{}, code int) error {
 		return httpError(w, err, http.StatusInternalServerError)
 	}
 
-	// set response code
-	w.WriteHeader(code)
-
 	// set content type
 	w.Header().Set("Content-Type", "application/json")
+
+	// set response code
+	w.WriteHeader(code)
 
 	// respond with json
 	_, err = w.Write(j)

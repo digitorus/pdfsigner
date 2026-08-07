@@ -129,3 +129,37 @@ Depending on the type of the signer appropriate flags should be used:
 --lib string             # Path to PKCS11 library
 --pass string            # PKCS11 password
 ```
+
+## Visual signature appearance
+
+Any `pdfsigner sign` command accepts flags to draw a visible signature
+widget on the page instead of an invisible signature. Only approval
+signatures (`--type 0`) support a visible appearance.
+
+```sh
+--visible                     # Draw a visual signature widget on the page
+--appearance-page int         # Page for the widget, 1-indexed (default 1)
+--appearance-x float          # X position, in points (default 0)
+--appearance-y float          # Y position, in points (default 0)
+--appearance-width float      # Width, in points (default 200)
+--appearance-height float     # Height, in points (default 80)
+--appearance-image string     # PNG/JPEG to draw instead of the standard
+                               # name/reason/location/date text layout
+```
+
+### Example
+
+```sh
+pdfsigner sign pem \
+  --crt path/to/certificate \
+  --key path/to/private/key \
+  --name "Name" \
+  --reason "Reason" \
+  --type 0 \
+  --visible \
+  --appearance-x 20 \
+  --appearance-y 20 \
+  --appearance-width 200 \
+  --appearance-height 80 \
+  path/to/file.pdf
+```

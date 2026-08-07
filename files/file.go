@@ -10,20 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// func storeTempFile(file io.Reader) (string, error) {
-// 	// TODO: Should we encrypt temporary files?
-// 	tmpFile, err := os.CreateTemp("", "pdf")
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	_, err = io.Copy(tmpFile, file)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return tmpFile.Name(), nil
-// }
-
 // findFilesByPatterns finds all files matched the patterns.
 func findFilesByPatterns(patterns []string) (matchedFiles []string, err error) {
 	for _, f := range patterns {
