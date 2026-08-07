@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitorus/pdfsign/sign"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/digitorus/pdfsigner/signer"
@@ -52,21 +52,20 @@ func runTest(m *testing.M) int {
 	q = queue.NewQueue()
 
 	// create signer
-	signData := signer.SignData{
-		Signature: sign.SignDataSignature{
-			Info: sign.SignDataSignatureInfo{
-				Name:        "Tim",
-				Location:    "Spain",
-				Reason:      "Test",
-				ContactInfo: "None",
-				Date:        time.Now().Local(),
-			},
-			CertType:   sign.CertificationSignature,
-			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
-		},
+	identity, err := signer.NewPEMIdentity("../testfiles/test.crt", "../testfiles/test.pem", "")
+	if err != nil {
+		log.Fatal(err)
 	}
-	signData.SetPEM("../testfiles/test.crt", "../testfiles//test.pem", "")
-	q.AddSignUnit("simple", signData)
+
+	opts := signer.Options{
+		SignerName: "Tim",
+		Location:   "Spain",
+		Reason:     "Test",
+		Contact:    "None",
+		Type:       pdfsign.CertificationSignature,
+		Permission: pdfsign.AllowFormFilling,
+	}
+	q.AddSignUnit("simple", identity, opts)
 	q.AddVerifyUnit()
 	q.StartProcessor()
 
@@ -155,7 +154,7 @@ func TestSignFlow(t *testing.T) {
 		w = httptest.NewRecorder()
 		wa.r.ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code, w.Body.String())
-		assert.Len(t, w.Body.Bytes(), 23748)
+		assert.Len(t, w.Body.Bytes(), 23769)
 
 		completedTasks += 1
 	}

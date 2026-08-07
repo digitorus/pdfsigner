@@ -28,15 +28,13 @@ var signPEMCmd = &cobra.Command{
 		requireFilePatterns(filePatterns)
 
 		// initialize config
-		c := signerConfig{}
+		c := signerConfig{Type: "pem"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
-		// set sign data
-		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
 
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
+		files.SignFilesByPatterns(filePatterns, mustBuildIdentity(c), c.Options, validateSignature)
 	},
 }
 
@@ -55,16 +53,13 @@ var signPKSC11Cmd = &cobra.Command{
 		requireFilePatterns(filePatterns)
 
 		// initialize config
-		c := signerConfig{}
+		c := signerConfig{Type: "pksc11"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
 
-		// set sign data
-		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
+		files.SignFilesByPatterns(filePatterns, mustBuildIdentity(c), c.Options, validateSignature)
 	},
 }
 
@@ -88,16 +83,8 @@ var signBySignerNameCmd = &cobra.Command{
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
 
-		// set sign data
-		switch c.Type {
-		case "pem":
-			c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-		case "pksc11":
-			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-		}
-
 		// sign files
-		files.SignFilesByPatterns(filePatterns, c.SignData, validateSignature)
+		files.SignFilesByPatterns(filePatterns, mustBuildIdentity(c), c.Options, validateSignature)
 	},
 }
 

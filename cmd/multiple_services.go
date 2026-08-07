@@ -125,16 +125,8 @@ func setupSigner(signerName string) {
 	// get config signer by name
 	config := getSignerConfigByName(signerName)
 
-	// set sign data
-	switch config.Type {
-	case "pem":
-		config.SignData.SetPEM(config.CrtPath, config.KeyPath, config.CrtChainPath)
-	case "pksc11":
-		config.SignData.SetPKSC11(config.LibPath, config.Pass, config.CrtChainPath)
-	}
-
 	// add signer to signers map
-	signVerifyQueue.AddSignUnit(signerName, config.SignData)
+	signVerifyQueue.AddSignUnit(signerName, mustBuildIdentity(config), config.Options)
 }
 
 // setupService depending on the type of the service setups service.

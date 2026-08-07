@@ -1,52 +1,49 @@
 //go:build cgo
-// +build cgo
 
 package signer
 
 import (
+	"fmt"
+
 	"github.com/digitorus/pkcs11"
-	log "github.com/sirupsen/logrus"
 )
 
-// SetPKSC11 sets specific to PKSC11 settings.
-func (s *SignData) SetPKSC11(libPath, pass, crtChainPath string) {
-	// pkcs11 key
+// NewPKCS11Identity loads a signer identity from a certificate and private
+// key held on a PKCS#11 token (HSM/smart card).
+func NewPKCS11Identity(libPath, pin, chainPath string) (*Identity, error) {
 	lib, err := pkcs11.FindLib(libPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("find pkcs11 library: %w", err)
 	}
 
-	// Load Library
 	ctx := pkcs11.New(lib)
 	if ctx == nil {
-		log.Fatal("Failed to load library")
+		return nil, fmt.Errorf("load pkcs11 library %q", libPath)
 	}
 
-	err = ctx.Initialize()
+	if err := ctx.Initialize(); err != nil {
+		return nil, fmt.Errorf("initialize pkcs11 module: %w", err)
+	}
+
+	session, err := pkcs11.CreateSession(ctx, 0, pin, false)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("open pkcs11 session: %w", err)
 	}
-	// login
-	session, err := pkcs11.CreateSession(ctx, 0, pass, false)
+
+	cert, ckaID, err := pkcs11.GetCert(ctx, session, nil)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("read pkcs11 certificate: %w", err)
 	}
-	// select the first certificate
-	cert, ckaId, err := pkcs11.GetCert(ctx, session, nil)
+
+	key, err := pkcs11.InitPrivateKey(ctx, session, ckaID)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("load pkcs11 private key: %w", err)
 	}
 
-	s.Certificate = cert
-
-	// private key
-	pkey, err := pkcs11.InitPrivateKey(ctx, session, ckaId)
+	intermediates, err := resolveIntermediates(cert, chainPath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	s.Signer = pkey
-
-	s.SetCertificateChains(crtChainPath)
-	s.SetRevocationSettings()
+	return &Identity{Signer: key, Certificate: cert, Intermediates: intermediates}, nil
 }

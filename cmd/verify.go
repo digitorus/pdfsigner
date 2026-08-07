@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"os"
-
-	"github.com/digitorus/pdfsign/verify"
+	"github.com/digitorus/pdfsigner/signer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -18,21 +16,14 @@ var verifyCmd = &cobra.Command{
 		}
 
 		for _, f := range inputFileNames {
-			input_file, err := os.Open(f)
-			if err != nil {
-				log.Fatal("Couldn't open file", f, ",", err)
-			}
-			defer func() { _ = input_file.Close() }()
-
-			// See the comment on the equivalent call in signer/signer.go for
-			// why the deprecated top-level helper is kept over the fluent API.
-			_, err = verify.VerifyFile(input_file) //nolint:staticcheck
+			result, err := signer.VerifyFile(f)
 			if err != nil {
 				log.Println("File", f, "Couldn't be verified", err)
-			} else {
+			} else if result.Valid {
 				log.Println("File", f, "verified successfully")
+			} else {
+				log.Println("File", f, "is signed but not valid")
 			}
-
 		}
 	},
 }

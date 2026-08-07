@@ -27,16 +27,13 @@ var watchPEMCmd = &cobra.Command{
 		}
 
 		// create signer config
-		c := signerConfig{}
+		c := signerConfig{Type: "pem"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
 
-		// set sign data
-		c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-
 		// start watch
-		startWatch(c.SignData)
+		startWatch(mustBuildIdentity(c), c.Options)
 	},
 }
 
@@ -52,16 +49,13 @@ var watchPKSC11Cmd = &cobra.Command{
 		}
 
 		// create signer config
-		c := signerConfig{}
+		c := signerConfig{Type: "pksc11"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
 
-		// set sign data
-		c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-
 		// start watch
-		startWatch(c.SignData)
+		startWatch(mustBuildIdentity(c), c.Options)
 	},
 }
 
@@ -82,25 +76,17 @@ var watchBySignerNameCmd = &cobra.Command{
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &c)
 
-		// set sign data
-		switch c.Type {
-		case "pem":
-			c.SignData.SetPEM(c.CrtPath, c.KeyPath, c.CrtChainPath)
-		case "pksc11":
-			c.SignData.SetPKSC11(c.LibPath, c.Pass, c.CrtChainPath)
-		}
-
 		// start watch
-		startWatch(c.SignData)
+		startWatch(mustBuildIdentity(c), c.Options)
 	},
 }
 
 // startWatch starts watcher.
-func startWatch(signData signer.SignData) {
+func startWatch(identity *signer.Identity, opts signer.Options) {
 	license.LD.AutoSave()
 	files.Watch(inputPathFlag, func(filePath string, left int) {
 		signedFilePath := getOutputFilePathByInputFilePath(filePath, outputPathFlag)
-		if err := signer.SignFile(filePath, signedFilePath, signData, validateSignature); err != nil {
+		if err := signer.SignFile(filePath, signedFilePath, identity, opts, validateSignature); err != nil {
 			log.Errorln(err)
 		}
 	})

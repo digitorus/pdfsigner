@@ -4,7 +4,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/digitorus/pdfsign/sign"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
 	"github.com/digitorus/pdfsigner/signer"
@@ -20,26 +20,25 @@ func TestQSignersMap(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create sign data
-	d := signer.SignData{
-		Signature: sign.SignDataSignature{
-			Info: sign.SignDataSignatureInfo{
-				Name:        "Tim",
-				Location:    "Spain",
-				Reason:      "Test",
-				ContactInfo: "None",
-			},
-			CertType:   sign.CertificationSignature,
-			DocMDPPerm: sign.AllowFillingExistingFormFieldsAndSignaturesPerms,
-		},
+	identity, err := signer.NewPEMIdentity("../../testfiles/test.crt", "../../testfiles/test.pem", "")
+	if err != nil {
+		t.Fatal(err)
 	}
-	d.SetPEM("../../testfiles/test.crt", "../../testfiles/test.pem", "")
+
+	opts := signer.Options{
+		SignerName: "Tim",
+		Location:   "Spain",
+		Reason:     "Test",
+		Contact:    "None",
+		Type:       pdfsign.CertificationSignature,
+		Permission: pdfsign.AllowFormFilling,
+	}
 
 	// create Queue
 	qs := NewQueue()
 
 	// add signer
-	qs.AddSignUnit("simple", d)
+	qs.AddSignUnit("simple", identity, opts)
 
 	// add sign job
 	jobID := qs.AddSignJob(JobSignConfig{ValidateSignature: true})

@@ -3,13 +3,11 @@ package queue
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 
-	"github.com/digitorus/pdfsign/sign"
-	"github.com/digitorus/pdfsign/verify"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/db"
 	"github.com/digitorus/pdfsigner/queues/priority_queue"
 	"github.com/digitorus/pdfsigner/signer"
@@ -44,8 +42,10 @@ type unit struct {
 	pq *priority_queue.PriorityQueue
 	// isSigningUnit should be set to true if the unit is used for signing or false for verification
 	isSigningUnit bool
-	// signData represents sign data and it's used for signing unit
-	signData signer.SignData
+	// identity holds the signing key and certificate used by a signing unit
+	identity *signer.Identity
+	// options holds the default signature options used by a signing unit
+	options signer.Options
 }
 
 // Job represents a job for sign queue, stores tasks and sign data to override units initial sign data.
@@ -62,13 +62,13 @@ type Job struct {
 
 type JobSignConfig struct {
 	// sign data
-	Signer      string          `json:"signer"`
-	Name        string          `json:"name"`
-	Location    string          `json:"location"`
-	Reason      string          `json:"reason"`
-	ContactInfo string          `json:"contact_info"`
-	CertType    sign.CertType   `json:"cert_type"`
-	DocMDPPerms sign.DocMDPPerm `json:"doc_mdp_perms"`
+	Signer      string                `json:"signer"`
+	Name        string                `json:"name"`
+	Location    string                `json:"location"`
+	Reason      string                `json:"reason"`
+	ContactInfo string                `json:"contact_info"`
+	Type        pdfsign.SignatureType `json:"type"`
+	Permission  pdfsign.Permission    `json:"permission"`
 	// ValidateSignature allows to verify the job after it's being singed
 	ValidateSignature bool `json:"verify_after_sign"`
 }
@@ -88,7 +88,7 @@ type Task struct {
 	// Status represents the status of the task. Pending, Failed, Completed.
 	Status string `json:"status"`
 	// VerificationData represents data of the verification
-	VerificationData *verify.Response `json:"verification_data,omitempty"`
+	VerificationData *signer.VerifyResult `json:"verification_data,omitempty"`
 	// Error represents error if the task failed
 	Error string `json:"error,omitempty"`
 }
@@ -152,10 +152,10 @@ func (q *Queue) addUnit(unitName string) *unit {
 }
 
 // AddSignUnit adds signer unit to units map.
-func (q *Queue) AddSignUnit(unitName string, signData signer.SignData) {
+func (q *Queue) AddSignUnit(unitName string, identity *signer.Identity, opts signer.Options) {
 	u := q.addUnit(unitName)
-	// set sign data if provided
-	u.signData = signData
+	u.identity = identity
+	u.options = opts
 	u.isSigningUnit = true
 }
 
@@ -335,15 +335,12 @@ func (q *Queue) processNextTask(unitName string) error {
 	// process verify or sign task
 	var err error
 
-	var verifyResp *verify.Response
-
 	if unit.isSigningUnit {
 		// sign task
-		err = signTask(task, job.SignConfig, unit.signData)
+		err = signTask(task, job.SignConfig, unit.identity, unit.options)
 	} else {
 		// verify task
-		verifyResp, err = verifyTask(task)
-		task.VerificationData = verifyResp
+		task.VerificationData, err = verifyTask(task)
 	}
 
 	// process error
@@ -430,33 +427,34 @@ func (q *Queue) GetQueueSizeByUnitName(signerName string) (priority_queue.LenAll
 	return q.units[signerName].pq.LenAll(), nil
 }
 
-// signTask merges job and signer signdata.
-func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.SignData) error {
-	// get signer sign data
-	signData := signer.SignData(signerSignData)
-
-	// merge request sign data and signer sign data
-	switch {
-	case jobSignConfig.Name != "":
-		signData.Signature.Info.Name = jobSignConfig.Name
-	case jobSignConfig.Location != "":
-		signData.Signature.Info.Location = jobSignConfig.Location
-	case jobSignConfig.Reason != "":
-		signData.Signature.Info.Reason = jobSignConfig.Reason
-	case jobSignConfig.ContactInfo != "":
-		signData.Signature.Info.ContactInfo = jobSignConfig.ContactInfo
-	case jobSignConfig.CertType != 0:
-		signData.Signature.CertType = jobSignConfig.CertType
-	case jobSignConfig.DocMDPPerms != 0:
-		signData.Signature.DocMDPPerm = jobSignConfig.DocMDPPerms
+// signTask merges the job's per-request overrides onto the signer unit's
+// default options, then signs the task's input file.
+func signTask(task Task, jobSignConfig JobSignConfig, identity *signer.Identity, opts signer.Options) error {
+	if jobSignConfig.Name != "" {
+		opts.SignerName = jobSignConfig.Name
+	}
+	if jobSignConfig.Location != "" {
+		opts.Location = jobSignConfig.Location
+	}
+	if jobSignConfig.Reason != "" {
+		opts.Reason = jobSignConfig.Reason
+	}
+	if jobSignConfig.ContactInfo != "" {
+		opts.Contact = jobSignConfig.ContactInfo
+	}
+	if jobSignConfig.Type != 0 {
+		opts.Type = jobSignConfig.Type
+	}
+	if jobSignConfig.Permission != 0 {
+		opts.Permission = jobSignConfig.Permission
 	}
 
-	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, signData, jobSignConfig.ValidateSignature)
+	err := signer.SignFile(task.InputFilePath, task.OutputFilePath, identity, opts, jobSignConfig.ValidateSignature)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"inputFile":  task.InputFilePath,
 			"outputFile": task.OutputFilePath,
-			"signData":   signData,
+			"options":    opts,
 		}).Warnf("Couldn't sign file: %s", err)
 
 		return err
@@ -465,21 +463,13 @@ func signTask(task Task, jobSignConfig JobSignConfig, signerSignData signer.Sign
 	return nil
 }
 
-func verifyTask(task Task) (resp *verify.Response, err error) {
-	inputFile, err := os.Open(task.InputFilePath)
+func verifyTask(task Task) (*signer.VerifyResult, error) {
+	result, err := signer.VerifyFile(task.InputFilePath)
 	if err != nil {
-		return resp, errors.Wrap(err, "")
-	}
-	defer func() { _ = inputFile.Close() }()
-
-	// See the comment on the equivalent call in signer/signer.go for why the
-	// deprecated top-level helper is kept over the fluent API.
-	resp, err = verify.VerifyFile(inputFile) //nolint:staticcheck
-	if err != nil {
-		return resp, errors.Wrap(err, "verify task")
+		return nil, errors.Wrap(err, "verify task")
 	}
 
-	return resp, nil
+	return result, nil
 }
 
 // StartProcessor starts separate go routine for each signer which signs associated job tasks when they appear.

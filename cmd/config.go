@@ -34,14 +34,14 @@ type serviceConfig struct {
 }
 
 type signerConfig struct {
-	Name         string          `mapstructure:"-"` // Added for backward compatibility
-	Type         string          `mapstructure:"type"`
-	CrtPath      string          `mapstructure:"crtPath,omitempty"`
-	KeyPath      string          `mapstructure:"keyPath,omitempty"`
-	LibPath      string          `mapstructure:"libPath,omitempty"`
-	Pass         string          `mapstructure:"pass,omitempty"`
-	CrtChainPath string          `mapstructure:"crtChainPath,omitempty"`
-	SignData     signer.SignData `mapstructure:"signData"`
+	Name         string         `mapstructure:"-"` // Added for backward compatibility
+	Type         string         `mapstructure:"type"`
+	CrtPath      string         `mapstructure:"crtPath,omitempty"`
+	KeyPath      string         `mapstructure:"keyPath,omitempty"`
+	LibPath      string         `mapstructure:"libPath,omitempty"`
+	Pass         string         `mapstructure:"pass,omitempty"`
+	CrtChainPath string         `mapstructure:"crtChainPath,omitempty"`
+	Options      signer.Options `mapstructure:"options"`
 }
 
 var (

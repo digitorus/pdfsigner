@@ -4,7 +4,6 @@ go 1.26.0
 
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/digitorus/pdf v0.2.0
 	github.com/digitorus/pdfsign v1.0.0-rc1
 	github.com/digitorus/pkcs11 v0.0.0-20231109204637-6ee79d00536b
 	github.com/fsnotify/fsnotify v1.9.0
@@ -24,6 +23,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/digitorus/pdf v0.2.0 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20250730155240-ffadbf3f398c // indirect
 	github.com/digitorus/timestamp v0.0.0-20250524132541-c45532741eea // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -40,6 +40,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/image v0.44.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

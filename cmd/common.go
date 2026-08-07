@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/digitorus/pdfsign/sign"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/license"
 	"github.com/digitorus/pdfsigner/queues/queue"
+	"github.com/digitorus/pdfsigner/signer"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -43,6 +45,15 @@ var (
 	signatureTSAUsernameFlag  string
 	signatureTSAPasswordFlag  string
 
+	// Appearance flags.
+	appearanceVisibleFlag bool
+	appearancePageFlag    int
+	appearanceXFlag       float64
+	appearanceYFlag       float64
+	appearanceWidthFlag   float64
+	appearanceHeightFlag  float64
+	appearanceImageFlag   string
+
 	// PEM flags.
 	certificatePathFlag string
 	privateKeyPathFlag  string
@@ -58,8 +69,10 @@ var (
 
 // parseCommonFlags binds common flags to variables.
 func parseCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", 1, "Certificate type")
-	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", 1, "DocMDP permissions")
+	cmd.PersistentFlags().UintVar(&signatureTypeFlag, "type", uint(pdfsign.CertificationSignature),
+		"Signature type: 0=Approval, 1=Certification, 2=DocumentTimestamp")
+	cmd.PersistentFlags().UintVar(&docMdpPermsFlag, "docmdp", uint(pdfsign.NoChanges),
+		"DocMDP permissions for certification signatures: 1=NoChanges, 2=AllowFormFilling, 3=AllowFormFillingAndAnnotations")
 	cmd.PersistentFlags().StringVar(&signatureInfoNameFlag, "name", "", "Signature info name")
 	cmd.PersistentFlags().StringVar(&signatureInfoLocationFlag, "location", "", "Signature info location")
 	cmd.PersistentFlags().StringVar(&signatureInfoReasonFlag, "reason", "", "Signature reason")
@@ -68,7 +81,21 @@ func parseCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&signatureTSAUsernameFlag, "tsa-username", "", "TSA username")
 	cmd.PersistentFlags().StringVar(&signatureTSAPasswordFlag, "tsa-password", "", "TSA password")
 	cmd.PersistentFlags().StringVar(&certificateChainPathFlag, "chain", "", "Certificate chain path")
-	cmd.PersistentFlags().BoolVar(&validateSignature, "validate-signature", true, "Certificate chain path")
+	cmd.PersistentFlags().BoolVar(&validateSignature, "validate-signature", true, "Verify the signature after signing")
+
+	parseAppearanceFlags(cmd)
+}
+
+// parseAppearanceFlags binds visual signature appearance flags to variables.
+func parseAppearanceFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().BoolVar(&appearanceVisibleFlag, "visible", false, "Draw a visual signature widget on the page")
+	cmd.PersistentFlags().IntVar(&appearancePageFlag, "appearance-page", 1, "Page for the visual signature (1-indexed)")
+	cmd.PersistentFlags().Float64Var(&appearanceXFlag, "appearance-x", 0, "X position of the visual signature, in points")
+	cmd.PersistentFlags().Float64Var(&appearanceYFlag, "appearance-y", 0, "Y position of the visual signature, in points")
+	cmd.PersistentFlags().Float64Var(&appearanceWidthFlag, "appearance-width", 200, "Width of the visual signature, in points")
+	cmd.PersistentFlags().Float64Var(&appearanceHeightFlag, "appearance-height", 80, "Height of the visual signature, in points")
+	cmd.PersistentFlags().StringVar(&appearanceImageFlag, "appearance-image", "",
+		"Image (PNG/JPEG) to draw instead of the standard name/reason/location/date text layout")
 }
 
 func parseConfigFlag(cmd *cobra.Command) {
@@ -148,41 +175,41 @@ func setupMultiSignersFlags(cmd *cobra.Command) {
 		usageSuffix += " config override flag"
 
 		// create commands with temporary uint variables
-		certTypeUint := uint(s.SignData.Signature.CertType)
-		docMDPPermUint := uint(s.SignData.Signature.DocMDPPerm)
+		typeUint := uint(s.Options.Type)
+		permissionUint := uint(s.Options.Permission)
 
-		cmd.PersistentFlags().UintVar(&certTypeUint, "type"+flagSuffix, certTypeUint, "Certificate type"+usageSuffix)
-		cmd.PersistentFlags().UintVar(&docMDPPermUint, "docmdp"+flagSuffix, docMDPPermUint, "DocMDP permissions"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&typeUint, "type"+flagSuffix, typeUint, "Signature type"+usageSuffix)
+		cmd.PersistentFlags().UintVar(&permissionUint, "docmdp"+flagSuffix, permissionUint, "DocMDP permissions"+usageSuffix)
 
 		// Store the index for later use in flag handling
-		certTypeIndices := make(map[string]int)
-		docMDPPermIndices := make(map[string]int)
-		certTypeIndices["type"+flagSuffix] = i
-		docMDPPermIndices["docmdp"+flagSuffix] = i
+		typeIndices := make(map[string]int)
+		permissionIndices := make(map[string]int)
+		typeIndices["type"+flagSuffix] = i
+		permissionIndices["docmdp"+flagSuffix] = i
 
 		// Add post-processing for these flags
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			for flagName, idx := range certTypeIndices {
+			for flagName, idx := range typeIndices {
 				if cmd.PersistentFlags().Changed(flagName) {
 					val, _ := cmd.PersistentFlags().GetUint(flagName)
-					signersConfigArr[idx].SignData.Signature.CertType = sign.CertType(val)
+					signersConfigArr[idx].Options.Type = pdfsign.SignatureType(val)
 				}
 			}
 
-			for flagName, idx := range docMDPPermIndices {
+			for flagName, idx := range permissionIndices {
 				if cmd.PersistentFlags().Changed(flagName) {
 					val, _ := cmd.PersistentFlags().GetUint(flagName)
-					signersConfigArr[idx].SignData.Signature.DocMDPPerm = sign.DocMDPPerm(val)
+					signersConfigArr[idx].Options.Permission = pdfsign.Permission(val)
 				}
 			}
 		}
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Name, "name"+flagSuffix, s.SignData.Signature.Info.Name, "Signature info name"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Location, "location"+flagSuffix, s.SignData.Signature.Info.Location, "Signature info location"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.Reason, "reason"+flagSuffix, s.SignData.Signature.Info.Reason, "Signature reason"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.Signature.Info.ContactInfo, "contact"+flagSuffix, s.SignData.Signature.Info.ContactInfo, "Signature contact"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.URL, "tsa-url"+flagSuffix, s.SignData.TSA.URL, "TSA url"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Username, "tsa-username"+flagSuffix, s.SignData.TSA.Username, "TSA username"+usageSuffix)
-		cmd.PersistentFlags().StringVar(&signersConfigArr[i].SignData.TSA.Password, "tsa-password"+flagSuffix, s.SignData.TSA.Password, "TSA password"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.SignerName, "name"+flagSuffix, s.Options.SignerName, "Signature info name"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.Location, "location"+flagSuffix, s.Options.Location, "Signature info location"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.Reason, "reason"+flagSuffix, s.Options.Reason, "Signature reason"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.Contact, "contact"+flagSuffix, s.Options.Contact, "Signature contact"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.TSAURL, "tsa-url"+flagSuffix, s.Options.TSAURL, "TSA url"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.TSAUsername, "tsa-username"+flagSuffix, s.Options.TSAUsername, "TSA username"+usageSuffix)
+		cmd.PersistentFlags().StringVar(&signersConfigArr[i].Options.TSAPassword, "tsa-password"+flagSuffix, s.Options.TSAPassword, "TSA password"+usageSuffix)
 		cmd.PersistentFlags().StringVar(&signersConfigArr[i].CrtChainPath, "chain"+flagSuffix, s.CrtChainPath, "Certificate chain path"+usageSuffix)
 	}
 }
@@ -217,7 +244,7 @@ func setupMultiServiceFlags(cmd *cobra.Command) {
 		usageSuffix += " config override flag"
 
 		// create commands
-		cmd.PersistentFlags().BoolVar(&servicesConfigArr[i].ValidateSignature, "validate-signature"+suffix, true, "Certificate chain path"+usageSuffix)
+		cmd.PersistentFlags().BoolVar(&servicesConfigArr[i].ValidateSignature, "validate-signature"+suffix, true, "Verify the signature after signing"+usageSuffix)
 	}
 }
 
@@ -231,38 +258,43 @@ func getAddrPort() string {
 func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	log.Debug("bindSignerFlagsToConfig")
 
-	// JobSignConfig
 	if cmd.PersistentFlags().Changed("docmdp") {
-		c.SignData.Signature.DocMDPPerm = sign.DocMDPPerm(docMdpPermsFlag)
+		c.Options.Permission = pdfsign.Permission(docMdpPermsFlag)
 	}
 
 	if cmd.PersistentFlags().Changed("type") {
-		c.SignData.Signature.CertType = sign.CertType(signatureTypeFlag)
+		c.Options.Type = pdfsign.SignatureType(signatureTypeFlag)
 	}
 
 	if cmd.PersistentFlags().Changed("name") {
-		c.SignData.Signature.Info.Name = signatureInfoNameFlag
+		c.Options.SignerName = signatureInfoNameFlag
 	}
 
 	if cmd.PersistentFlags().Changed("location") {
-		c.SignData.Signature.Info.Location = signatureInfoLocationFlag
+		c.Options.Location = signatureInfoLocationFlag
 	}
 
 	if cmd.PersistentFlags().Changed("reason") {
-		c.SignData.Signature.Info.Reason = signatureInfoReasonFlag
+		c.Options.Reason = signatureInfoReasonFlag
 	}
 
 	if cmd.PersistentFlags().Changed("contact") {
-		c.SignData.Signature.Info.ContactInfo = signatureInfoContactFlag
-	}
-
-	if cmd.PersistentFlags().Changed("tsa-password") {
-		c.SignData.TSA.URL = signatureTSAUrlFlag
+		c.Options.Contact = signatureInfoContactFlag
 	}
 
 	if cmd.PersistentFlags().Changed("tsa-url") {
-		c.SignData.TSA.Password = signatureTSAPasswordFlag
+		c.Options.TSAURL = signatureTSAUrlFlag
 	}
+
+	if cmd.PersistentFlags().Changed("tsa-username") {
+		c.Options.TSAUsername = signatureTSAUsernameFlag
+	}
+
+	if cmd.PersistentFlags().Changed("tsa-password") {
+		c.Options.TSAPassword = signatureTSAPasswordFlag
+	}
+
+	bindAppearanceFlagsToConfig(cmd, c)
 
 	// Certificate chain
 	if cmd.PersistentFlags().Changed("chain") {
@@ -286,6 +318,73 @@ func bindSignerFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
 	if cmd.PersistentFlags().Changed("pass") {
 		c.Pass = pksc11PassFlag
 	}
+}
+
+// bindAppearanceFlagsToConfig applies --visible and --appearance-* flag
+// overrides onto c.Options.Appearance, leaving any appearance configured in
+// the config file untouched when the corresponding flag was not passed.
+func bindAppearanceFlagsToConfig(cmd *cobra.Command, c *signerConfig) {
+	if cmd.PersistentFlags().Changed("visible") {
+		if !appearanceVisibleFlag {
+			c.Options.Appearance = nil
+			return
+		}
+
+		if c.Options.Appearance == nil {
+			c.Options.Appearance = &signer.Appearance{Page: 1, Width: 200, Height: 80}
+		}
+	}
+
+	if c.Options.Appearance == nil {
+		return
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-page") {
+		c.Options.Appearance.Page = appearancePageFlag
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-x") {
+		c.Options.Appearance.X = appearanceXFlag
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-y") {
+		c.Options.Appearance.Y = appearanceYFlag
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-width") {
+		c.Options.Appearance.Width = appearanceWidthFlag
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-height") {
+		c.Options.Appearance.Height = appearanceHeightFlag
+	}
+
+	if cmd.PersistentFlags().Changed("appearance-image") {
+		c.Options.Appearance.ImagePath = appearanceImageFlag
+	}
+}
+
+// buildIdentity resolves the signing key and certificate described by c.
+func buildIdentity(c signerConfig) (*signer.Identity, error) {
+	switch c.Type {
+	case "pem":
+		return signer.NewPEMIdentity(c.CrtPath, c.KeyPath, c.CrtChainPath)
+	case "pksc11":
+		return signer.NewPKCS11Identity(c.LibPath, c.Pass, c.CrtChainPath)
+	default:
+		return nil, fmt.Errorf("unknown signer type %q", c.Type)
+	}
+}
+
+// mustBuildIdentity resolves the signer.Identity described by c, exiting the
+// process on failure like the rest of the CLI's flag validation.
+func mustBuildIdentity(c signerConfig) *signer.Identity {
+	identity, err := buildIdentity(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return identity
 }
 
 // getSignerConfigByName returns config of the signer by name.

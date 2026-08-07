@@ -32,16 +32,13 @@ var servePEMCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		config := signerConfig{}
+		config := signerConfig{Type: "pem"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &config)
 
-		// set sign data
-		config.SignData.SetPEM(config.CrtPath, config.KeyPath, config.CrtChainPath)
-
 		// start web api with runners using unnamed signer
-		startWebAPIWithRunnersUnnamedSigner(config.SignData)
+		startWebAPIWithRunnersUnnamedSigner(mustBuildIdentity(config), config.Options)
 	},
 }
 
@@ -63,16 +60,13 @@ var servePKSC11Cmd = &cobra.Command{
 		}
 
 		// create signer config
-		config := signerConfig{}
+		config := signerConfig{Type: "pksc11"}
 
 		// bind signer flags to config
 		bindSignerFlagsToConfig(cmd, &config)
 
-		// set sign data
-		config.SignData.SetPKSC11(config.LibPath, config.Pass, config.CrtChainPath)
-
 		// start web api with runners using unnamed signer
-		startWebAPIWithRunnersUnnamedSigner(config.SignData)
+		startWebAPIWithRunnersUnnamedSigner(mustBuildIdentity(config), config.Options)
 	},
 }
 
@@ -113,9 +107,9 @@ var serveWithMultipleSignersCmd = &cobra.Command{
 }
 
 // startWebAPIWithRunnersUnnamedSigner start the web api.
-func startWebAPIWithRunnersUnnamedSigner(signData signer.SignData) {
+func startWebAPIWithRunnersUnnamedSigner(identity *signer.Identity, opts signer.Options) {
 	id := "signer"
-	signVerifyQueue.AddSignUnit(id, signData)
+	signVerifyQueue.AddSignUnit(id, identity, opts)
 	log.Println(signVerifyQueue)
 	startWebAPIWithProcessor([]string{id})
 }

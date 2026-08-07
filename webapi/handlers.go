@@ -8,8 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/digitorus/pdfsign/sign"
-	"github.com/digitorus/pdfsign/verify"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/queues/queue"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -88,7 +87,7 @@ type fields struct {
 
 func parseFields(p *multipart.Part, f *fields) error {
 	switch p.FormName() {
-	case "signer", "name", "location", "reason", "contactInfo", "certType", "approval":
+	case "signer", "name", "location", "reason", "contactInfo", "certType", "docMDP", "validateSignature":
 		// parse params
 		slurp, err := io.ReadAll(p)
 		if err != nil {
@@ -115,14 +114,14 @@ func parseFields(p *multipart.Part, f *fields) error {
 				return err
 			}
 
-			f.signConfig.CertType = sign.CertType(i)
-		case "docMDPPermissions":
+			f.signConfig.Type = pdfsign.SignatureType(i)
+		case "docMDP":
 			i, err := strconv.Atoi(str)
 			if err != nil {
 				return err
 			}
 
-			f.signConfig.DocMDPPerms = sign.DocMDPPerm(i)
+			f.signConfig.Permission = pdfsign.Permission(i)
 		case "validateSignature":
 			b, err := strconv.ParseBool(str)
 			if err != nil {
@@ -247,16 +246,7 @@ func (wa *WebAPI) handleVerifyGetInfo(w http.ResponseWriter, r *http.Request) er
 	}
 
 	// respond with json
-	return respondJSON(w, handleVerifyGetInfoResponse{
-		DocumentInfo: completedTask.VerificationData.DocumentInfo,
-		Signers:      completedTask.VerificationData.Signers,
-	}, http.StatusOK)
-}
-
-// handleVerifyGetInfoResponse used for handleVerifyGetInfo response.
-type handleVerifyGetInfoResponse struct {
-	DocumentInfo verify.DocumentInfo `json:"document_info"`
-	Signers      []verify.Signer     `json:"signers"`
+	return respondJSON(w, completedTask.VerificationData, http.StatusOK)
 }
 
 // handleSignDelete removes job from the queue.

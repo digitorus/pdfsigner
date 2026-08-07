@@ -5,9 +5,6 @@ licensePath: ./pdfsigner.lic
 .signature_defaults: &signature_defaults
   docMDP: 1
   certType: 1
-
-# Common signature info (anchor)
-.signature_info_defaults: &signature_info_defaults
   name: Company Name
   location: New York
   reason: Document approval
@@ -36,23 +33,26 @@ signers:
     type: pem
     crtPath: ./testfiles/test.crt
     keyPath: ./testfiles/test.pem
-    crtChainPath: ./testfiles/test.crt
-    signData:
-      signature:
-        <<: *signature_defaults # Reuse common signature settings
-        info:
-          <<: *signature_info_defaults # Reuse common info settings
+    # crtChainPath: ./chain.pem # PEM bundle of intermediate/root CA certs, if the leaf isn't self-signed
+    options:
+      <<: *signature_defaults # Reuse common signature settings
+      # Uncomment to draw a visual signature widget on the page:
+      # appearance:
+      #   page: 1
+      #   x: 20
+      #   y: 20
+      #   width: 200
+      #   height: 80
+      #   image: ./testfiles/stamp.png # optional; omit to use the standard text layout
 
   # hardware_token:
-  #   type: pkcs11
+  #   type: pksc11
   #   libPath: /usr/lib/softokn3.so
   #   pass: token_password
   #   crtChainPath: ./testfiles/test.crt
-  #   signData:
-  #     signature:
-  #       <<: *signature_defaults # Reuse common signature settings
-  #       info:
-  #         name: Hardware Token
-  #         location: Secure Element
-  #         reason: Secure signing
-  #         contactInfo: security@company.com
+  #   options:
+  #     <<: *signature_defaults
+  #     name: Hardware Token
+  #     location: Secure Element
+  #     reason: Secure signing
+  #     contactInfo: security@company.com

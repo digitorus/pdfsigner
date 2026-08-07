@@ -1,161 +1,104 @@
+// Package signer signs and verifies PDF documents on behalf of pdfsigner,
+// built on pdfsign's fluent Document API.
 package signer
 
 import (
-	"crypto/x509"
-	"encoding/pem"
+	"crypto"
+	"fmt"
 	"os"
-	"time"
 
-	"github.com/digitorus/pdf"
-	"github.com/digitorus/pdfsign/revocation"
-	"github.com/digitorus/pdfsign/sign"
-	"github.com/digitorus/pdfsign/verify"
+	pdfsign "github.com/digitorus/pdfsign"
 	"github.com/digitorus/pdfsigner/license"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-// SignConfig is a SignConfig of the sign package, but with additional methods added.
-type SignData sign.SignData
+// Options configures how a signature is produced: metadata, format,
+// timestamping, and an optional visual appearance.
+type Options struct {
+	Reason     string `mapstructure:"reason"`
+	Location   string `mapstructure:"location"`
+	Contact    string `mapstructure:"contactInfo"`
+	SignerName string `mapstructure:"name"`
 
-// SetPEM sets specific to PEM settings.
-func (s *SignData) SetPEM(crtPath, keyPath, crtChainPath string) {
-	// Set certificate
-	certificate_data, err := os.ReadFile(crtPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	Type       pdfsign.SignatureType `mapstructure:"certType"`
+	Permission pdfsign.Permission    `mapstructure:"docMDP"`
+	Format     pdfsign.Format        `mapstructure:"format"`
+	// Digest selects the hash algorithm. Zero keeps pdfsign's default (SHA256).
+	Digest crypto.Hash `mapstructure:"-"`
 
-	certificate_data_block, _ := pem.Decode(certificate_data)
-	if certificate_data_block == nil {
-		log.Fatal("failed to parse PEM block containing the certificate")
-	}
+	TSAURL      string `mapstructure:"tsaUrl"`
+	TSAUsername string `mapstructure:"tsaUsername"`
+	TSAPassword string `mapstructure:"tsaPassword"`
 
-	cert, err := x509.ParseCertificate(certificate_data_block.Bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s.Certificate = cert
-
-	// Set key
-	key_data, err := os.ReadFile(keyPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	key_data_block, _ := pem.Decode(key_data)
-	if key_data_block == nil {
-		log.Fatal("failed to parse PEM block containing the private key")
-	}
-
-	pkey, err := x509.ParsePKCS1PrivateKey(key_data_block.Bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s.Signer = pkey
-
-	s.SetCertificateChains(crtChainPath)
-	s.SetRevocationSettings()
+	// Appearance, when set, draws a visual signature widget on the page.
+	Appearance *Appearance `mapstructure:"appearance"`
 }
 
-// SetCertificateChains sets certificate chain settings.
-func (s *SignData) SetCertificateChains(crtChainPath string) {
-	var certificate_chains [][]*x509.Certificate
-
-	if crtChainPath == "" {
-		return
+// SignFile signs input with identity according to opts, writing the result
+// to output. It blocks on the license rate limiter before signing, and
+// optionally re-verifies the result when validate is true.
+func SignFile(input, output string, identity *Identity, opts Options, validate bool) error {
+	if err := license.LD.Wait(); err != nil {
+		return err
 	}
 
-	chain_data, err := os.ReadFile(crtChainPath)
-	if err != nil {
-		log.Fatal(err)
+	if err := signFile(input, output, identity, opts); err != nil {
+		return err
 	}
 
-	certificate_pool := x509.NewCertPool()
-	certificate_pool.AppendCertsFromPEM(chain_data)
-
-	certificate_chains, err = s.Certificate.Verify(x509.VerifyOptions{
-		Intermediates: certificate_pool,
-		CurrentTime:   s.Certificate.NotBefore,
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
-	})
-	if err != nil {
-		log.Fatal(err)
+	if validate {
+		if _, err := VerifyFile(output); err != nil {
+			return fmt.Errorf("validate signed output: %w", err)
+		}
 	}
 
-	s.CertificateChains = certificate_chains
-}
-
-// SetRevocationSettings sets default revocation settings.
-func (s *SignData) SetRevocationSettings() {
-	s.RevocationData = revocation.InfoArchival{}
-	s.RevocationFunction = sign.DefaultEmbedRevocationStatusFunction
-}
-
-// SignFile checks the license, waits if limits are reached, if allowed signs the file.
-func SignFile(input, output string, s SignData, validateSignature bool) error {
-	// check the license and wait if limits are reached
-	err := license.LD.Wait()
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-
-	// set date
-	s.Signature.Info.Date = time.Now().Local()
-
-	// sign file
-	err = signFile(input, output, s, validateSignature)
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-
-	// log the result
 	log.Println("File signed:", output)
 
-	return err
+	return nil
 }
 
-func signFile(input string, output string, sign_data SignData, validateSignature bool) error {
-	input_file, err := os.Open(input)
+func signFile(input, output string, identity *Identity, opts Options) error {
+	doc, err := pdfsign.OpenFile(input)
 	if err != nil {
-		return err
-	}
-	defer func() { _ = input_file.Close() }()
-
-	output_file, err := os.Create(output)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = output_file.Close() }()
-
-	finfo, err := input_file.Stat()
-	if err != nil {
-		return err
+		return fmt.Errorf("open %s: %w", input, err)
 	}
 
-	size := finfo.Size()
+	sb := doc.Sign(identity.Signer, identity.Certificate, identity.Intermediates...).
+		Reason(opts.Reason).
+		Location(opts.Location).
+		Contact(opts.Contact).
+		SignerName(opts.SignerName).
+		Type(opts.Type).
+		Permission(opts.Permission).
+		Format(opts.Format)
 
-	rdr, err := pdf.NewReader(input_file, size)
-	if err != nil {
-		return err
+	if opts.Digest != 0 {
+		sb.Digest(opts.Digest)
 	}
 
-	err = sign.SignWithData(input_file, output_file, rdr, size, sign.SignData(sign_data))
-	if err != nil {
-		return err
+	if opts.TSAURL != "" {
+		sb.Timestamp(opts.TSAURL).TimestampAuth(opts.TSAUsername, opts.TSAPassword)
 	}
 
-	if validateSignature {
-		// The verify.Response/Signer/Certificate shape (OCSP/CRL detail,
-		// certificate chains, ...) has no equivalent in pdfsign's newer
-		// fluent doc.Verify() API, so the deprecated top-level helper is
-		// kept deliberately rather than switched to the fluent API.
-		_, err = verify.VerifyFile(output_file) //nolint:staticcheck // see comment above
+	if opts.Appearance != nil {
+		app, err := opts.Appearance.build()
 		if err != nil {
 			return err
 		}
+
+		sb.Unit(opts.Appearance.unit()).
+			Appearance(app, opts.Appearance.X, opts.Appearance.Y).
+			Page(opts.Appearance.page())
+	}
+
+	out, err := os.Create(output)
+	if err != nil {
+		return fmt.Errorf("create %s: %w", output, err)
+	}
+	defer func() { _ = out.Close() }()
+
+	if _, err := doc.Write(out); err != nil {
+		return fmt.Errorf("sign %s: %w", input, err)
 	}
 
 	return nil
